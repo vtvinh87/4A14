@@ -41,7 +41,8 @@ describe('Supabase Edge API adapter', () => {
     }));
 
     expect(result.status).toBe(200);
-    expect(result.headers.get('Set-Cookie')).toContain('hoc_vui_session=opaque-token');
+    expect(result.headers.get('Cache-Control')).toBe('no-store');
+    expect(result.headers.get('Set-Cookie')).toBe('hoc_vui_session=opaque-token; Path=/; HttpOnly');
     expect(await result.json()).toEqual({ ok: true, accessToken: 'opaque-token' });
     expect(received).toMatchObject({
       method: 'POST',
@@ -66,7 +67,8 @@ describe('Supabase Edge API adapter', () => {
     expect(result.status).toBe(204);
     expect(result.headers.get('Access-Control-Allow-Origin')).toBe('https://hoc-vui.web.app');
     expect(result.headers.get('Access-Control-Allow-Credentials')).toBe('true');
-    expect(result.headers.get('Access-Control-Allow-Headers')).toContain('Authorization');
+    expect(result.headers.get('Access-Control-Allow-Methods')).toBe('GET,POST,PATCH,PUT,DELETE,OPTIONS');
+    expect(result.headers.get('Access-Control-Allow-Headers')).toBe('Authorization,Content-Type,X-Parent-Grant');
     expect(result.headers.get('Vary')).toBe('Origin');
     expect(app.handle).not.toHaveBeenCalled();
   });
@@ -83,6 +85,53 @@ describe('Supabase Edge API adapter', () => {
     expect(result.status).toBe(403);
     expect(await result.json()).toMatchObject({ ok: false, code: 'forbidden' });
     expect(app.handle).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed origin before route dispatch', async () => {
+    const app = { handle: vi.fn(async () => response({ ok: true })) };
+    const handler = createEdgeHandler(async () => ({ app }));
+    const result = await handler(new Request('https://project.supabase.co/functions/v1/api/auth/me', {
+      method: 'POST',
+      headers: { Origin: 'not a valid origin', 'Content-Type': 'application/json' },
+      body: '{}',
+    }));
+
+    expect(result.status).toBe(403);
+    expect(await result.json()).toMatchObject({ ok: false, code: 'forbidden' });
+    expect(app.handle).not.toHaveBeenCalled();
+  });
+
+  it('supports a non-disposable loader without requiring a dispose callback', async () => {
+    const end = vi.fn(async () => undefined);
+    const handler = createEdgeHandler(async () => ({ app: { handle: async () => response({ ok: true }) }, db: { end } }));
+
+    const result = await handler(new Request('https://project.supabase.co/functions/v1/api/auth/me'));
+
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ ok: true });
+    expect(end).not.toHaveBeenCalled();
+  });
+
+  it('disposes an owned dependency after the request without replacing the API response on disposal failure', async () => {
+    const lifecycle: string[] = [];
+    const handler = createEdgeHandler(async () => ({
+      app: {
+        handle: async () => {
+          lifecycle.push('handle');
+          return response({ ok: true, result: 'preserved' }, 202);
+        },
+      },
+      dispose: async () => {
+        lifecycle.push('dispose');
+        throw new Error('dispose failed');
+      },
+    }));
+
+    const result = await handler(new Request('https://project.supabase.co/functions/v1/api/auth/me'));
+
+    expect(lifecycle).toEqual(['handle', 'dispose']);
+    expect(result.status).toBe(202);
+    expect(await result.json()).toEqual({ ok: true, result: 'preserved' });
   });
 
   it('sanitizes dependency errors before returning an unavailable response', async () => {

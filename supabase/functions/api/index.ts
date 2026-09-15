@@ -5,7 +5,11 @@ const ALLOWED_METHODS = 'GET,POST,PATCH,PUT,DELETE,OPTIONS';
 const ALLOWED_HEADERS = 'Authorization,Content-Type,X-Parent-Grant';
 
 type EdgeApp = { handle: (request: AppRequest) => Promise<AppResponse> };
-type AppLoader = () => Promise<{ app: EdgeApp }>;
+export type LoadedEdgeApp = {
+  app: EdgeApp;
+  dispose?: () => void | Promise<void>;
+};
+type AppLoader = () => Promise<LoadedEdgeApp>;
 
 function configuredOrigins(): string[] {
   return (getEnv('HOC_VUI_ALLOWED_ORIGINS') ?? '')
@@ -94,12 +98,19 @@ export function createEdgeHandler(loadApp: AppLoader = getDefaultApp): (request:
       });
     }
 
+    let dispose: LoadedEdgeApp['dispose'];
     try {
-      const { app } = await loadApp();
+      const loaded = await loadApp();
+      dispose = loaded.dispose;
+      const { app } = loaded;
       const result = await app.handle(appRequestFromWebRequest(request, await requestBody(request)));
       return appResponseToWebResponse(result, origin);
     } catch {
       return jsonResponse({ ok: false, code: 'unavailable', message: 'API tạm thời chưa sẵn sàng; hãy kiểm tra kết nối rồi thử lại.' }, 503, origin);
+    } finally {
+      if (dispose) {
+        try { await dispose(); } catch { /* Disposal must not replace the API response. */ }
+      }
     }
   };
 }

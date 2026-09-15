@@ -3,6 +3,8 @@ import { createApp, type AppRequest, type AppResponse } from './app';
 import { MemoryAuthRepository } from './auth/memoryRepository';
 import { createAuthService } from './auth/service';
 import { databaseUrlFromEnv } from './db/client';
+import { MemoryLearningRepository } from './learning/memoryRepository';
+import { createLearningService } from './learning/service';
 
 function cookieValue(response: AppResponse): string {
   const cookie = response.headers['Set-Cookie'] ?? '';
@@ -13,6 +15,21 @@ async function request(app: ReturnType<typeof createApp>, input: Omit<AppRequest
   return app.handle({ ...input, headers: { host: input.host ?? 'localhost:8888', ...(input.cookie ? { cookie: input.cookie } : {}), ...(input.parentGrant ? { 'x-parent-grant': input.parentGrant } : {}), ...(input.authorization ? { authorization: input.authorization } : {}), ...(input.origin ? { origin: input.origin } : {}) } });
 }
 
+function expectPublicSession(response: AppResponse): void {
+  const session = response.body.session as Record<string, unknown>;
+  const account = session.account as Record<string, unknown>;
+  expect(session).not.toHaveProperty('token');
+  expect(session).not.toHaveProperty('tokenHash');
+  expect(session).not.toHaveProperty('parentGrantHash');
+  expect(account).not.toHaveProperty('studentCredential');
+  expect(account).not.toHaveProperty('parentCredential');
+  expect(account).not.toHaveProperty('adminCredential');
+}
+
+function expectNoAccessToken(response: AppResponse): void {
+  expect(response.body).not.toHaveProperty('accessToken');
+}
+
 describe('same-origin account API', () => {
   it('keeps credentials out of responses and enforces student/admin boundaries', async () => {
     const repository = new MemoryAuthRepository();
@@ -21,9 +38,14 @@ describe('same-origin account API', () => {
     const adminLogin = await request(app, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'Admin', password: '123456@' } });
     expect(adminLogin.statusCode).toBe(200);
     expect(adminLogin.body.accessToken).toEqual(expect.any(String));
+    expectPublicSession(adminLogin);
     expect(JSON.stringify(adminLogin.body)).not.toContain('scrypt');
     expect(JSON.stringify(adminLogin.body)).not.toContain('123456@');
-    const adminCookie = cookieValue(adminLogin);
+    const changedAdminPassword = await request(app, { method: 'POST', path: '/api/auth/admin/change-password', cookie: cookieValue(adminLogin), body: { currentPassword: '123456@', newPassword: '654321@' } });
+    expect(changedAdminPassword.statusCode).toBe(200);
+    expect(changedAdminPassword.body.accessToken).toEqual(expect.any(String));
+    expectPublicSession(changedAdminPassword);
+    const adminCookie = cookieValue(changedAdminPassword);
 
     const created = await request(app, { method: 'POST', path: '/api/admin/students', cookie: adminCookie, body: { username: 'Bao04', displayName: 'Bé Bảo' } });
     expect(created.statusCode).toBe(200);
@@ -36,6 +58,7 @@ describe('same-origin account API', () => {
     const studentLogin = await request(app, { method: 'POST', path: '/api/auth/student/login', body: { username: 'BAO04', pin: '123456' } });
     expect(studentLogin.statusCode).toBe(200);
     expect(studentLogin.body.accessToken).toEqual(expect.any(String));
+    expectPublicSession(studentLogin);
     expect(studentLogin.body.mustChange).toBe(true);
     const studentCookie = cookieValue(studentLogin);
     const blockedAdminCall = await request(app, { method: 'GET', path: '/api/admin/students', cookie: studentCookie });
@@ -47,6 +70,7 @@ describe('same-origin account API', () => {
     const changed = await request(app, { method: 'POST', path: '/api/auth/student/change-pin', cookie: studentCookie, body: { currentPin: '123456', newPin: '012345' } });
     expect(changed.statusCode).toBe(200);
     expect(changed.body.accessToken).toEqual(expect.any(String));
+    expectPublicSession(changed);
   });
 
   it('requires an independent parent PIN and revokes the grant on lock', async () => {
@@ -63,16 +87,19 @@ describe('same-origin account API', () => {
     const firstParent = await request(app, { method: 'POST', path: '/api/parent/unlock', cookie: changedCookie, body: { pin: '123456' } });
     expect(firstParent.statusCode).toBe(200);
     expect(firstParent.body.accessToken).toEqual(expect.any(String));
+    expectPublicSession(firstParent);
     expect(firstParent.body.mustChange).toBe(true);
     const firstParentCookie = cookieValue(firstParent);
     expect((await request(app, { method: 'GET', path: '/api/parent/dashboard', cookie: firstParentCookie })).statusCode).toBe(403);
 
     const parentChanged = await request(app, { method: 'POST', path: '/api/parent/change-pin', cookie: firstParentCookie, body: { currentPin: '123456', newPin: '864208' } });
     expect(parentChanged.body.accessToken).toEqual(expect.any(String));
+    expectPublicSession(parentChanged);
     const parentChangedCookie = cookieValue(parentChanged);
     expect((await request(app, { method: 'GET', path: '/api/parent/dashboard', cookie: parentChangedCookie })).statusCode).toBe(403);
     const unlocked = await request(app, { method: 'POST', path: '/api/parent/unlock', cookie: parentChangedCookie, body: { pin: '864208' } });
     expect(unlocked.body.accessToken).toEqual(expect.any(String));
+    expectPublicSession(unlocked);
     const unlockedCookie = cookieValue(unlocked);
     const grant = String(unlocked.body.parentGrantToken ?? '');
     expect(grant).toBeTruthy();
@@ -98,9 +125,13 @@ describe('same-origin account API', () => {
       const allowedWrite = await request(app, { method: 'POST', path: '/api/admin/students', origin: 'https://hoc-vui.example', authorization: `Bearer ${accessToken}`, body: { username: 'allow01', displayName: 'Được tạo' } });
       expect(allowedWrite.statusCode).toBe(200);
 
+      const malformedOrigin = await request(app, { method: 'POST', path: '/api/admin/students', origin: 'not a valid origin', authorization: `Bearer ${accessToken}`, body: { username: 'bad01', displayName: 'Không được tạo' } });
+      expect(malformedOrigin.statusCode).toBe(403);
+
       const me = await request(app, { method: 'GET', path: '/api/auth/me', authorization: `Bearer ${accessToken}` });
       expect(me.statusCode).toBe(200);
-      expect(me.body).not.toHaveProperty('accessToken');
+      expectNoAccessToken(me);
+      expectPublicSession(me);
     } finally {
       if (previousAllowlist === undefined) delete process.env.HOC_VUI_ALLOWED_ORIGINS;
       else process.env.HOC_VUI_ALLOWED_ORIGINS = previousAllowlist;
@@ -131,7 +162,7 @@ describe('same-origin account API', () => {
   it('exposes only scoped profile routes and never trusts a client student id', async () => {
     const repository = new MemoryAuthRepository();
     let now = new Date('2026-09-14T05:00:00.000Z');
-    const app = createApp({ auth: createAuthService(repository, () => now) });
+    const app = createApp({ auth: createAuthService(repository, () => now), learning: createLearningService(new MemoryLearningRepository(), () => now) });
     const admin = await request(app, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'admin', password: '123456@' } });
     const adminCookie = cookieValue(admin);
     const first = await request(app, { method: 'POST', path: '/api/admin/students', cookie: adminCookie, body: { username: 'profile01', displayName: 'Hồ Sơ A' } });
@@ -144,9 +175,14 @@ describe('same-origin account API', () => {
     const self = await request(app, { method: 'PATCH', path: '/api/me/profile', cookie: firstCookie, body: { displayName: 'Hồ Sơ A mới', avatarId: 'fox-sunny', birthDate: '2000-02-29' } });
     expect(self.statusCode).toBe(200);
     expect(self.body.profile).toEqual(expect.objectContaining({ displayName: 'Hồ Sơ A mới', avatarId: 'fox-sunny', birthDate: '2000-02-29' }));
+    expectNoAccessToken(self);
     expect(JSON.stringify(self.body)).not.toContain('scrypt');
     expect(JSON.stringify(self.body)).not.toContain('salt');
     expect(JSON.stringify(self.body)).not.toContain('token');
+
+    const progress = await request(app, { method: 'GET', path: '/api/me/progress', cookie: firstCookie });
+    expect(progress.statusCode).toBe(200);
+    expectNoAccessToken(progress);
 
     const studentSessionParentProfile = await request(app, { method: 'GET', path: '/api/parent/profile', cookie: firstCookie });
     expect(studentSessionParentProfile.statusCode).toBe(403);
@@ -167,9 +203,20 @@ describe('same-origin account API', () => {
     expect(wrongGrantProfile.statusCode).toBe(403);
     const parentProfile = await request(app, { method: 'GET', path: '/api/parent/profile', cookie: parentCookie, parentGrant: grant });
     expect(parentProfile.statusCode).toBe(200);
+    expectNoAccessToken(parentProfile);
     expect(JSON.stringify(parentProfile.body)).not.toContain('hash');
     expect(JSON.stringify(parentProfile.body)).not.toContain('salt');
     expect(JSON.stringify(parentProfile.body)).not.toContain('token');
+    const dashboard = await request(app, { method: 'GET', path: '/api/parent/dashboard?range=all', cookie: parentCookie, parentGrant: grant });
+    expect(dashboard.statusCode).toBe(200);
+    expectNoAccessToken(dashboard);
+    expectPublicSession(dashboard);
+    const exported = await request(app, { method: 'GET', path: '/api/parent/export', cookie: parentCookie, parentGrant: grant });
+    expect(exported.statusCode).toBe(200);
+    expectNoAccessToken(exported);
+    const reset = await request(app, { method: 'POST', path: '/api/parent/reset', cookie: parentCookie, parentGrant: grant, body: {} });
+    expect(reset.statusCode).toBe(200);
+    expectNoAccessToken(reset);
     const firstId = String((first.body.account as { id: string }).id);
     const secondId = String((second.body.account as { id: string }).id);
     const preference = await request(app, { method: 'PATCH', path: '/api/parent/profile-preferences', cookie: parentCookie, parentGrant: grant, body: { birthdayWishesEnabled: true } });
