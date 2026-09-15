@@ -36,6 +36,21 @@ describe('account entry views', () => {
     expect(onLogin).toHaveBeenCalledWith('bao04', '012345');
   });
 
+  it('shows the concise Admin contact without the old login explanation', () => {
+    act(() => root.render(createElement(LoginView, { onStudentLogin: vi.fn(), onAdminLogin: vi.fn() })));
+
+    expect(mount.textContent).not.toContain('Nhập tên tài khoản và mã PIN 6 số mà Admin đã cấp cho con.');
+    expect(mount.textContent).toContain('Liên hệ Admin để tạo tài khoản hoặc đặt lại mật khẩu.');
+
+    const zalo = mount.querySelector<HTMLAnchorElement>('a.auth-admin-contact');
+    expect(zalo?.textContent).toBe('Zalo: Thành Vinh');
+    expect(zalo?.querySelector('img.auth-admin-icon')?.getAttribute('src')).toBe('/art/hud/zalo.webp');
+    expect(zalo?.querySelector('img.auth-admin-icon')?.getAttribute('alt')).toBe('');
+    expect(zalo?.getAttribute('href')).toBe('https://zalo.me/0948584429');
+    expect(zalo?.getAttribute('target')).toBe('_blank');
+    expect(zalo?.getAttribute('rel')).toBe('noreferrer');
+  });
+
   it('requires matching replacement PINs before calling the change handler', () => {
     const onChange = vi.fn();
     act(() => root.render(createElement(ChangePinView, { title: 'Đổi mã PIN', kind: 'student', onChange, onLogout: vi.fn() })));

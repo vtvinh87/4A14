@@ -682,6 +682,8 @@ button:focus-visible {
 
 .pet-zone {
   position: relative;
+  z-index: 4;
+  isolation: isolate;
   grid-column: 1;
   grid-row: 1;
   display: flex;
@@ -714,6 +716,8 @@ button:focus-visible {
   align-items: center;
   width: min(100%, 330px);
 }
+
+.pet-zone .pet-companion { z-index: 10; }
 
 .pet-size-full {
   flex-direction: column-reverse;
@@ -831,6 +835,37 @@ button:focus-visible {
   line-height: 1.2;
   text-align: center;
 }
+
+.pet-bubble-full {
+  z-index: 20;
+  width: min(100%, 350px);
+  margin-top: -18px;
+  padding: 17px 24px 18px;
+  border-radius: 30px 30px 30px 10px;
+  background: linear-gradient(145deg, rgba(255, 255, 250, .98), rgba(255, 247, 210, .96));
+  box-shadow: 0 9px 0 rgba(49, 68, 85, .2), 0 12px 24px rgba(32, 71, 82, .13), inset 0 2px 0 rgba(255, 255, 255, .88);
+  font-size: clamp(.9rem, 1.35vw, 1.08rem);
+  line-height: 1.3;
+}
+
+.pet-bubble-full::before {
+  position: absolute;
+  top: 9px;
+  right: 14px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffca3a;
+  box-shadow: 0 0 0 4px rgba(255, 202, 58, .2);
+  content: "";
+}
+
+.pet-bubble-full::after { background: #fffaf0; }
+.pet-bubble-tone-playful { border-top-color: #e8a526; }
+.pet-bubble-tone-curious { border-top-color: #2a9b9b; }
+.pet-bubble-tone-moody { border-top-color: #7087bd; }
+.pet-bubble-tone-joyful { border-top-color: #ef9b36; }
+.pet-bubble-tone-serious { border-top-color: #4b7092; }
 
 .pet-bubble-speech {
   animation: pet-bubble-speech-in 220ms ease both;
@@ -2151,6 +2186,7 @@ button:focus-visible {
   display: grid;
   place-items: center;
   min-height: 335px;
+  isolation: isolate;
   overflow: hidden;
   border: 4px solid rgba(94, 72, 47, 0.42);
   border-radius: 28px;
@@ -2183,6 +2219,8 @@ button:focus-visible {
 }
 
 .pet-room .pet-companion {
+  position: relative;
+  z-index: 10;
   align-self: end;
   margin-bottom: 28px;
 }
@@ -2192,7 +2230,39 @@ button:focus-visible {
 }
 
 .pet-room .pet-bubble {
+  position: relative;
+  z-index: 20;
+  width: min(100%, 360px);
+  padding: 17px 24px 18px;
+  border-width: 3px;
+  border-radius: 30px 30px 30px 10px;
+  background: linear-gradient(145deg, rgba(255, 255, 250, .98), rgba(255, 247, 210, .96));
+  box-shadow: 0 9px 0 rgba(49, 68, 85, .2), 0 12px 24px rgba(32, 71, 82, .13), inset 0 2px 0 rgba(255, 255, 255, .88);
+  font-size: clamp(.9rem, 1.35vw, 1.08rem);
+  line-height: 1.3;
   margin-top: -18px;
+}
+
+.pet-room .pet-bubble::before {
+  position: absolute;
+  top: 9px;
+  right: 14px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffca3a;
+  box-shadow: 0 0 0 4px rgba(255, 202, 58, .2);
+  content: "";
+}
+
+.pet-room .pet-bubble-tone-playful { border-top-color: #e8a526; }
+.pet-room .pet-bubble-tone-curious { border-top-color: #2a9b9b; }
+.pet-room .pet-bubble-tone-moody { border-top-color: #7087bd; }
+.pet-room .pet-bubble-tone-joyful { border-top-color: #ef9b36; }
+.pet-room .pet-bubble-tone-serious { border-top-color: #4b7092; }
+
+.pet-room-caption {
+  z-index: 2;
 }
 
 .pet-room-caption {
@@ -4679,7 +4749,7 @@ button:focus-visible {
   .pet-zone::before { bottom: 42px; width: 210px; height: 56px; }
   .pet-zone .pet-companion { width: 260px; }
   .pet-zone .pet-avatar { width: 188px; }
-  .pet-zone .pet-bubble { width: 210px; margin-top: -19px; padding: 11px 14px; font-size: 0.82rem; }
+  .pet-zone .pet-bubble-full { width: min(300px, calc(100% - 16px)); margin-top: -19px; padding: 13px 17px 14px; font-size: 0.86rem; }
   .journey-center { order: 2; width: 100%; }
   .journey-feature-rail { order: 3; width: min(100%, 520px); padding: 9px 10px; }
   .journey-feature-kicker { margin: 0 0 2px; }
@@ -4755,6 +4825,7 @@ button:focus-visible {
   .empty-action-card .secondary-button { width: 100%; margin-left: 0; }
   .pet-room { min-height: 330px; }
   .pet-room .pet-avatar { width: 185px; }
+  .pet-room .pet-bubble { width: min(286px, calc(100% - 28px)); padding: 14px 18px 15px; font-size: .86rem; }
   .pet-room-caption { justify-content: flex-start; font-size: 0.72rem; }
   .pet-roster { padding: 14px 12px; border-width: 2px; border-radius: 20px; }
   .pet-roster-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
@@ -5060,7 +5131,7 @@ button:focus-visible {
 .auth-card .eyebrow { text-align: center; }
 .auth-card h1, .auth-modal h2 { margin: 0; color: var(--ink); font-size: clamp(1.55rem, 4vw, 2.25rem); font-weight: 900; letter-spacing: -0.05em; line-height: 1.08; text-align: center; }
 .auth-lead { margin: 12px auto 22px; color: var(--ink-soft); font-size: 0.96rem; font-weight: 700; line-height: 1.5; text-align: center; }
-.auth-mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 18px; padding: 5px; border-radius: 14px; background: #e3eee6; }
+.auth-mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 24px 0 18px; padding: 5px; border-radius: 14px; background: #e3eee6; }
 .auth-mode-switch button { min-height: 42px; border-radius: 10px; background: transparent; color: var(--ink-soft); font-size: 0.82rem; font-weight: 900; }
 .auth-mode-switch button.is-active { background: #fff6cf; color: var(--ink); box-shadow: 0 3px 0 rgba(106, 86, 37, 0.18); }
 .auth-form { display: grid; gap: 13px; }
@@ -5078,6 +5149,9 @@ button:focus-visible {
 .auth-cancel { justify-content: center; width: 100%; min-height: 44px; }
 .auth-error { margin: 0; padding: 9px 11px; border: 2px solid rgba(185, 91, 62, 0.34); border-radius: 11px; background: #fff0e8; color: #994a3a; font-size: 0.78rem; font-weight: 800; line-height: 1.4; }
 .auth-note { margin: 20px 0 0; color: #557083; font-size: 0.73rem; font-weight: 700; line-height: 1.45; text-align: center; }
+.auth-note p { margin: 0; }
+.auth-admin-contact { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; color: #0068ff; font-size: 0.82rem; font-weight: 900; }
+.auth-admin-icon { display: block; width: 22px; height: 22px; flex: 0 0 22px; border-radius: 6px; object-fit: contain; }
 .pwa-install-card { display: grid; gap: 10px; margin-top: 18px; padding: 14px; border: 2px solid rgba(38, 142, 137, 0.18); border-radius: 16px 11px 18px 12px; background: linear-gradient(135deg, rgba(230, 247, 237, 0.84), rgba(237, 249, 252, 0.92)); }
 .pwa-install-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .pwa-install-heading .eyebrow { margin: 0 0 3px; text-align: left; }
