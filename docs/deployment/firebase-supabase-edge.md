@@ -32,11 +32,13 @@ npm test
 npm run typecheck
 npm run typecheck:server
 npm run validate:fox
-deno check --unstable-sloppy-imports --import-map supabase/functions/api/deno.json supabase/functions/api/index.ts
+deno check --config supabase/functions/api/deno.json supabase/functions/api/index.ts
 npm run check:edge-runtime
 ```
 
-`check:edge-runtime` chạy `deno serve` trên entrypoint thật với cổng localhost ngẫu nhiên, gửi duy nhất một `OPTIONS` allowlisted, kiểm tra HTTP 204 và toàn bộ CORS headers chính xác, rồi dừng đúng child process. Preflight kết thúc trước khi khởi tạo app/database, nên gate này không cần database URL, secret hoặc dữ liệu học sinh. Function-local `deno.json` giữ import map `postgres` và bật `sloppy-imports` cho các import extensionless hiện có; lệnh check/smoke vẫn truyền flag tương ứng để hành vi local được tường minh và tái lập.
+`deno check` phân giải dependency graph theo chế độ strict giống managed bundler: các import relative reachable từ Edge entrypoint phải có đuôi `.ts`; không dùng `sloppy-imports`. Function-local `deno.json` chỉ giữ import map `postgres` và ba ánh xạ exact cho các import nội bộ nằm trong hai module type dùng chung chưa thuộc write set của fix deployment.
+
+`check:edge-runtime` chạy strict `deno check` trước, rồi chạy `deno serve --config supabase/functions/api/deno.json` trên entrypoint thật với cổng localhost ngẫu nhiên, gửi duy nhất một `OPTIONS` allowlisted, kiểm tra HTTP 204 và toàn bộ CORS headers chính xác, rồi dừng đúng child process. Bất kỳ lỗi dependency resolution, startup, HTTP hoặc cleanup nào đều làm command thoát non-zero. Preflight kết thúc trước khi khởi tạo app/database, nên gate này không cần database URL, secret hoặc dữ liệu học sinh.
 
 Không dùng dữ liệu học sinh thật để smoke test.
 

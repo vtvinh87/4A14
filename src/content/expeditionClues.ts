@@ -1,4 +1,4 @@
-import type { LessonId } from './types';
+import type { LessonId } from './types.ts';
 
 /** Intentionally false alternatives for the two true evidence cards in each clue hunt. */
 export const CLUE_DISTRACTORS: Record<LessonId, [string, string]> = {

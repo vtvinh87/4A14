@@ -1,7 +1,7 @@
-import { formatTextbookReference } from '../../src/content/textbookGuide';
-import { getLessonPackage } from '../../src/content/packages';
-import type { DashboardActivity, DashboardRange, DashboardSuggestion } from '../../shared/dashboard-contracts';
-import { DASHBOARD_RULE_VERSION } from '../../shared/dashboard-contracts';
+import { formatTextbookReference } from '../../src/content/textbookGuide.ts';
+import { getLessonPackage } from '../../src/content/packages.ts';
+import type { DashboardActivity, DashboardRange, DashboardSuggestion } from '../../shared/dashboard-contracts.ts';
+import { DASHBOARD_RULE_VERSION } from '../../shared/dashboard-contracts.ts';
 
 function sourceFor(activity: DashboardActivity): string | undefined {
   const lesson = getLessonPackage(activity.lessonId);

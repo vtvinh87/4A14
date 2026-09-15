@@ -1,4 +1,4 @@
-import type { Response } from '../src/content/types';
+import type { Response } from '../src/content/types.ts';
 
 export const CONTENT_VERSION = 'lesson-content-v1';
 export const ACCOUNT_BACKUP_KIND = 'hoc-vui-progress';
@@ -46,7 +46,7 @@ export type AccountProgressSnapshot = {
   revision: number;
   generation: number;
   contentVersion: string;
-  progress: import('../src/content/types').Progress;
+  progress: import('../src/content/types.ts').Progress;
   updatedAt: string;
   legacyImported?: boolean;
 };
@@ -59,7 +59,7 @@ export type AccountProgressBackup = {
   revision: number;
   generation: number;
   contentVersion: string;
-  progress: import('../src/content/types').Progress;
+  progress: import('../src/content/types.ts').Progress;
   legacyImported?: boolean;
 };
 

@@ -1,7 +1,7 @@
 import type postgres from 'postgres';
-import { DEFAULT_AVATAR_ID, isAvatarId, type AvatarId } from '../../shared/account-contracts';
-import { withTransaction, type DatabaseClient, type DatabaseTransaction } from '../db/client';
-import type { AdminAuditRecord, AuthRepository, CredentialKind, CredentialRecord, ServerAccountRecord, ServerSessionRecord } from './types';
+import { DEFAULT_AVATAR_ID, isAvatarId, type AvatarId } from '../../shared/account-contracts.ts';
+import { withTransaction, type DatabaseClient, type DatabaseTransaction } from '../db/client.ts';
+import type { AdminAuditRecord, AuthRepository, CredentialKind, CredentialRecord, ServerAccountRecord, ServerSessionRecord } from './types.ts';
 
 type AccountRow = {
   id: string;

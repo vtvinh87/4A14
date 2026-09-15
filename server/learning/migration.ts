@@ -1,8 +1,8 @@
-import { hashToken } from '../auth/crypto';
-import { ACCOUNT_BACKUP_KIND, CONTENT_VERSION, type AccountProgressBackup, type MigrationPreview } from '../../shared/learning-contracts';
-import type { Progress } from '../../src/content/types';
-import { BACKUP_MAX_BYTES, isProgress } from '../../src/progress/storage';
-import type { LearningSnapshotRecord } from './types';
+import { hashToken } from '../auth/crypto.ts';
+import { ACCOUNT_BACKUP_KIND, CONTENT_VERSION, type AccountProgressBackup, type MigrationPreview } from '../../shared/learning-contracts.ts';
+import type { Progress } from '../../src/content/types.ts';
+import { BACKUP_MAX_BYTES, isProgress } from '../../src/progress/storage.ts';
+import type { LearningSnapshotRecord } from './types.ts';
 
 type MigrationParseFailure = { ok: false; code: 'invalid' | 'forbidden'; message: string };
 export type ParsedProgressBackup = {

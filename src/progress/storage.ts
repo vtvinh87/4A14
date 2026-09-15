@@ -1,8 +1,8 @@
-import type { Evaluation, Lesson, Progress, Response, Session } from '../content/types';
-import { MVP_LESSON_PACKAGES } from '../content/packages';
-import { LESSON_MISSION_IDS, STAMP_IDS } from '../game/rewards';
-import { evaluate } from '../game/evaluate';
-import { getVerifiedLegacyLesson, hasLegacyMissionCompletion } from './legacy';
+import type { Evaluation, Lesson, Progress, Response, Session } from '../content/types.ts';
+import { MVP_LESSON_PACKAGES } from '../content/packages.ts';
+import { LESSON_MISSION_IDS, STAMP_IDS } from '../game/rewards.ts';
+import { evaluate } from '../game/evaluate.ts';
+import { getVerifiedLegacyLesson, hasLegacyMissionCompletion } from './legacy.ts';
 
 export type AppSettings = {
   sound: boolean;

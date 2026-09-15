@@ -10,9 +10,9 @@ import {
   validateUsername,
   type StudentProfilePatch,
   type StudentProfileView,
-} from '../../shared/account-contracts';
-import { credentialAlgorithm, hashSecret, hashToken, randomToken, randomUuid, verifySecret } from './crypto';
-import type { AccountView, AdminAuditRecord, AuthFailure, AuthRepository, AuthResult, AuthSessionView, CredentialKind, CredentialRecord, ServerAccountRecord, ServerSessionRecord } from './types';
+} from '../../shared/account-contracts.ts';
+import { credentialAlgorithm, hashSecret, hashToken, randomToken, randomUuid, verifySecret } from './crypto.ts';
+import type { AccountView, AdminAuditRecord, AuthFailure, AuthRepository, AuthResult, AuthSessionView, CredentialKind, CredentialRecord, ServerAccountRecord, ServerSessionRecord } from './types.ts';
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;

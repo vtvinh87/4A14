@@ -1,5 +1,5 @@
-import type { LessonId, Progress } from '../content/types';
-import { MVP_LESSON_PACKAGES } from '../content/packages';
+import type { LessonId, Progress } from '../content/types.ts';
+import { MVP_LESSON_PACKAGES } from '../content/packages.ts';
 
 export const LESSON_MISSION_IDS: Record<LessonId, string[]> = Object.fromEntries(
   MVP_LESSON_PACKAGES.map((lesson) => [lesson.id, lesson.missions.map((mission) => mission.id)]),

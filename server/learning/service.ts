@@ -1,10 +1,10 @@
-import type { LearningBatchResult, LearningEventInput, LearningFailure } from '../../shared/learning-contracts';
-import { CONTENT_VERSION } from '../../shared/learning-contracts';
-import { LearningBatchError, type LearningRepository } from './types';
-import { processLearningEvent } from './engine';
-import { createProgressBackup, migrationPreview, parseProgressBackup } from './migration';
-import { buildDashboardData } from '../analytics/metrics';
-import type { DashboardRange } from '../../shared/dashboard-contracts';
+import type { LearningBatchResult, LearningEventInput, LearningFailure } from '../../shared/learning-contracts.ts';
+import { CONTENT_VERSION } from '../../shared/learning-contracts.ts';
+import { LearningBatchError, type LearningRepository } from './types.ts';
+import { processLearningEvent } from './engine.ts';
+import { createProgressBackup, migrationPreview, parseProgressBackup } from './migration.ts';
+import { buildDashboardData } from '../analytics/metrics.ts';
+import type { DashboardRange } from '../../shared/dashboard-contracts.ts';
 
 function errorResult(error: LearningBatchError): LearningFailure {
   return { ok: false, code: error.code, message: error.message };

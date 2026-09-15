@@ -1,4 +1,4 @@
-import type { Lesson, LessonId } from '../content/types';
+import type { Lesson, LessonId } from '../content/types.ts';
 
 /**
  * Mission ids that were shipped before the two additional expedition missions

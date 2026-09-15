@@ -1,9 +1,9 @@
 import type postgres from 'postgres';
-import { withTransaction, type DatabaseClient, type DatabaseTransaction } from '../db/client';
-import { createEmptySnapshot } from './engine';
-import { LearningBatchError, type LearningEventProcessorResult, type LearningEventRecord, type LearningRepository, type LearningRunRecord, type LearningSnapshotRecord, type LearningStore, type MigrationReceiptRecord } from './types';
-import type { LearningEventInput } from '../../shared/learning-contracts';
-import type { Progress, Session } from '../../src/content/types';
+import { withTransaction, type DatabaseClient, type DatabaseTransaction } from '../db/client.ts';
+import { createEmptySnapshot } from './engine.ts';
+import { LearningBatchError, type LearningEventProcessorResult, type LearningEventRecord, type LearningRepository, type LearningRunRecord, type LearningSnapshotRecord, type LearningStore, type MigrationReceiptRecord } from './types.ts';
+import type { LearningEventInput } from '../../shared/learning-contracts.ts';
+import type { Progress, Session } from '../../src/content/types.ts';
 
 type QueryClient = DatabaseClient | DatabaseTransaction;
 

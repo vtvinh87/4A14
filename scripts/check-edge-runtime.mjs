@@ -26,8 +26,7 @@ for (const key of Object.keys(childEnv)) {
 
 const child = spawn('deno', [
   'serve',
-  '--unstable-sloppy-imports',
-  '--import-map', importMap,
+  '--config', importMap,
   '--allow-env=HOC_VUI_ALLOWED_ORIGINS',
   '--allow-net=127.0.0.1',
   '--host', '127.0.0.1',

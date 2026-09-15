@@ -1,5 +1,5 @@
-import { MVP_LESSON_PACKAGES } from '../content/packages';
-import type { LessonId } from '../content/types';
+import { MVP_LESSON_PACKAGES } from '../content/packages.ts';
+import type { LessonId } from '../content/types.ts';
 
 export function getPreviousLesson(lessonId: LessonId) {
   const index = MVP_LESSON_PACKAGES.findIndex(lesson => lesson.id === lessonId);

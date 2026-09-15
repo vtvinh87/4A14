@@ -1,5 +1,5 @@
-import type { AccountProgressSnapshot, LearningEventRecord } from './learning-contracts';
-import type { LessonId } from '../src/content/types';
+import type { AccountProgressSnapshot, LearningEventRecord } from './learning-contracts.ts';
+import type { LessonId } from '../src/content/types.ts';
 
 export const DASHBOARD_RULE_VERSION = 'dashboard-rules-v1';
 export type DashboardRange = '7d' | '30d' | 'all';

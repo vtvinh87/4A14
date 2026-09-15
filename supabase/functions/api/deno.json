@@ -1,6 +1,9 @@
 {
-  "unstable": ["sloppy-imports"],
+  "lock": false,
   "imports": {
-    "postgres": "npm:postgres@3.4.9"
+    "postgres": "npm:postgres@3.4.9",
+    "../../../shared/account-contracts": "../../../shared/account-contracts.ts",
+    "../../../shared/learning-contracts": "../../../shared/learning-contracts.ts",
+    "../../../src/content/types": "../../../src/content/types.ts"
   }
 }

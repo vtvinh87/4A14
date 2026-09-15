@@ -1,5 +1,5 @@
-import type { Activity, Lesson, Mission, Session, Response } from '../content/types';
-import { evaluate } from './evaluate';
+import type { Activity, Lesson, Mission, Session, Response } from '../content/types.ts';
+import { evaluate } from './evaluate.ts';
 
 export type SessionEvent =
   | { type: 'START'; sessionId?: string }

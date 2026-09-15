@@ -1,12 +1,12 @@
-import { createDbClient, type DatabaseClient } from './db/client';
-import { PostgresAuthRepository } from './auth/postgresRepository';
-import { createAuthService } from './auth/service';
-import type { AuthFailure, AuthSessionView } from './auth/types';
-import { PostgresLearningRepository } from './learning/postgresRepository';
-import { createLearningService } from './learning/service';
-import type { LearningEventInput, LearningFailure } from '../shared/learning-contracts';
-import type { StudentProfilePatch } from '../shared/account-contracts';
-import { getEnv } from './runtime/env';
+import { createDbClient, type DatabaseClient } from './db/client.ts';
+import { PostgresAuthRepository } from './auth/postgresRepository.ts';
+import { createAuthService } from './auth/service.ts';
+import type { AuthFailure, AuthSessionView } from './auth/types.ts';
+import { PostgresLearningRepository } from './learning/postgresRepository.ts';
+import { createLearningService } from './learning/service.ts';
+import type { LearningEventInput, LearningFailure } from '../shared/learning-contracts.ts';
+import type { StudentProfilePatch } from '../shared/account-contracts.ts';
+import { getEnv } from './runtime/env.ts';
 
 const SESSION_COOKIE = 'hoc_vui_session';
 const LOCAL_SESSION_MAX_AGE = 7 * 24 * 60 * 60;

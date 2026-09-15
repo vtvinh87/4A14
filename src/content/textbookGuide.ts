@@ -1,5 +1,5 @@
-import { FULL_LESSON_SEEDS } from './courseSeeds';
-import type { SourceRef } from './types';
+import { FULL_LESSON_SEEDS } from './courseSeeds.ts';
+import type { SourceRef } from './types.ts';
 
 // Visually checked against printed pages 4–5 (PDF pages 5–6) of the supplied SGK.
 // Chapter ranges guide reading; they do not pretend VBT exercise locators are SGK locators.

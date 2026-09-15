@@ -1,4 +1,4 @@
-import type { LessonId, SourceRef } from './types';
+import type { LessonId, SourceRef } from './types.ts';
 
 export type SeedFact = {
   id: string;

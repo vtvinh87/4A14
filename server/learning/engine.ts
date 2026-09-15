@@ -1,12 +1,12 @@
-import type { LearningEventInput } from '../../shared/learning-contracts';
-import { CONTENT_VERSION } from '../../shared/learning-contracts';
-import { getLessonPackage, MVP_LESSON_PACKAGES } from '../../src/content/packages';
-import type { Activity, Progress, Response, Session } from '../../src/content/types';
-import { isLessonUnlocked } from '../../src/game/lessonAccess';
-import { grantReward } from '../../src/game/rewards';
-import { evaluate } from '../../src/game/evaluate';
-import { createSession, getCurrentActivity, transition, type SessionEvent } from '../../src/game/session';
-import type { LearningEventProcessorResult, LearningRunRecord, LearningSnapshotRecord, LearningStore } from './types';
+import type { LearningEventInput } from '../../shared/learning-contracts.ts';
+import { CONTENT_VERSION } from '../../shared/learning-contracts.ts';
+import { getLessonPackage, MVP_LESSON_PACKAGES } from '../../src/content/packages.ts';
+import type { Activity, Progress, Response, Session } from '../../src/content/types.ts';
+import { isLessonUnlocked } from '../../src/game/lessonAccess.ts';
+import { grantReward } from '../../src/game/rewards.ts';
+import { evaluate } from '../../src/game/evaluate.ts';
+import { createSession, getCurrentActivity, transition, type SessionEvent } from '../../src/game/session.ts';
+import type { LearningEventProcessorResult, LearningRunRecord, LearningSnapshotRecord, LearningStore } from './types.ts';
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);

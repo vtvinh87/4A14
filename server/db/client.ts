@@ -1,5 +1,5 @@
 import postgres, { type Sql, type TransactionSql } from 'postgres';
-import { getEnv } from '../runtime/env';
+import { getEnv } from '../runtime/env.ts';
 
 export type DatabaseClient = Sql<Record<string, never>>;
 export type DatabaseTransaction = TransactionSql<Record<string, never>>;

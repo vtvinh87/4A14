@@ -1,5 +1,5 @@
-import { FULL_LESSON_SEEDS } from './courseSeeds';
-import type { LessonId } from './types';
+import { FULL_LESSON_SEEDS } from './courseSeeds.ts';
+import type { LessonId } from './types.ts';
 
 export type MvpLessonId = LessonId;
 

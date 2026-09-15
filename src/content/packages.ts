@@ -1,8 +1,8 @@
 import reviewedContent from '../../source/mvp-content-reviewed.json' with { type: 'json' };
-import type { Activity, Choice, Lesson, Match, Mission, Order, Select, SourceRef } from './types';
-import { FULL_LESSON_SEEDS, type LessonSeed } from './courseSeeds';
-import { CLUE_DISTRACTORS, learnerEvidence } from './expeditionClues';
-import { getExpeditionDecision } from './expeditionDecisions';
+import type { Activity, Choice, Lesson, Match, Mission, Order, Select, SourceRef } from './types.ts';
+import { FULL_LESSON_SEEDS, type LessonSeed } from './courseSeeds.ts';
+import { CLUE_DISTRACTORS, learnerEvidence } from './expeditionClues.ts';
+import { getExpeditionDecision } from './expeditionDecisions.ts';
 
 type ReviewedFact = {
   id: string;

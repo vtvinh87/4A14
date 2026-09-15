@@ -1,4 +1,4 @@
-import type { LessonSeed, SeedQuiz } from './courseSeeds';
+import type { LessonSeed, SeedQuiz } from './courseSeeds.ts';
 
 type MissionNumber = 4 | 5;
 

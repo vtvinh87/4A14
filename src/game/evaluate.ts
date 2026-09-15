@@ -1,4 +1,4 @@
-import type { Activity, Choice, Match, Order, Response, Select, Evaluation } from '../content/types';
+import type { Activity, Choice, Match, Order, Response, Select, Evaluation } from '../content/types.ts';
 
 const INVALID_EXPLANATION = 'Câu trả lời chưa đủ thẻ hoặc có thẻ không hợp lệ. Hãy thử lại nhé.';
 

@@ -1,12 +1,12 @@
-import { getLessonSummary, MVP_LESSONS } from '../../src/content/catalog';
-import { getLessonPackage } from '../../src/content/packages';
-import { isLessonUnlocked } from '../../src/game/lessonAccess';
-import { getLessonRewardState } from '../../src/game/rewards';
-import type { DashboardActivity, DashboardDataQuality, DashboardLessonStatus, DashboardMetrics, DashboardRange, ParentDashboardData } from '../../shared/dashboard-contracts';
-import { DASHBOARD_RULE_VERSION } from '../../shared/dashboard-contracts';
-import { estimateInteractiveSeconds } from '../../src/analytics/activityTime';
-import type { LearningEventRecord, LearningSnapshotRecord } from '../learning/types';
-import { buildRecommendations } from './recommendations';
+import { getLessonSummary, MVP_LESSONS } from '../../src/content/catalog.ts';
+import { getLessonPackage } from '../../src/content/packages.ts';
+import { isLessonUnlocked } from '../../src/game/lessonAccess.ts';
+import { getLessonRewardState } from '../../src/game/rewards.ts';
+import type { DashboardActivity, DashboardDataQuality, DashboardLessonStatus, DashboardMetrics, DashboardRange, ParentDashboardData } from '../../shared/dashboard-contracts.ts';
+import { DASHBOARD_RULE_VERSION } from '../../shared/dashboard-contracts.ts';
+import { estimateInteractiveSeconds } from '../../src/analytics/activityTime.ts';
+import type { LearningEventRecord, LearningSnapshotRecord } from '../learning/types.ts';
+import { buildRecommendations } from './recommendations.ts';
 
 const TOTAL_MISSIONS = MVP_LESSONS.length * 5;
 
