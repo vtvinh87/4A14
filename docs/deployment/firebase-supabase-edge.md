@@ -7,17 +7,19 @@ Tài liệu này mô tả rollout production cho Học Vui. Firebase chỉ phụ
 `VITE_API_BASE_URL` là giá trị public được nhúng vào browser bundle:
 
 ```text
-https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api
+https://<CONFIRMED_SUPABASE_PROJECT_REF>.supabase.co/functions/v1/api
 ```
 
 Các biến sau chỉ được đặt trong môi trường Edge/server, không commit vào Git và không đưa vào `VITE_*`:
 
-- `HOC_VUI_ALLOWED_ORIGINS`: exact origins, phân cách bằng dấu phẩy; thêm Firebase `*.web.app`, custom domain nếu có, và `http://localhost:8888` khi cần test local.
-- `HOC_VUI_DATABASE_URL`: connection transaction pooler của role runtime ít quyền nhất, có SSL bắt buộc.
-- `SUPABASE_DB_URL`: fallback do Supabase cung cấp nếu chưa cấu hình runtime-role URL riêng.
+- `HOC_VUI_ALLOWED_ORIGINS`: exact origins, phân cách bằng dấu phẩy. Nhập origin Firebase đã xác nhận `https://<CONFIRMED_FIREBASE_PROJECT_ID>.web.app`; chỉ thêm exact custom domain và `http://localhost:8888` khi thực sự cần. Không dùng wildcard vì implementation normalize rồi exact-match từng origin.
+- `HOC_VUI_DATABASE_URL`: connection transaction pooler của custom role `hoc_vui_runtime`, có SSL bắt buộc. Role này bị giới hạn vào private schema/tables và các quyền CRUD cần cho server API.
+- `SUPABASE_DB_URL`: fallback do Supabase cung cấp. Fallback này không tương đương custom `hoc_vui_runtime` role và không được dùng cho production khi rollout yêu cầu custom runtime role.
 - `HOC_VUI_DB_POOL_MAX=1`, `HOC_VUI_COOKIE_SECURE=true`, và `PGSSLMODE=require`.
 
-Không ghi password, connection string đầy đủ, access token, service-role key hay dữ liệu học sinh thật trong file này, shell history, log hoặc bundle. Dùng password manager/secret store để nhập secrets trực tiếp cho Supabase; không gửi secret qua chat.
+Các policy RLS hiện tại dành cho `hoc_vui_runtime` là broad server-side policies (`using (true)`/`with check (true)`). Cô lập dữ liệu theo từng trẻ được thực thi tại boundary auth/session của ứng dụng; không được coi database RLS riêng lẻ là cơ chế per-child isolation.
+
+Không ghi password, production connection string đầy đủ, access token, service-role key hay dữ liệu học sinh thật trong file này, shell history, log hoặc bundle. Dùng password manager/secret store để nhập secrets trực tiếp cho Supabase; không gửi secret qua chat.
 
 ## Pre-deploy checks
 
@@ -30,43 +32,53 @@ npm test
 npm run typecheck
 npm run typecheck:server
 npm run validate:fox
-npm run build
 deno check --unstable-sloppy-imports --import-map supabase/functions/api/deno.json supabase/functions/api/index.ts
 ```
 
-Kiểm tra bundle sau build không chứa `postgresql://`, tên/password runtime role, hoặc service-role key. Không dùng dữ liệu học sinh thật để smoke test.
+Không dùng dữ liệu học sinh thật để smoke test.
 
-## Deploy Edge Function
+## Deployment order
 
-1. Đăng nhập Supabase CLI bằng luồng chính thức của CLI trên máy triển khai; không ghi access token vào repository hoặc command output lưu trữ.
-2. Xác nhận project ref là `tvlpabqkternfvsxqovi` và function config giữ `verify_jwt = false`, vì Học Vui dùng opaque custom session token chứ không dùng Supabase Auth JWT.
-3. Đặt `HOC_VUI_ALLOWED_ORIGINS` và `HOC_VUI_DATABASE_URL` bằng Supabase Edge Function secrets. Ưu tiên runtime role transaction-pooler; chỉ dùng `SUPABASE_DB_URL` fallback khi đã đánh giá quyền truy cập phù hợp.
-4. Deploy riêng function `api`:
+### 1. Authenticate, select, and confirm Firebase
+
+Đăng nhập Firebase CLI trước, liệt kê project có thể truy cập và đối chiếu project id với nguồn vận hành độc lập. Chỉ sau khi đã xác nhận chính xác project đích mới được tạo/cập nhật `.firebaserc` hoặc chọn active project:
 
 ```bash
-npx supabase@latest functions deploy api --project-ref tvlpabqkternfvsxqovi
+npx firebase-tools login
+npx firebase-tools projects:list
+npx firebase-tools use <CONFIRMED_FIREBASE_PROJECT_ID>
 ```
 
-5. Smoke test preflight và unauthenticated response từ URL function. Một response 401 cho `/auth/me` khi chưa có session là đúng; response 503 hoặc CORS wildcard là lỗi rollout.
+`<CONFIRMED_FIREBASE_PROJECT_ID>` là placeholder; không thay bằng một project suy đoán. `firebase.json` không chứa project id để tránh deploy nhầm. Chưa deploy Hosting ở bước này.
 
-## Build and deploy Hosting
+### 2. Authenticate and confirm Supabase
+
+1. Đăng nhập Supabase CLI bằng luồng chính thức của CLI trên máy triển khai; không ghi access token vào repository hoặc command output lưu trữ.
+2. Liệt kê/link project rồi đối chiếu project ref với nguồn vận hành độc lập; chỉ tiếp tục với `<CONFIRMED_SUPABASE_PROJECT_REF>`. Xác nhận function config giữ `verify_jwt = false`, vì Học Vui dùng opaque custom session token chứ không dùng Supabase Auth JWT.
+
+### 3. Configure, deploy, and smoke-test Edge
+
+1. Đặt `HOC_VUI_ALLOWED_ORIGINS` và `HOC_VUI_DATABASE_URL` bằng Supabase Edge Function secrets. Dùng transaction pooler của `hoc_vui_runtime`; không thay bằng `SUPABASE_DB_URL` trong production khi custom runtime role là yêu cầu của rollout.
+2. Xác nhận allowlist chứa origin Firebase cụ thể `https://<CONFIRMED_FIREBASE_PROJECT_ID>.web.app`, cộng exact custom domain và localhost chỉ khi cần; không dùng wildcard.
+3. Deploy riêng function `api`:
+
+```bash
+npx supabase@latest functions deploy api --project-ref <CONFIRMED_SUPABASE_PROJECT_REF>
+```
+
+4. Trước khi build frontend, smoke-test trực tiếp function URL bằng origin Firebase đã xác nhận và tài khoản synthetic: kiểm tra CORS preflight, login, bearer session, `/auth/me`, logout và một request được bảo vệ. Response 401 cho `/auth/me` khi chưa có session là đúng; response 503, origin phản chiếu ngoài allowlist hoặc CORS wildcard là lỗi rollout.
+
+### 4. Build and deploy Firebase Hosting
 
 Sau khi Edge Function pass smoke test, build frontend với API URL public:
 
 ```bash
-VITE_API_BASE_URL="https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api" npm run build
+VITE_API_BASE_URL="https://<CONFIRMED_SUPABASE_PROJECT_REF>.supabase.co/functions/v1/api" npm run build
 npm run validate:firebase
-```
-
-Đăng nhập Firebase CLI, liệt kê và xác nhận đúng project đích trước khi tạo `.firebaserc`. Chỉ sau khi project được xác nhận mới chạy Hosting deploy:
-
-```bash
-npx firebase-tools projects:list
-npx firebase-tools use <CONFIRMED_FIREBASE_PROJECT_ID>
 npx firebase-tools deploy --only hosting
 ```
 
-`<CONFIRMED_FIREBASE_PROJECT_ID>` chỉ là placeholder tài liệu; không thay bằng một project suy đoán. `firebase.json` không chứa project id để tránh deploy nhầm.
+Trước khi deploy, kiểm tra bundle vừa build không chứa `postgresql://`, tên/password runtime role hoặc service-role key.
 
 ## Browser/PWA smoke test
 

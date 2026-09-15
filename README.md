@@ -21,11 +21,11 @@ LaunchAgent `com.hoc-vui.localhost` đã được cấu hình để tự chạy 
 
 ## Firebase Hosting + Supabase Edge API
 
-`firebase.json` chỉ phục vụ `dist` và fallback SPA; không bật Firebase Functions, Firestore hay Firebase Auth. Khi build production, đặt `VITE_API_BASE_URL` tới function URL `https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api`. Browser chỉ giữ opaque session token trong `sessionStorage`; database URL, runtime-role credential, service-role key và allowlist CORS chỉ được cấu hình ở phía function.
+`firebase.json` chỉ phục vụ `dist` và fallback SPA; không bật Firebase Functions, Firestore hay Firebase Auth. Khi build production, đặt `VITE_API_BASE_URL` tới URL của Supabase Edge Function `api` thuộc project đã xác nhận. Browser chỉ giữ opaque session token trong `sessionStorage`; database URL, runtime-role credential, service-role key và allowlist CORS chỉ được cấu hình ở phía function.
 
 Quy trình secrets, deploy, smoke test và rollback được ghi tại [docs/deployment/firebase-supabase-edge.md](docs/deployment/firebase-supabase-edge.md). Chỉ tạo `.firebaserc` sau khi đã đăng nhập đúng tài khoản Firebase và xác nhận chính xác project đích.
 
-Migration cloud được quản lý duy nhất trong `supabase/migrations/` và có thể kiểm tra trạng thái bằng Supabase CLI. Không dùng Supabase Data API cho schema `hoc_vui_private`; custom auth của Học Vui vẫn do API server kiểm soát. Database hiện chỉ có Admin bootstrap và không nhập dữ liệu học sinh thật.
+Migration cloud được quản lý duy nhất trong `supabase/migrations/` và có thể kiểm tra trạng thái bằng Supabase CLI. Role `hoc_vui_runtime` chỉ có quyền dùng private schema/tables và CRUD cần cho server API; các policy hiện tại của role này là broad server-side policies, nên việc cô lập dữ liệu theo từng trẻ do lớp auth/session của ứng dụng thực thi, không phải chỉ nhờ database RLS. Không dùng Supabase Data API cho schema `hoc_vui_private`. `SUPABASE_DB_URL` chỉ là fallback do nền tảng cung cấp, không tương đương custom runtime role và không dùng cho production khi rollout yêu cầu `hoc_vui_runtime`. Database hiện chỉ có Admin bootstrap và không nhập dữ liệu học sinh thật.
 
 Để kiểm tra bản production có cache offline:
 
