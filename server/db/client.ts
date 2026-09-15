@@ -1,17 +1,23 @@
 import postgres, { type Sql, type TransactionSql } from 'postgres';
+import { getEnv } from '../runtime/env';
 
 export type DatabaseClient = Sql<Record<string, never>>;
 export type DatabaseTransaction = TransactionSql<Record<string, never>>;
 
 export function databaseUrlFromEnv(): string | null {
-  return process.env.HOC_VUI_DATABASE_URL ?? process.env.DATABASE_URL ?? process.env.DB_URL ?? null;
+  return [
+    getEnv('HOC_VUI_DATABASE_URL'),
+    getEnv('DATABASE_URL'),
+    getEnv('DB_URL'),
+    getEnv('SUPABASE_DB_URL'),
+  ].find((value): value is string => Boolean(value?.trim())) ?? null;
 }
 
 export function createDbClient(url = databaseUrlFromEnv()): DatabaseClient {
   if (!url) throw new Error('HOC_VUI_DATABASE_URL or DATABASE_URL is required for the server database.');
-  const sslRequired = process.env.PGSSLMODE === 'require' || /(?:^|[?&])sslmode=require(?:&|$)/.test(url);
+  const sslRequired = getEnv('PGSSLMODE') === 'require' || /(?:^|[?&])sslmode=require(?:&|$)/.test(url);
   return postgres(url, {
-    max: Number(process.env.HOC_VUI_DB_POOL_MAX ?? 1),
+    max: Number(getEnv('HOC_VUI_DB_POOL_MAX') ?? 1),
     prepare: false,
     ssl: sslRequired ? 'require' : false,
     connect_timeout: 5,

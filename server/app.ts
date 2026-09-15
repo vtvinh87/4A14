@@ -6,6 +6,7 @@ import { PostgresLearningRepository } from './learning/postgresRepository';
 import { createLearningService } from './learning/service';
 import type { LearningEventInput, LearningFailure } from '../shared/learning-contracts';
 import type { StudentProfilePatch } from '../shared/account-contracts';
+import { getEnv } from './runtime/env';
 
 const SESSION_COOKIE = 'hoc_vui_session';
 const LOCAL_SESSION_MAX_AGE = 7 * 24 * 60 * 60;
@@ -99,7 +100,7 @@ function statusForFailure(failure: AuthFailure | LearningFailure): number {
 }
 
 function cookieFlags(): string {
-  const secure = process.env.NODE_ENV === 'production' || process.env.HOC_VUI_COOKIE_SECURE === 'true';
+  const secure = getEnv('NODE_ENV') === 'production' || getEnv('HOC_VUI_COOKIE_SECURE') === 'true';
   return `Path=/; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`;
 }
 
@@ -123,7 +124,15 @@ function sameOrigin(request: AppRequest): boolean {
   try {
     const originUrl = new URL(origin);
     const host = header(request, 'host');
-    return !host || originUrl.host === host;
+    if (host && originUrl.host === host) return true;
+    const configuredOrigins = (getEnv('HOC_VUI_ALLOWED_ORIGINS') ?? '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .flatMap((value) => {
+        try { return [new URL(value).origin]; } catch { return []; }
+      });
+    return configuredOrigins.includes(originUrl.origin);
   } catch {
     return false;
   }
@@ -171,13 +180,13 @@ export function createApp(dependencies: AppDependencies) {
       const body = bodyObject(request);
       const result = await auth.loginStudent(String(body.username ?? ''), String(body.pin ?? ''));
       if (!result.ok) return failure(result);
-      return withCookie(success({ session: publicSession(result.session), ...(result.mustChange ? { mustChange: true } : {}) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
+      return withCookie(success({ accessToken: result.token, session: publicSession(result.session), ...(result.mustChange ? { mustChange: true } : {}) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
     }
     if (method === 'POST' && pathname === '/api/auth/admin/login') {
       const body = bodyObject(request);
       const result = await auth.loginAdmin(String(body.username ?? ''), String(body.password ?? ''));
       if (!result.ok) return failure(result);
-      return withCookie(success({ session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'admin'));
+      return withCookie(success({ accessToken: result.token, session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'admin'));
     }
     if (method === 'GET' && pathname === '/api/auth/me') {
       const token = sessionToken(request);
@@ -200,7 +209,7 @@ export function createApp(dependencies: AppDependencies) {
       const body = bodyObject(request);
       const result = await auth.changePin(token, String(body.currentPin ?? ''), String(body.newPin ?? ''), 'student');
       if (!result.ok) return failure(result);
-      return withCookie(success({ session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
+      return withCookie(success({ accessToken: result.token, session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
     }
     if (method === 'POST' && pathname === '/api/auth/admin/change-password') {
       const token = requireToken(request);
@@ -208,7 +217,7 @@ export function createApp(dependencies: AppDependencies) {
       const body = bodyObject(request);
       const result = await auth.changeAdminPassword(token, String(body.currentPassword ?? ''), String(body.newPassword ?? ''));
       if (!result.ok) return failure(result);
-      return withCookie(success({ session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'admin'));
+      return withCookie(success({ accessToken: result.token, session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'admin'));
     }
     if (method === 'GET' && pathname === '/api/me/profile') {
       const token = requireToken(request);
@@ -232,7 +241,7 @@ export function createApp(dependencies: AppDependencies) {
       const body = bodyObject(request);
       const result = await auth.unlockParent(token, String(body.pin ?? ''));
       if (!result.ok) return failure(result);
-      return withCookie(success({ session: publicSession(result.session), ...(result.mustChange ? { mustChange: true } : {}), ...(result.parentGrantUntil ? { parentGrantUntil: result.parentGrantUntil } : {}), ...(result.parentGrantToken ? { parentGrantToken: result.parentGrantToken } : {}) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
+      return withCookie(success({ accessToken: result.token, session: publicSession(result.session), ...(result.mustChange ? { mustChange: true } : {}), ...(result.parentGrantUntil ? { parentGrantUntil: result.parentGrantUntil } : {}), ...(result.parentGrantToken ? { parentGrantToken: result.parentGrantToken } : {}) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
     }
     if (method === 'POST' && pathname === '/api/parent/change-pin') {
       const token = requireToken(request);
@@ -246,7 +255,7 @@ export function createApp(dependencies: AppDependencies) {
       }
       const result = await auth.changePin(token, String(body.currentPin ?? ''), String(body.newPin ?? ''), 'parent');
       if (!result.ok) return failure(result);
-      return withCookie(success({ session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
+      return withCookie(success({ accessToken: result.token, session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
     }
     if (method === 'POST' && pathname === '/api/parent/lock') {
       const token = sessionToken(request);

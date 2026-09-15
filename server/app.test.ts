@@ -2,14 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { createApp, type AppRequest, type AppResponse } from './app';
 import { MemoryAuthRepository } from './auth/memoryRepository';
 import { createAuthService } from './auth/service';
+import { databaseUrlFromEnv } from './db/client';
 
 function cookieValue(response: AppResponse): string {
   const cookie = response.headers['Set-Cookie'] ?? '';
   return cookie.split(';', 1)[0] ?? '';
 }
 
-async function request(app: ReturnType<typeof createApp>, input: Omit<AppRequest, 'headers'> & { cookie?: string; parentGrant?: string }): Promise<AppResponse> {
-  return app.handle({ ...input, headers: { host: 'localhost:8888', ...(input.cookie ? { cookie: input.cookie } : {}), ...(input.parentGrant ? { 'x-parent-grant': input.parentGrant } : {}) } });
+async function request(app: ReturnType<typeof createApp>, input: Omit<AppRequest, 'headers'> & { cookie?: string; parentGrant?: string; authorization?: string; origin?: string; host?: string }): Promise<AppResponse> {
+  return app.handle({ ...input, headers: { host: input.host ?? 'localhost:8888', ...(input.cookie ? { cookie: input.cookie } : {}), ...(input.parentGrant ? { 'x-parent-grant': input.parentGrant } : {}), ...(input.authorization ? { authorization: input.authorization } : {}), ...(input.origin ? { origin: input.origin } : {}) } });
 }
 
 describe('same-origin account API', () => {
@@ -19,6 +20,7 @@ describe('same-origin account API', () => {
 
     const adminLogin = await request(app, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'Admin', password: '123456@' } });
     expect(adminLogin.statusCode).toBe(200);
+    expect(adminLogin.body.accessToken).toEqual(expect.any(String));
     expect(JSON.stringify(adminLogin.body)).not.toContain('scrypt');
     expect(JSON.stringify(adminLogin.body)).not.toContain('123456@');
     const adminCookie = cookieValue(adminLogin);
@@ -33,6 +35,7 @@ describe('same-origin account API', () => {
 
     const studentLogin = await request(app, { method: 'POST', path: '/api/auth/student/login', body: { username: 'BAO04', pin: '123456' } });
     expect(studentLogin.statusCode).toBe(200);
+    expect(studentLogin.body.accessToken).toEqual(expect.any(String));
     expect(studentLogin.body.mustChange).toBe(true);
     const studentCookie = cookieValue(studentLogin);
     const blockedAdminCall = await request(app, { method: 'GET', path: '/api/admin/students', cookie: studentCookie });
@@ -41,7 +44,9 @@ describe('same-origin account API', () => {
     const bypass = await request(app, { method: 'GET', path: '/api/parent/dashboard', cookie: studentCookie });
     expect(bypass.statusCode).toBe(403);
     expect(bypass.body).toMatchObject({ ok: false, code: 'forbidden', message: 'Cần nhập lại PIN phụ huynh để mở Dashboard.' });
-    expect((await request(app, { method: 'POST', path: '/api/auth/student/change-pin', cookie: studentCookie, body: { currentPin: '123456', newPin: '012345' } })).statusCode).toBe(200);
+    const changed = await request(app, { method: 'POST', path: '/api/auth/student/change-pin', cookie: studentCookie, body: { currentPin: '123456', newPin: '012345' } });
+    expect(changed.statusCode).toBe(200);
+    expect(changed.body.accessToken).toEqual(expect.any(String));
   });
 
   it('requires an independent parent PIN and revokes the grant on lock', async () => {
@@ -57,14 +62,17 @@ describe('same-origin account API', () => {
 
     const firstParent = await request(app, { method: 'POST', path: '/api/parent/unlock', cookie: changedCookie, body: { pin: '123456' } });
     expect(firstParent.statusCode).toBe(200);
+    expect(firstParent.body.accessToken).toEqual(expect.any(String));
     expect(firstParent.body.mustChange).toBe(true);
     const firstParentCookie = cookieValue(firstParent);
     expect((await request(app, { method: 'GET', path: '/api/parent/dashboard', cookie: firstParentCookie })).statusCode).toBe(403);
 
     const parentChanged = await request(app, { method: 'POST', path: '/api/parent/change-pin', cookie: firstParentCookie, body: { currentPin: '123456', newPin: '864208' } });
+    expect(parentChanged.body.accessToken).toEqual(expect.any(String));
     const parentChangedCookie = cookieValue(parentChanged);
     expect((await request(app, { method: 'GET', path: '/api/parent/dashboard', cookie: parentChangedCookie })).statusCode).toBe(403);
     const unlocked = await request(app, { method: 'POST', path: '/api/parent/unlock', cookie: parentChangedCookie, body: { pin: '864208' } });
+    expect(unlocked.body.accessToken).toEqual(expect.any(String));
     const unlockedCookie = cookieValue(unlocked);
     const grant = String(unlocked.body.parentGrantToken ?? '');
     expect(grant).toBeTruthy();
@@ -72,6 +80,52 @@ describe('same-origin account API', () => {
     expect((await request(app, { method: 'GET', path: `/api/parent/dashboard?studentId=${String((created.body.account as { id: string }).id)}`, cookie: unlockedCookie, parentGrant: grant })).statusCode).toBe(200);
     await request(app, { method: 'POST', path: '/api/parent/lock', cookie: unlockedCookie });
     expect((await request(app, { method: 'GET', path: '/api/parent/dashboard', cookie: unlockedCookie, parentGrant: grant })).statusCode).toBe(403);
+  });
+
+  it('accepts bearer sessions and allows cross-origin writes only from the configured origin', async () => {
+    const previousAllowlist = process.env.HOC_VUI_ALLOWED_ORIGINS;
+    process.env.HOC_VUI_ALLOWED_ORIGINS = 'https://hoc-vui.example';
+    try {
+      const repository = new MemoryAuthRepository();
+      const app = createApp({ auth: createAuthService(repository) });
+      const adminLogin = await request(app, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'admin', password: '123456@' } });
+      const accessToken = String(adminLogin.body.accessToken);
+      const bearerRead = await request(app, { method: 'GET', path: '/api/admin/students', authorization: `Bearer ${accessToken}` });
+      expect(bearerRead.statusCode).toBe(200);
+
+      const rejectedWrite = await request(app, { method: 'POST', path: '/api/admin/students', origin: 'https://evil.example', authorization: `Bearer ${accessToken}`, body: { username: 'evil01', displayName: 'Không được tạo' } });
+      expect(rejectedWrite.statusCode).toBe(403);
+      const allowedWrite = await request(app, { method: 'POST', path: '/api/admin/students', origin: 'https://hoc-vui.example', authorization: `Bearer ${accessToken}`, body: { username: 'allow01', displayName: 'Được tạo' } });
+      expect(allowedWrite.statusCode).toBe(200);
+
+      const me = await request(app, { method: 'GET', path: '/api/auth/me', authorization: `Bearer ${accessToken}` });
+      expect(me.statusCode).toBe(200);
+      expect(me.body).not.toHaveProperty('accessToken');
+    } finally {
+      if (previousAllowlist === undefined) delete process.env.HOC_VUI_ALLOWED_ORIGINS;
+      else process.env.HOC_VUI_ALLOWED_ORIGINS = previousAllowlist;
+    }
+  });
+
+  it('resolves the least-specific database environment fallback without exposing it to callers', () => {
+    const previous = {
+      primary: process.env.HOC_VUI_DATABASE_URL,
+      database: process.env.DATABASE_URL,
+      legacy: process.env.DB_URL,
+      supabase: process.env.SUPABASE_DB_URL,
+    };
+    try {
+      process.env.HOC_VUI_DATABASE_URL = '';
+      process.env.DATABASE_URL = '';
+      process.env.DB_URL = '';
+      process.env.SUPABASE_DB_URL = 'postgresql://supabase-runtime.example/postgres';
+      expect(databaseUrlFromEnv()).toBe('postgresql://supabase-runtime.example/postgres');
+    } finally {
+      if (previous.primary === undefined) delete process.env.HOC_VUI_DATABASE_URL; else process.env.HOC_VUI_DATABASE_URL = previous.primary;
+      if (previous.database === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = previous.database;
+      if (previous.legacy === undefined) delete process.env.DB_URL; else process.env.DB_URL = previous.legacy;
+      if (previous.supabase === undefined) delete process.env.SUPABASE_DB_URL; else process.env.SUPABASE_DB_URL = previous.supabase;
+    }
   });
 
   it('exposes only scoped profile routes and never trusts a client student id', async () => {

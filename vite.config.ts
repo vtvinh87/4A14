@@ -215,7 +215,7 @@ export default defineConfig({
   plugins: [react(), offlineServiceWorkerPlugin()],
   test: {
     environment: 'jsdom',
-    include: ['src/**/*.test.{ts,tsx}', 'server/**/*.test.ts', 'tests/e2e/**/*.spec.ts'],
+    include: ['src/**/*.test.{ts,tsx}', 'server/**/*.test.ts', 'supabase/**/*.test.ts', 'tests/e2e/**/*.spec.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/._*', '**/**/._*'],
   },
   server: {
