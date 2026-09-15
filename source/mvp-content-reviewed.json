@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "reviewed": true,
+  "reviewer": "Coordinator visual inspection 2026-09-10",
+  "source": "lich-su-va-dia-li-4.pdf",
+  "sourceSha256": "f7d8c9a7f7e069fcd9e509561468797c3dbd89b9e62b706291667ae87fc2577d",
+  "constraints": [
+    "Paraphrase only these reviewed facts; all playable activities carry sourceRefs.",
+    "Administrative names and statistics are according to this supplied textbook, not assertions of current boundaries.",
+    "Legends must explicitly be labelled Theo truyền thuyết, not historical proof.",
+    "Do not treat fictional adventure islands as real geography."
+  ],
+  "lessons": [
+    {
+      "id": "bai-1",
+      "title": "Làm quen với phương tiện học tập môn Lịch sử và Địa lí",
+      "facts": [
+        {
+          "id": "map",
+          "pdfPage": 7,
+          "printedPage": 6,
+          "locator": "Khám phá 1, cuối trang",
+          "text": "Bản đồ thu nhỏ một khu vực hoặc toàn bộ bề mặt Trái Đất theo tỉ lệ."
+        },
+        {
+          "id": "sketch",
+          "pdfPage": 9,
+          "printedPage": 8,
+          "locator": "Đầu trang và Hình 3",
+          "text": "Lược đồ có nội dung giản lược hơn bản đồ. Đọc bản đồ/lược đồ theo thứ tự: đọc tên để biết nội dung; xem chú giải để hiểu kí hiệu; tìm đối tượng dựa vào kí hiệu."
+        },
+        {
+          "id": "data",
+          "pdfPage": 10,
+          "printedPage": 9,
+          "locator": "Mục 2, định nghĩa",
+          "text": "Bảng số liệu sắp xếp số liệu khoa học; biểu đồ thể hiện số liệu trực quan; trục thời gian trình bày chuỗi sự kiện theo thời gian."
+        },
+        {
+          "id": "table",
+          "pdfPage": 10,
+          "printedPage": 9,
+          "locator": "Bảng diện tích và số dân năm 2020, Hình 4",
+          "text": "Diện tích theo bảng năm 2020, đơn vị km²: Hà Nội 3359; Đà Nẵng 1285; Lâm Đồng 9783; Thành phố Hồ Chí Minh 2061; Cần Thơ 1439. Trong năm địa phương của bảng, Lâm Đồng lớn nhất. Luôn hiển thị bảng và năm 2020 trước câu hỏi, không gọi là số liệu hiện nay."
+        },
+        {
+          "id": "artifact",
+          "pdfPage": 11,
+          "printedPage": 10,
+          "locator": "Mục 3, Hình 7",
+          "text": "Hiện vật lịch sử là di tích, đồ vật từ quá khứ còn lưu lại. Mũi tên đồng Cổ Loa là ví dụ hiện vật. Tranh ảnh là hình vẽ hoặc ảnh chụp về nhân vật, địa điểm, hiện vật, sự kiện hoặc đối tượng địa lí."
+        },
+        {
+          "id": "picture",
+          "pdfPage": 12,
+          "printedPage": 11,
+          "locator": "Hình 8 và Hình 9",
+          "text": "Hình 8 là ảnh cánh đồng Phong Nậm ở Cao Bằng. Sử dụng hiện vật/tranh ảnh: đọc tên; quan sát và mô tả; nhận xét theo yêu cầu bài học."
+        }
+      ],
+      "missionPlan": [
+        {
+          "id": "b1-m1",
+          "title": "Mở túi nhà thám hiểm",
+          "activities": [
+            "choice: phương tiện thu nhỏ bề mặt Trái Đất → bản đồ",
+            "matching: bản đồ/biểu đồ/trục thời gian ↔ mô tả tương ứng"
+          ]
+        },
+        {
+          "id": "b1-m2",
+          "title": "Giải mã kí hiệu",
+          "activities": [
+            "order: ba bước sử dụng bản đồ ở Hình 3",
+            "choice: muốn hiểu kí hiệu cần xem gì → chú giải"
+          ]
+        },
+        {
+          "id": "b1-m3",
+          "title": "Thám tử dữ liệu",
+          "activities": [
+            "choice: từ bảng năm 2020 đã hiển thị, địa phương diện tích lớn nhất → Lâm Đồng",
+            "matching: bảng số liệu/hiện vật/tranh ảnh ↔ số liệu sắp xếp/mũi tên đồng Cổ Loa/ảnh cánh đồng Phong Nậm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bai-7",
+      "title": "Đền Hùng và lễ Giỗ Tổ Hùng Vương",
+      "facts": [
+        {
+          "id": "location",
+          "pdfPage": 33,
+          "printedPage": 32,
+          "locator": "Khám phá 1, đoạn cuối",
+          "text": "Theo sách, khu di tích Đền Hùng chủ yếu thuộc thành phố Việt Trì, tỉnh Phú Thọ; gồm Đền Hạ, Đền Trung, Đền Thượng, lăng Vua Hùng, đền Quốc Tổ Lạc Long Quân, đền Tổ Mẫu Âu Cơ."
+        },
+        {
+          "id": "festival",
+          "pdfPage": 34,
+          "printedPage": 33,
+          "locator": "Mục 2, hai đoạn cuối",
+          "text": "Giỗ Tổ Hùng Vương ngày mồng 10 tháng Ba âm lịch hằng năm, tôn vinh công lao dựng nước của các Vua Hùng. Nghi lễ có rước kiệu và dâng hương. Đoàn rước đi qua các đền đến Đền Thượng, nơi tổ chức dâng hương. Phần hội có thi gói bánh chưng, giã bánh giầy, hát Xoan, đấu vật. Ý nghĩa: uống nước nhớ nguồn."
+        },
+        {
+          "id": "dragon",
+          "pdfPage": 35,
+          "printedPage": 34,
+          "locator": "Câu chuyện Con Rồng cháu Tiên",
+          "text": "Theo truyền thuyết Con Rồng cháu Tiên: Lạc Long Quân và Âu Cơ có một trăm người con từ bọc trăm trứng. Năm mươi con theo cha xuống biển, năm mươi theo mẹ lên núi. Người con trưởng theo mẹ được tôn làm vua, hiệu Hùng Vương, đặt tên nước Văn Lang."
+        },
+        {
+          "id": "cakes",
+          "pdfPage": 36,
+          "printedPage": 35,
+          "locator": "Câu chuyện Bánh chưng, bánh giầy",
+          "text": "Theo truyền thuyết: vua muốn chọn người nối ngôi qua lễ vật có ý nghĩa; Lang Liêu được thần báo mộng dùng gạo làm bánh; chàng làm bánh chưng hình vuông tượng trưng Đất và bánh giầy hình tròn tượng trưng Trời; vua hiểu ý nghĩa, chọn bánh và truyền ngôi cho Lang Liêu."
+        }
+      ],
+      "missionPlan": [
+        {
+          "id": "b7-m1",
+          "title": "Ghé miền Đất Tổ",
+          "activities": [
+            "choice: theo sách Đền Hùng thuộc tỉnh nào → Phú Thọ",
+            "choice: Giỗ Tổ ngày nào → mồng 10 tháng Ba âm lịch"
+          ]
+        },
+        {
+          "id": "b7-m2",
+          "title": "Nhịp ngày hội",
+          "activities": [
+            "matching: phần lễ/phần hội ↔ dâng hương/thi giã bánh giầy (hai cặp độc nhất)",
+            "choice: ý nghĩa Giỗ Tổ → nhớ công lao dựng nước của các Vua Hùng"
+          ]
+        },
+        {
+          "id": "b7-m3",
+          "title": "Nghe chuyện bên lửa",
+          "activities": [
+            "matching: theo truyền thuyết bánh chưng/bánh giầy ↔ vuông tượng trưng Đất/tròn tượng trưng Trời",
+            "order: theo truyền thuyết vua tìm người nối ngôi → Lang Liêu làm hai loại bánh → vua chọn bánh và truyền ngôi"
+          ]
+        }
+      ]
+    }
+  ]
+}

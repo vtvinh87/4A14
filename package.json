@@ -1,0 +1,38 @@
+{
+  "name": "hoc-vui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:netlify": "netlify dev",
+    "build": "tsc -b && vite build",
+    "generate:fox": "node scripts/generate-fox-glb.mjs",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --pretty false",
+    "typecheck:server": "tsc -p tsconfig.server.json --pretty false",
+    "test": "vitest run",
+    "test:db": "vitest run --run server/db server/auth/postgresRepository.integration.test.ts server/app.integration.test.ts",
+    "test:db:cloud": "vitest run --run server/db server/auth/postgresRepository.integration.test.ts server/app.integration.test.ts --testTimeout=60000",
+    "validate:fox": "node scripts/validate-fox-glb.mjs",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@netlify/functions": "^6.0.0",
+    "postgres": "^3.4.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "0.186.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.5.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/three": "0.185.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.4"
+  }
+}

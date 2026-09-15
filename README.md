@@ -1,0 +1,65 @@
+# Học Vui — local app + Supabase server
+
+Học Vui là trải nghiệm game-world tiếng Việt cho bé 9 tuổi trên máy tính bảng. Bản hiện tại giữ nền cảnh/pet đã duyệt, mở đủ 29 bài học và dùng các seed bài tập được đối chiếu với VBT/SGK Lịch sử và Địa lí 4. API tài khoản, phiên và tiến độ chạy server-side; database cloud dùng Supabase PostgreSQL trong môi trường đã cấu hình.
+
+## Chạy local
+
+```bash
+npm install
+npm run dev -- --host 0.0.0.0 --port 4173
+```
+
+Mở `http://localhost:4173/`.
+
+Để chạy bản tích hợp API tại `http://localhost:8888/`, dùng Netlify Dev:
+
+```bash
+npm run dev:netlify
+```
+
+LaunchAgent `com.hoc-vui.localhost` đã được cấu hình để tự chạy cổng 8888. Khi chạy theo cấu hình tích hợp, server dùng transaction pooler Supabase với role `hoc_vui_runtime`; mật khẩu chỉ được đọc từ macOS Keychain qua `scripts/start-netlify-with-supabase.sh`, không đặt trong source, `VITE_*`, plist hay log. Nếu chạy thủ công và chưa có Keychain item, hãy cấu hình biến môi trường server-only theo `.env.example`.
+
+Migration cloud được quản lý duy nhất trong `supabase/migrations/` và có thể kiểm tra trạng thái bằng Supabase CLI. Không dùng Supabase Data API cho schema `hoc_vui_private`; custom auth của Học Vui vẫn do API server kiểm soát. Database hiện chỉ có Admin bootstrap và không nhập dữ liệu học sinh thật.
+
+Để kiểm tra bản production có cache offline:
+
+```bash
+npm run build
+npm run preview -- --host 0.0.0.0 --port 4174
+```
+
+Mở `http://localhost:4174/`. Service Worker chỉ được tạo trong production build với cache có phiên bản; góc Phụ huynh chỉ hiện “Đã sẵn sàng offline” sau khi xác nhận đủ shell, JavaScript, CSS, ảnh, font local và 29 gói bài học. Hãy mở app khi có mạng và chờ trạng thái này trước khi ngắt mạng. Nếu trình duyệt không hỗ trợ Service Worker hoặc trạng thái chưa sẵn sàng, app chỉ được xem là online-only. App không tự tải lại giữa một hoạt động đang học.
+
+## Kiểm tra
+
+```bash
+npm run typecheck
+npm test
+npm run validate:fox
+npm run build
+```
+
+Để tái tạo và kiểm tra asset pet procedural:
+
+```bash
+npm run generate:fox
+npm run validate:fox
+```
+
+## Phạm vi hiện tại
+
+- Hành trình, danh mục sáu chủ đề, màn học, nhận dấu, pet, bộ sưu tập, góc phụ huynh và cài đặt.
+- 29 bài học, mỗi bài có 3 nhiệm vụ và 6 hoạt động: lựa chọn, ghép cặp, sắp xếp bằng nút lên/xuống.
+- Discovery luôn mở trước câu hỏi; mỗi hoạt động có gợi ý, giải thích và locator “Xem trong sách”.
+- Tiến độ phiên, nhiệm vụ và dấu được lưu local-first bằng `localStorage` schema 1; lỗi/quota được báo mà không âm thầm ghi đè dữ liệu cũ.
+- Khi có phiên server, tài khoản, session, event và snapshot được đồng bộ qua API vào Supabase; localStorage vẫn là cache/queue offline ở phía trình duyệt.
+- Góc phụ huynh có xuất/nhập JSON tối đa 1 MB, validate trước khi thay thế và reset có xác nhận.
+- Danh mục mở đủ sáu vùng học tập; dev server không cài Service Worker, chỉ bản production preview mới có kiểm tra offline.
+- Bản production precache 29 gói bài học, JavaScript/CSS đã build, ảnh local, `fox-pet.glb` và các subset WOFF2 local của Be Vietnam Pro; dữ liệu học vẫn local-only trong `localStorage` và bản sao lưu JSON tối đa 1 MB.
+- Typography dùng Be Vietnam Pro từ [Google Fonts](https://fonts.google.com/specimen/Be+Vietnam+Pro), gồm subset Vietnamese, Latin-ext và Latin; giấy phép SIL OFL 1.1 được giữ tại `public/fonts/OFL.txt`.
+- Pet dùng GLB procedural local thật: mesh nhiều part có skin joints/weights và các clip `idle`, `greet`, `think`, `celebrate`, `rest`; runtime Three.js `0.186.0` được lazy-load local. Nếu WebGL hoặc asset lỗi, app giữ fallback PNG đã duyệt.
+- `scripts/generate-fox-glb.mjs` là generator deterministic không dùng stock/copyright-unclear asset; `scripts/validate-fox-glb.mjs` kiểm tra GLB header, skin attributes, 17 bones và 5 clips.
+- Nền cảnh vẫn là artwork đã duyệt; chỉ Cáo Nhỏ là render 3D realtime khi runtime khả dụng.
+- Chưa thực hiện Netlify deploy, production restore hoặc đưa dữ liệu học sinh thật lên cloud.
+
+Các file `._*` là metadata AppleDouble của volume ExFAT và được Vitest loại khỏi test discovery; không dùng làm source app.

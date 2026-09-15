@@ -1,0 +1,5 @@
+import type { DashboardSuggestion } from '../../../shared/dashboard-contracts';
+
+export function SupportSuggestions({ suggestions }: { suggestions: DashboardSuggestion[] }) {
+  return <section className="parent-card support-card" aria-labelledby="support-suggestions-title"><div className="parent-card-heading"><div><p className="eyebrow">GỢI Ý ĐỒNG HÀNH</p><h2 id="support-suggestions-title">Việc nhỏ tiếp theo</h2></div><span className="metric-spark">♥</span></div><div className="support-suggestion-list">{suggestions.map((suggestion) => <article className={`support-suggestion is-${suggestion.kind}`} key={suggestion.id}><div className="support-suggestion-heading"><strong>{suggestion.title}</strong><span>{suggestion.evidence}</span></div><p>{suggestion.body}</p><small>{suggestion.action}{suggestion.textbookReference ? ` · ${suggestion.textbookReference}` : ''}</small><em className="suggestion-provenance">Nguồn: {suggestion.provenance.ruleVersion} · {suggestion.provenance.eventIds.length} event</em></article>)}</div></section>;
+}

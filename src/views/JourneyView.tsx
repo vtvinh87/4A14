@@ -1,0 +1,33 @@
+import type { PetMood } from '../motion/pet';
+import { ArrowIcon } from '../components/icons';
+import { Pet } from '../components/Pet';
+import { JourneyFeatureRail } from '../components/JourneyFeatureRail';
+
+type JourneyViewProps = {
+  petMood: PetMood;
+  reducedMotion: boolean;
+  onPetTap: () => void;
+  onOpenLessons: () => void;
+};
+
+export function JourneyView({ petMood, reducedMotion, onPetTap, onOpenLessons }: JourneyViewProps) {
+  return (
+    <section className="journey-layout" aria-labelledby="journey-title">
+      <aside className="pet-zone">
+        <Pet mood={petMood} reducedMotion={reducedMotion} onTap={onPetTap} />
+      </aside>
+
+      <div className="journey-center">
+        <div className="launch-panel">
+          <div className="launch-title-tag"><h1 id="journey-title">Ba lô thám hiểm</h1></div>
+          <p>Cùng Cáo Nhỏ tìm những điều thú vị trong Lịch sử &amp; Địa lí 4.</p>
+          <button className="primary-cta" type="button" onClick={onOpenLessons}>
+            Khám phá ngay <ArrowIcon size={25} />
+          </button>
+        </div>
+      </div>
+
+      <JourneyFeatureRail />
+    </section>
+  );
+}

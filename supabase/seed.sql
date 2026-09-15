@@ -1,0 +1,1 @@
+-- Application credentials are bootstrapped by the server with an idempotent transaction.

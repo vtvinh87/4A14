@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.hoc-vui.localhost</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>runtime_password="$(/usr/bin/security find-generic-password -a "$(/usr/bin/id -un)" -s "hoc-vui-supabase-runtime-password" -w 2&gt;/dev/null || true)"; test -n "$runtime_password" || exit 1; export PGPASSWORD="$runtime_password"; export HOC_VUI_DATABASE_URL='postgresql://hoc_vui_runtime.tvlpabqkternfvsxqovi@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require'; exec /Users/macbook/.nvm/versions/node/v24.19.0/bin/npx --yes netlify-cli dev --offline</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Volumes/Pictures/Projects/Hoc_Vui</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/macbook/.nvm/versions/node/v24.19.0/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>HOC_VUI_DATABASE_URL</key>
+    <string>postgresql://hoc_vui_runtime.tvlpabqkternfvsxqovi@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require</string>
+    <key>HOC_VUI_DB_POOL_MAX</key>
+    <string>1</string>
+    <key>HOC_VUI_COOKIE_SECURE</key>
+    <string>false</string>
+    <key>APP_ORIGIN</key>
+    <string>http://localhost:8888</string>
+    <key>NETLIFY_CLI_TELEMETRY_DISABLED</key>
+    <string>1</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>5</integer>
+  <key>ProcessType</key>
+  <string>Interactive</string>
+  <key>StandardOutPath</key>
+  <string>/Users/macbook/Library/Logs/HocVui/localhost-8888.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/macbook/Library/Logs/HocVui/localhost-8888.err.log</string>
+</dict>
+</plist>
