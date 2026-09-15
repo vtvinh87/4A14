@@ -2,6 +2,12 @@
 
 Tài liệu này mô tả rollout production cho Học Vui. Firebase chỉ phục vụ static frontend/PWA; Supabase Edge Function `api` là lớp API duy nhất nói chuyện với PostgreSQL private schema. Không dùng Firebase Functions, Firestore, Firebase Auth hoặc Supabase Data API cho `hoc_vui_private`.
 
+## Current rollout status — 2026-09-15
+
+- Supabase project `4A14` (`tvlpabqkternfvsxqovi`): Edge Function `api` is `ACTIVE`, `verify_jwt=false`, and managed preflight/unauthenticated `/auth/me` smoke checks pass.
+- Firebase project `4A14` (`a14-82a69`): Hosting release is live at [https://a14-82a69.web.app](https://a14-82a69.web.app). Root, manifest, Service Worker and SPA deep-link checks return HTTP 200; the deployed bundle contains the public Edge URL and no database credential markers.
+- The final credentialed login/profile/learning smoke still requires a known synthetic Admin credential. The bootstrap credential probe returned `invalid`, so no credential was guessed and no student account was modified.
+
 ## Configuration boundary
 
 `VITE_API_BASE_URL` là giá trị public được nhúng vào browser bundle:

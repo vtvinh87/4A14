@@ -72,7 +72,7 @@
 
 **Deployment-compatibility fix:** make the dependency graph reachable from `supabase/functions/api/index.ts` resolvable by strict Deno/Supabase bundling. Relative production imports in the approved server/shared/content/game/progress/analytics write set use explicit `.ts` extensions; no tests or unrelated graph are mechanically rewritten.
 
-> Local implementation and verification are complete. Managed deployment is intentionally pending: Supabase CLI access to the target project returned HTTP 403, and Firebase Hosting was not deployed against an API that is not yet live. No external production write was performed.
+> Local implementation and verification are complete. Managed deployment is complete for the approved `4A14` projects: Supabase `api` is active and Firebase Hosting is live. The remaining operator action is a credentialed smoke with a known synthetic Admin credential; no credential guessing or real student-data operation was performed.
 
 - [x] Review each task's diff against its write set and inspect all generated/config files.
 - [x] Run fresh gates from the feature worktree: `npm test`, `npm run typecheck`, `npm run typecheck:server`, `npm run validate:firebase`, `npm run validate:fox`, and `npm run build`.
