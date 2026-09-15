@@ -1,6 +1,6 @@
-# Học Vui — local app + Supabase server
+# Học Vui — Firebase Hosting + Supabase Edge API
 
-Học Vui là trải nghiệm game-world tiếng Việt cho bé 9 tuổi trên máy tính bảng. Bản hiện tại giữ nền cảnh/pet đã duyệt, mở đủ 29 bài học và dùng các seed bài tập được đối chiếu với VBT/SGK Lịch sử và Địa lí 4. API tài khoản, phiên và tiến độ chạy server-side; database cloud dùng Supabase PostgreSQL trong môi trường đã cấu hình.
+Học Vui là trải nghiệm game-world tiếng Việt cho bé 9 tuổi trên máy tính bảng. Bản hiện tại giữ nền cảnh/pet đã duyệt, mở đủ 29 bài học và dùng các seed bài tập được đối chiếu với VBT/SGK Lịch sử và Địa lí 4. Frontend production được cấu hình để phục vụ bằng Firebase Hosting Spark; API tài khoản, phiên, hồ sơ, phụ huynh và tiến độ chạy trong Supabase Edge Function `api`, còn database cloud dùng Supabase PostgreSQL trong môi trường server-only.
 
 ## Chạy local
 
@@ -18,6 +18,12 @@ npm run dev:netlify
 ```
 
 LaunchAgent `com.hoc-vui.localhost` đã được cấu hình để tự chạy cổng 8888. Khi chạy theo cấu hình tích hợp, server dùng transaction pooler Supabase với role `hoc_vui_runtime`; mật khẩu chỉ được đọc từ macOS Keychain qua `scripts/start-netlify-with-supabase.sh`, không đặt trong source, `VITE_*`, plist hay log. Nếu chạy thủ công và chưa có Keychain item, hãy cấu hình biến môi trường server-only theo `.env.example`.
+
+## Firebase Hosting + Supabase Edge API
+
+`firebase.json` chỉ phục vụ `dist` và fallback SPA; không bật Firebase Functions, Firestore hay Firebase Auth. Khi build production, đặt `VITE_API_BASE_URL` tới function URL `https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api`. Browser chỉ giữ opaque session token trong `sessionStorage`; database URL, runtime-role credential, service-role key và allowlist CORS chỉ được cấu hình ở phía function.
+
+Quy trình secrets, deploy, smoke test và rollback được ghi tại [docs/deployment/firebase-supabase-edge.md](docs/deployment/firebase-supabase-edge.md). Chỉ tạo `.firebaserc` sau khi đã đăng nhập đúng tài khoản Firebase và xác nhận chính xác project đích.
 
 Migration cloud được quản lý duy nhất trong `supabase/migrations/` và có thể kiểm tra trạng thái bằng Supabase CLI. Không dùng Supabase Data API cho schema `hoc_vui_private`; custom auth của Học Vui vẫn do API server kiểm soát. Database hiện chỉ có Admin bootstrap và không nhập dữ liệu học sinh thật.
 
@@ -60,6 +66,6 @@ npm run validate:fox
 - Pet dùng GLB procedural local thật: mesh nhiều part có skin joints/weights và các clip `idle`, `greet`, `think`, `celebrate`, `rest`; runtime Three.js `0.186.0` được lazy-load local. Nếu WebGL hoặc asset lỗi, app giữ fallback PNG đã duyệt.
 - `scripts/generate-fox-glb.mjs` là generator deterministic không dùng stock/copyright-unclear asset; `scripts/validate-fox-glb.mjs` kiểm tra GLB header, skin attributes, 17 bones và 5 clips.
 - Nền cảnh vẫn là artwork đã duyệt; chỉ Cáo Nhỏ là render 3D realtime khi runtime khả dụng.
-- Chưa thực hiện Netlify deploy, production restore hoặc đưa dữ liệu học sinh thật lên cloud.
+- Netlify Dev/local port 8888 vẫn là đường lui; chưa thực hiện production deploy Firebase Hosting/Supabase Edge, restore, import/reset hoặc đưa dữ liệu học sinh thật lên cloud.
 
 Các file `._*` là metadata AppleDouble của volume ExFAT và được Vitest loại khỏi test discovery; không dùng làm source app.
