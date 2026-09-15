@@ -4,9 +4,9 @@ Tài liệu này mô tả rollout production cho Học Vui. Firebase chỉ phụ
 
 ## Current rollout status — 2026-09-15
 
-- Supabase project `4A14` (`tvlpabqkternfvsxqovi`): Edge Function `api` is `ACTIVE`, `verify_jwt=false`, and managed preflight/unauthenticated `/auth/me` smoke checks pass.
-- Firebase project `4A14` (`a14-82a69`): Hosting release is live at [https://a14-82a69.web.app](https://a14-82a69.web.app). Root, manifest, Service Worker and SPA deep-link checks return HTTP 200; the deployed bundle contains the public Edge URL and no database credential markers.
-- The final credentialed login/profile/learning smoke still requires a known synthetic Admin credential. The bootstrap credential probe returned `invalid`, so no credential was guessed and no student account was modified.
+- Supabase project `4A14` (`tvlpabqkternfvsxqovi`): Edge Function `api` is `ACTIVE`, `verify_jwt=false`, exact-origin CORS preflight passes for both Firebase sites, and synthetic Admin login/logout smoke checks pass.
+- Firebase project `4A14` (`a14-82a69`): Hosting is deployed to both [https://a14-82a69.web.app](https://a14-82a69.web.app) and [https://4a14.web.app](https://4a14.web.app). Root, manifest, Service Worker and SPA deep-link checks return HTTP 200; the deployed bundle contains the public Edge URL and no database credential markers.
+- The credential smoke uses the existing bootstrap Admin account only; no student account or learner data is modified.
 
 ## Configuration boundary
 
@@ -18,7 +18,7 @@ https://<CONFIRMED_SUPABASE_PROJECT_REF>.supabase.co/functions/v1/api
 
 Các biến sau chỉ được đặt trong môi trường Edge/server, không commit vào Git và không đưa vào `VITE_*`:
 
-- `HOC_VUI_ALLOWED_ORIGINS`: exact origins, phân cách bằng dấu phẩy. Nhập origin Firebase đã xác nhận `https://<CONFIRMED_FIREBASE_PROJECT_ID>.web.app`; chỉ thêm exact custom domain và `http://localhost:8888` khi thực sự cần. Không dùng wildcard vì implementation normalize rồi exact-match từng origin.
+- `HOC_VUI_ALLOWED_ORIGINS`: exact origins, phân cách bằng dấu phẩy. Rollout hiện tại cho phép `https://a14-82a69.web.app`, `https://4a14.web.app` và `http://localhost:8888`; chỉ thêm exact custom domain khi thực sự cần. Không dùng wildcard vì implementation normalize rồi exact-match từng origin.
 - `HOC_VUI_DATABASE_URL`: connection transaction pooler của custom role `hoc_vui_runtime`, có SSL bắt buộc. Role này bị giới hạn vào private schema/tables và các quyền CRUD cần cho server API.
 - `SUPABASE_DB_URL`: fallback do Supabase cung cấp. Fallback này không tương đương custom `hoc_vui_runtime` role và không được dùng cho production khi rollout yêu cầu custom runtime role.
 - `HOC_VUI_DB_POOL_MAX=1`, `HOC_VUI_COOKIE_SECURE=true`, và `PGSSLMODE=require`.

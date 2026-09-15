@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "a14-82a69"
+  },
+  "targets": {
+    "a14-82a69": {
+      "hosting": {
+        "legacy": [
+          "a14-82a69"
+        ],
+        "app": [
+          "4a14"
+        ]
+      }
+    }
+  }
+}

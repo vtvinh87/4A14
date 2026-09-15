@@ -2,6 +2,7 @@
 node_modules/
 dist/
 .netlify/
+.firebase/
 *.tsbuildinfo
 
 # Local configuration and secrets

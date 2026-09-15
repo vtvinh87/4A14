@@ -26,46 +26,53 @@ function requireHeader(entries, source, predicate, description) {
 
 try {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  const hosting = config.hosting;
-  if (!hosting || typeof hosting !== 'object' || Array.isArray(hosting)) fail('hosting configuration is missing');
-  if (hosting.public !== 'dist') fail('hosting.public must be "dist"');
-
-  const ignores = new Set(hosting.ignore ?? []);
-  for (const requiredIgnore of ['firebase.json', '**/.*', '**/node_modules/**']) {
-    if (!ignores.has(requiredIgnore)) fail(`hosting.ignore must include ${requiredIgnore}`);
-  }
-
-  const spaRewrite = hosting.rewrites?.find(
-    (rewrite) => rewrite.source === '**' && rewrite.destination === '/index.html',
-  );
-  if (!spaRewrite) fail('SPA rewrite ** -> /index.html is missing');
-  if (hosting.rewrites.some((rewrite) => rewrite.function || rewrite.run || rewrite.source === '/api/**')) {
-    fail('Firebase Functions or API rewrites are not allowed');
-  }
-
-  const headers = hosting.headers ?? [];
-  const serviceWorkerCacheControl = requireHeader(
-    headers,
-    '/sw.js',
-    (value) => value.toLowerCase().includes('no-cache'),
-    'Service Worker no-cache',
-  );
   const immutableCacheControl = 'public, max-age=31536000, immutable';
-  for (const extension of ['js', 'css']) {
-    const source = `**/*-*.${extension}`;
-    requireHeader(
-      headers,
-      source,
-      (value) => value.toLowerCase().replace(/\s+/g, ' ').trim() === immutableCacheControl,
-      `hashed ${extension.toUpperCase()} asset immutable`,
+  const hosting = Array.isArray(config.hosting) ? config.hosting : config.hosting ? [config.hosting] : [];
+  if (hosting.length === 0) fail('hosting configuration is missing');
+
+  const validatedSites = hosting.map((site) => {
+    const label = site && typeof site === 'object' ? site.target ?? site.site ?? 'default' : 'invalid';
+    if (!site || typeof site !== 'object') fail(`hosting configuration is invalid for ${label}`);
+    if (site.public !== 'dist') fail(`hosting.public must be "dist" for ${label}`);
+
+    const ignores = new Set(site.ignore ?? []);
+    for (const requiredIgnore of ['firebase.json', '**/.*', '**/node_modules/**']) {
+      if (!ignores.has(requiredIgnore)) fail(`hosting.ignore must include ${requiredIgnore} for ${label}`);
+    }
+
+    const spaRewrite = site.rewrites?.find(
+      (rewrite) => rewrite.source === '**' && rewrite.destination === '/index.html',
     );
-  }
+    if (!spaRewrite) fail(`SPA rewrite ** -> /index.html is missing for ${label}`);
+    if (site.rewrites.some((rewrite) => rewrite.function || rewrite.run || rewrite.source === '/api/**')) {
+      fail(`Firebase Functions or API rewrites are not allowed for ${label}`);
+    }
+
+    const headers = site.headers ?? [];
+    const serviceWorkerCacheControl = requireHeader(
+      headers,
+      '/sw.js',
+      (value) => value.toLowerCase().includes('no-cache'),
+      `Service Worker no-cache for ${label}`,
+    );
+    for (const extension of ['js', 'css']) {
+      const source = `**/*-*.${extension}`;
+      requireHeader(
+        headers,
+        source,
+        (value) => value.toLowerCase().replace(/\s+/g, ' ').trim() === immutableCacheControl,
+        `hashed ${extension.toUpperCase()} asset immutable for ${label}`,
+      );
+    }
+    return { label, serviceWorkerCacheControl };
+  });
 
   console.log(JSON.stringify({
     config: path.relative(projectRoot, configPath),
-    public: hosting.public,
+    sites: validatedSites.map(({ label }) => label),
+    public: 'dist',
     spaRewrite: '/index.html',
-    serviceWorkerCacheControl,
+    serviceWorkerCacheControl: validatedSites[0].serviceWorkerCacheControl,
     hashedAssetCacheControl: immutableCacheControl,
   }, null, 2));
 } catch (error) {
