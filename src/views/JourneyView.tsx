@@ -1,4 +1,6 @@
+import { useCallback, useRef, useState } from 'react';
 import type { PetMood } from '../motion/pet';
+import { pickPetHomeDialogue } from '../motion/petHomeConversation';
 import { ArrowIcon } from '../components/icons';
 import { Pet } from '../components/Pet';
 import { JourneyFeatureRail } from '../components/JourneyFeatureRail';
@@ -11,10 +13,23 @@ type JourneyViewProps = {
 };
 
 export function JourneyView({ petMood, reducedMotion, onPetTap, onOpenLessons }: JourneyViewProps) {
+  const [homeDialogue, setHomeDialogue] = useState(() => pickPetHomeDialogue());
+  const homeDialogueIndexRef = useRef(homeDialogue.index);
+  const chooseHomeDialogue = useCallback(() => {
+    const next = pickPetHomeDialogue(homeDialogueIndexRef.current);
+    homeDialogueIndexRef.current = next.index;
+    setHomeDialogue(next);
+  }, []);
+
+  const handlePetTap = () => {
+    chooseHomeDialogue();
+    onPetTap();
+  };
+
   return (
     <section className="journey-layout" aria-labelledby="journey-title">
       <aside className="pet-zone">
-        <Pet mood={petMood} reducedMotion={reducedMotion} onTap={onPetTap} />
+        <Pet mood={petMood} reducedMotion={reducedMotion} onTap={handlePetTap} message={homeDialogue.dialogue.text} messageTone={homeDialogue.dialogue.tone} />
       </aside>
 
       <div className="journey-center">

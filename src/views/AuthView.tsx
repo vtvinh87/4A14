@@ -37,7 +37,6 @@ export function LoginView({ onStudentLogin, onAdminLogin, error, busy = false }:
         <img className="auth-emblem" src="/art/collection/collection-emblem.png" alt="" aria-hidden="true" />
         <p className="eyebrow">HÀNH TRÌNH 4A14</p>
         <h1 id="auth-title">Đăng nhập để bắt đầu chuyến đi</h1>
-        <p className="auth-lead">Nhập tên tài khoản và mã PIN 6 số mà Admin đã cấp cho con.</p>
         <div className="auth-mode-switch" role="tablist" aria-label="Loại đăng nhập">
           <button type="button" className={mode === 'student' ? 'is-active' : ''} onClick={() => { setMode('student'); setSecret(''); setLocalError(''); }}>Học sinh</button>
           <button type="button" className={mode === 'admin' ? 'is-active' : ''} onClick={() => { setMode('admin'); setSecret(''); setLocalError(''); }}>Quản trị</button>
@@ -48,7 +47,10 @@ export function LoginView({ onStudentLogin, onAdminLogin, error, busy = false }:
           {(error || localError) && <p className="auth-error" role="alert">{error || localError}</p>}
           <button className="primary-small-button auth-submit" type="submit" disabled={busy}>{busy ? 'Đang mở cổng…' : 'Vào hành trình →'}</button>
         </form>
-        <p className="auth-note">Tài khoản do Admin tạo. Nếu quên mã, hãy nhờ Admin đặt lại.</p>
+        <div className="auth-note">
+          <p>Liên hệ Admin để tạo tài khoản hoặc đặt lại mật khẩu.</p>
+          <a className="auth-admin-contact" href="https://zalo.me/0948584429" target="_blank" rel="noreferrer"><img className="auth-admin-icon" src="/art/hud/zalo.webp" alt="" aria-hidden="true" width="22" height="22" /><span>Zalo: Thành Vinh</span></a>
+        </div>
       </section>
     </main>
   );

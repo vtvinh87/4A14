@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getPetById, type PetDefinition } from '../content/pets';
 import { petMessage, resolvePetMood, type PetMood } from '../motion/pet';
+import type { PetHomeDialogueTone } from '../motion/petHomeConversation';
 import { FoxPet2D5D } from './FoxPet2D5D';
 
 type PetProps = {
@@ -8,11 +9,12 @@ type PetProps = {
   reducedMotion: boolean;
   onTap: () => void;
   message?: string;
+  messageTone?: PetHomeDialogueTone;
   size?: 'full' | 'compact';
   pet?: PetDefinition;
 };
 
-export function Pet({ mood, reducedMotion, onTap, message, size = 'full', pet }: PetProps) {
+export function Pet({ mood, reducedMotion, onTap, message, messageTone, size = 'full', pet }: PetProps) {
   const activePet = pet ?? getPetById('fox-orange');
   const supports2D5D = activePet.id === 'fox-orange';
   const visualMood = resolvePetMood(mood, reducedMotion);
@@ -39,7 +41,7 @@ export function Pet({ mood, reducedMotion, onTap, message, size = 'full', pet }:
         )}
         {(!supports2D5D || !is2D5DReady || useFallback) && <img className="pet-image" src={imageSrc} alt={imageAlt} onError={() => { setIs2D5DReady(false); setUseFallback(true); }} />}
       </button>
-      <div className="pet-bubble pet-bubble-speech" key={visualMessage} role="status" aria-live="polite">
+      <div className={`pet-bubble pet-bubble-speech${size === 'full' ? ' pet-bubble-full' : ''}${messageTone ? ` pet-bubble-tone-${messageTone}` : ''}`} key={visualMessage} role="status" aria-live="polite">
         {visualMessage}
       </div>
     </div>

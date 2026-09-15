@@ -1,13 +1,45 @@
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
+import { PET_HOME_DIALOGUES } from '../motion/petHomeConversation';
 import { JourneyView } from './JourneyView';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-vi.mock('../components/Pet', () => ({ Pet: () => null }));
+vi.mock('../components/Pet', () => ({
+  Pet: ({ message, messageTone, onTap }: { message?: string; messageTone?: string; onTap: () => void }) => createElement(
+    'button',
+    { type: 'button', 'data-test-pet-dialogue': messageTone ?? '', onClick: onTap },
+    message,
+  ),
+}));
 
 describe('JourneyView launch surface', () => {
+  it('uses the rotating dialogue catalog for the full-size Journey Pet', () => {
+    const mount = document.createElement('div');
+    const root = createRoot(mount);
+
+    try {
+      act(() => root.render(createElement(JourneyView, {
+        petMood: 'idle',
+        reducedMotion: false,
+        onPetTap: vi.fn(),
+        onOpenLessons: vi.fn(),
+      })));
+
+      const petButton = mount.querySelector<HTMLButtonElement>('[data-test-pet-dialogue]');
+      expect(petButton).not.toBeNull();
+      const firstDialogue = petButton?.textContent;
+      expect(PET_HOME_DIALOGUES.some((item) => item.text === firstDialogue)).toBe(true);
+
+      act(() => petButton?.click());
+      expect(petButton?.textContent).not.toBe(firstDialogue);
+      expect(PET_HOME_DIALOGUES.some((item) => item.text === petButton?.textContent)).toBe(true);
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
   it('keeps the launch CTA, removes redundant milestones, and exposes the feature rail', () => {
     const mount = document.createElement('div');
     const root = createRoot(mount);

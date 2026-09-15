@@ -1,5 +1,6 @@
-import { useState, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import type { PetMood } from '../motion/pet';
+import { pickPetHomeDialogue } from '../motion/petHomeConversation';
 import { LockIcon, SparkIcon } from '../components/icons';
 import { Pet } from '../components/Pet';
 import { DEFAULT_PET_ID, getPetById, isPetUnlocked, PETS, type PetId } from '../content/pets';
@@ -18,9 +19,26 @@ export function PetView({ petMood, reducedMotion, onPetTap, onOpenSettings, stam
   const selectedPetUnlocked = isPetUnlocked(selectedPet, stamps);
   const unlockedCount = PETS.filter((pet) => isPetUnlocked(pet, stamps)).length;
   const activePet = selectedPetUnlocked ? selectedPet : getPetById(DEFAULT_PET_ID);
+  const [homeDialogue, setHomeDialogue] = useState(() => pickPetHomeDialogue());
+  const homeDialogueIndexRef = useRef(homeDialogue.index);
+
+  const chooseHomeDialogue = useCallback(() => {
+    const next = pickPetHomeDialogue(homeDialogueIndexRef.current);
+    homeDialogueIndexRef.current = next.index;
+    setHomeDialogue(next);
+  }, []);
+
+  useEffect(() => {
+    chooseHomeDialogue();
+  }, [activePet.id, chooseHomeDialogue]);
 
   const selectPet = (petId: PetId) => {
     setSelectedPetId(petId);
+  };
+
+  const handlePetTap = () => {
+    chooseHomeDialogue();
+    onPetTap();
   };
 
   const activeImageFallback = (event: SyntheticEvent<HTMLImageElement>) => {
@@ -34,7 +52,7 @@ export function PetView({ petMood, reducedMotion, onPetTap, onOpenSettings, stam
       <div className="view-heading"><div className="page-title-tag"><h1 id="pet-title">Pet của tôi</h1></div><button className="secondary-button" type="button" onClick={onOpenSettings}>Cài đặt chuyển động</button></div>
       <div className="pet-room">
         <div className="pet-room-glow" />
-        <Pet mood={petMood} reducedMotion={reducedMotion} onTap={onPetTap} message={activePet.cue} pet={activePet} size="full" />
+        <Pet mood={petMood} reducedMotion={reducedMotion} onTap={handlePetTap} message={homeDialogue.dialogue.text} messageTone={homeDialogue.dialogue.tone} pet={activePet} size="full" />
         <div className="pet-room-caption"><SparkIcon size={18} /><span>{selectedPetUnlocked ? `Chạm vào ${selectedPet.name} để nhận một lời chào.` : selectedPet.unlockGuide}</span></div>
       </div>
       <section className="pet-roster" aria-labelledby="pet-roster-title">
