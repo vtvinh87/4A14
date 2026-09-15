@@ -21,7 +21,7 @@
 
 ## Task 1: Make the existing server contract runtime-neutral and add the Edge adapter
 
-**Write set:** `server/runtime/env.ts`, `server/db/client.ts`, `server/app.ts`, `supabase/config.toml`, `supabase/functions/api/index.ts`, `supabase/functions/api/deno.json`, `server/app.test.ts`, `supabase/functions/api/index.test.ts`.
+**Write set:** `server/runtime/env.ts`, `server/db/client.ts`, `server/app.ts`, `supabase/config.toml`, `supabase/functions/api/index.ts`, `supabase/functions/api/deno.json`, `server/app.test.ts`, `server/edgeAdapter.test.ts`.
 
 - [ ] Add `getEnv(name: string): string | undefined` in `server/runtime/env.ts`. It must read `Deno.env.get` when running in Deno and `globalThis.process?.env` when running in Node, without evaluating an undeclared `process` identifier in Deno.
 - [ ] Update `server/db/client.ts` and `server/app.ts` to use `getEnv`. `databaseUrlFromEnv()` must resolve `HOC_VUI_DATABASE_URL`, then `DATABASE_URL`, then `DB_URL`, then `SUPABASE_DB_URL`; `createDbClient()` must keep `prepare: false`, pool max default `1`, `sslmode=require` detection, five-second connect timeout, and twenty-second idle timeout.
