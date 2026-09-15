@@ -12,6 +12,7 @@
     "typecheck": "tsc -b --pretty false",
     "typecheck:server": "tsc -p tsconfig.server.json --pretty false",
     "test": "vitest run",
+    "check:edge-runtime": "node scripts/check-edge-runtime.mjs",
     "test:db": "vitest run --run server/db server/auth/postgresRepository.integration.test.ts server/app.integration.test.ts",
     "test:db:cloud": "vitest run --run server/db server/auth/postgresRepository.integration.test.ts server/app.integration.test.ts --testTimeout=60000",
     "validate:fox": "node scripts/validate-fox-glb.mjs",

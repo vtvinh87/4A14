@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createEdgeHandler, toAppPath } from './index';
+import defaultHandler, { createEdgeHandler, handler, toAppPath } from './index';
 import type { AppRequest, AppResponse } from '../../../server/app';
 
 function response(body: Record<string, unknown>, statusCode = 200): AppResponse {
@@ -17,6 +17,10 @@ function response(body: Record<string, unknown>, statusCode = 200): AppResponse 
 describe('Supabase Edge API adapter', () => {
   beforeEach(() => {
     vi.stubEnv('HOC_VUI_ALLOWED_ORIGINS', 'https://hoc-vui.web.app, http://localhost:8888');
+  });
+
+  it('exports the Edge runtime fetch contract', () => {
+    expect(defaultHandler).toMatchObject({ fetch: handler });
   });
 
   it('normalizes the deployed function URL while preserving API routes and query strings', () => {

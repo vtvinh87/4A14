@@ -33,7 +33,10 @@ npm run typecheck
 npm run typecheck:server
 npm run validate:fox
 deno check --unstable-sloppy-imports --import-map supabase/functions/api/deno.json supabase/functions/api/index.ts
+npm run check:edge-runtime
 ```
+
+`check:edge-runtime` chạy `deno serve` trên entrypoint thật với cổng localhost ngẫu nhiên, gửi duy nhất một `OPTIONS` allowlisted, kiểm tra HTTP 204 và toàn bộ CORS headers chính xác, rồi dừng đúng child process. Preflight kết thúc trước khi khởi tạo app/database, nên gate này không cần database URL, secret hoặc dữ liệu học sinh. Function-local `deno.json` giữ import map `postgres` và bật `sloppy-imports` cho các import extensionless hiện có; lệnh check/smoke vẫn truyền flag tương ứng để hành vi local được tường minh và tái lập.
 
 Không dùng dữ liệu học sinh thật để smoke test.
 
@@ -66,7 +69,7 @@ npx firebase-tools use <CONFIRMED_FIREBASE_PROJECT_ID>
 npx supabase@latest functions deploy api --project-ref <CONFIRMED_SUPABASE_PROJECT_REF>
 ```
 
-4. Trước khi build frontend, smoke-test trực tiếp function URL bằng origin Firebase đã xác nhận và tài khoản synthetic: kiểm tra CORS preflight, login, bearer session, `/auth/me`, logout và một request được bảo vệ. Response 401 cho `/auth/me` khi chưa có session là đúng; response 503, origin phản chiếu ngoài allowlist hoặc CORS wildcard là lỗi rollout.
+4. Chạy lại `npm run check:edge-runtime`, sau đó trước khi build frontend mới smoke-test trực tiếp function URL bằng origin Firebase đã xác nhận và tài khoản synthetic: kiểm tra CORS preflight, login, bearer session, `/auth/me`, logout và một request được bảo vệ. Response 401 cho `/auth/me` khi chưa có session là đúng; response 503, origin phản chiếu ngoài allowlist hoặc CORS wildcard là lỗi rollout.
 
 ### 4. Build and deploy Firebase Hosting
 

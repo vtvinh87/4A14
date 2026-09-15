@@ -116,4 +116,4 @@ export function createEdgeHandler(loadApp: AppLoader = getDefaultApp): (request:
 }
 
 export const handler = createEdgeHandler();
-export default handler;
+export default { fetch: handler };
