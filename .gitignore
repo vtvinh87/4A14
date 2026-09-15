@@ -25,6 +25,9 @@ docs/executor/recovery-*/
 # Local agent execution snapshots
 .superpowers/
 
+# Isolated feature worktrees
+.worktrees/
+
 # Host metadata from the ExFAT volume
 ._*
 .DS_Store
