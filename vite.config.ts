@@ -50,7 +50,7 @@ const LOCAL_PWA_URLS = [
   '/icons/icon-512-maskable.png',
 ];
 const LOCAL_PWA_VERSIONS = [
-  '/manifest.webmanifest:b9e28071fb102bf0e48ecc4335209536d6b41229e4ac1fc13b2d3ccb1a62f289',
+  '/manifest.webmanifest:a5712491f1aca4050f8519063cc1464ce37ccd249112b99a3d0cafb2f7a614e1',
   '/icons/favicon-32.png:24d5d7a562d2e64796b19872ca02454869a93b640635c38a4162a9c2cf849ed1',
   '/icons/icon-180.png:d9bde06f336bec768bec0f4348613f59a45908e4559595b6425f59701e2d4ee7',
   '/icons/icon-192.png:3596603c7ae97fb23eb67a30541f87dc10b36be9e8504d3444823349f675cd57',

@@ -18,8 +18,8 @@ const manifest = JSON.parse(manifestSource) as {
 describe('PWA install contract', () => {
   it('declares a Vietnamese standalone app with regular and maskable launcher icons', () => {
     expect(manifest.id).toBe('/');
-    expect(manifest.name).toContain('Học Vui');
-    expect(manifest.short_name).toBe('Học Vui');
+    expect(manifest.name).toBe('4A14 - Lịch sử & Địa Lý 4');
+    expect(manifest.short_name).toBe('4A14');
     expect(manifest.lang).toBe('vi');
     expect(manifest.start_url).toBe('/');
     expect(manifest.scope).toBe('/');
@@ -39,7 +39,8 @@ describe('PWA install contract', () => {
     expect(indexHtmlSource).toContain('name="theme-color"');
     expect(indexHtmlSource).toContain('name="mobile-web-app-capable"');
     expect(indexHtmlSource).toContain('name="apple-mobile-web-app-capable"');
-    expect(indexHtmlSource).toContain('name="apple-mobile-web-app-title"');
+    expect(indexHtmlSource).toContain('name="apple-mobile-web-app-title" content="4A14"');
+    expect(indexHtmlSource).toContain('<title>4A14 - Lịch sử &amp; Địa Lý 4</title>');
   });
 
   it('registers every served install asset with a content digest', () => {

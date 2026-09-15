@@ -31,7 +31,6 @@ export function JourneyFeatureRail() {
   return (
     <>
       <aside className="journey-feature-rail" data-journey-feature-rail aria-label="Tính năng sắp ra mắt">
-        <p className="journey-feature-kicker">SẮP RA MẮT</p>
         <div className="journey-feature-list">
           {JOURNEY_FEATURES.map((feature) => (
             <button
@@ -39,13 +38,15 @@ export function JourneyFeatureRail() {
               className="journey-feature-button"
               data-journey-feature={feature.id}
               type="button"
+              aria-label={feature.label}
+              title={feature.label}
               aria-haspopup="dialog"
               onClick={() => setActiveFeature(feature)}
             >
               <span className="journey-feature-art" aria-hidden="true">
                 <img data-journey-feature-art src={feature.art} alt="" />
               </span>
-              <span className="journey-feature-label">{feature.label}</span>
+              <span className="journey-feature-label" aria-hidden="true">{feature.label}</span>
             </button>
           ))}
         </div>

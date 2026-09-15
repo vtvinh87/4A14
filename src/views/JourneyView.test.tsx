@@ -65,6 +65,10 @@ describe('JourneyView launch surface', () => {
       expect(mount.querySelector('[data-journey-feature-rail]')).not.toBeNull();
       expect(mount.querySelector('[data-journey-feature="leaderboard"] img')?.getAttribute('src')).toBe('/art/hud/leaderboard.png');
       expect(mount.querySelector('[data-journey-feature="challenge"] img')?.getAttribute('src')).toBe('/art/hud/challenge.png');
+      expect(mount.querySelector('[data-journey-feature="leaderboard"]')?.getAttribute('aria-label')).toBe('Bảng xếp hạng');
+      expect(mount.querySelector('[data-journey-feature="challenge"]')?.getAttribute('aria-label')).toBe('Thách đố');
+      expect(mount.querySelector('[data-journey-feature="leaderboard"] .journey-feature-label')?.getAttribute('aria-hidden')).toBe('true');
+      expect(mount.querySelector('[data-journey-feature="challenge"] .journey-feature-label')?.getAttribute('aria-hidden')).toBe('true');
 
       act(() => mount.querySelector<HTMLButtonElement>('[data-journey-feature="leaderboard"]')?.click());
       expect(mount.querySelector('[data-coming-soon-dialog]')).not.toBeNull();

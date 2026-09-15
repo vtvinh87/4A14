@@ -27,10 +27,17 @@ describe('Journey layout', () => {
     expect(ruleFor('.pet-zone')).toContain('transform: translateY(22px);');
   });
 
-  it('reflows the feature rail for narrow screens without restoring the old two-column layout', () => {
+  it('keeps the feature rail in a vertical icon layout at narrow widths', () => {
     expect(styles).toContain('grid-template-columns: minmax(130px, 0.85fr) minmax(330px, 1.3fr) minmax(130px, 0.85fr);');
-    expect(styles).toContain('.journey-feature-list { flex-direction: row; gap: 8px; }');
+    expect(styles).toContain('.journey-feature-list {\n  display: flex;\n  flex-direction: column;');
     expect(styles).toContain('transform: translateY(28px);');
-    expect(styles).toContain('.journey-feature-button { flex: 1 1 0; grid-template-columns: 42px minmax(0, 1fr); min-height: 62px; }');
+    expect(styles).toContain('grid-template-columns: 1fr;');
+  });
+
+  it('keeps upcoming features as accessible icon-only actions near the right edge', () => {
+    expect(ruleFor('.journey-feature-rail')).toContain('justify-self: end;');
+    expect(styles).toContain('grid-template-columns: 1fr;');
+    expect(styles).toMatch(/\.journey-feature-label \{\s+position: absolute;/);
+    expect(styles).toContain('right: -4px;');
   });
 });
