@@ -1,5 +1,6 @@
-import { CLASSROOM_MESSAGE_MAX_LENGTH, type ClassroomMessage, type ClassroomMessagesResponse, type FriendSummary, type FriendsResponse } from '../../shared/classroom-contracts.ts';
+import { CLASSROOM_MESSAGE_MAX_LENGTH, type ClassroomMessage, type ClassroomMessagesResponse, type ClassroomRealtimeConfig, type FriendSummary, type FriendsResponse } from '../../shared/classroom-contracts.ts';
 import type { ClassroomMessageRecord, ClassroomRepository } from './types.ts';
+import type { ClassroomRealtimeBridge } from './realtime.ts';
 
 export type ClassroomFailureCode = 'invalid' | 'forbidden' | 'not-found' | 'rate-limited' | 'unavailable';
 export type ClassroomFailure = { ok: false; code: ClassroomFailureCode; message: string };
@@ -10,6 +11,7 @@ export type ClassroomService = {
   listMessages(studentId: string, peerId: string, limit: number): Promise<ClassroomMessagesResponse | ClassroomFailure>;
   sendMessage(studentId: string, peerId: string, body: string): Promise<{ message: ClassroomMessage } | ClassroomFailure>;
   markRead(studentId: string, peerId: string): Promise<{ marked: number } | ClassroomFailure>;
+  realtimeConfig(studentId: string): Promise<ClassroomRealtimeConfig | null>;
 };
 
 const ONLINE_WINDOW_MS = 120_000;
@@ -37,7 +39,7 @@ async function activePeerOrFailure(repository: ClassroomRepository, studentId: s
   return true;
 }
 
-export function createClassroomService(repository: ClassroomRepository, clock: () => Date = () => new Date()): ClassroomService {
+export function createClassroomService(repository: ClassroomRepository, clock: () => Date = () => new Date(), realtimeBridge?: ClassroomRealtimeBridge | null): ClassroomService {
   return {
     async listFriends(studentId) {
       const now = clock();
@@ -79,7 +81,15 @@ export function createClassroomService(repository: ClassroomRepository, clock: (
       const recentCount = await repository.countRecentSentMessages(studentId, new Date(now.getTime() - RATE_LIMIT_WINDOW_MS).toISOString());
       if (recentCount >= RATE_LIMIT_MAX_MESSAGES) return failure('rate-limited', 'Bạn đã gửi quá nhanh; hãy thử lại sau một lát.');
       try {
-        return { message: messageView(await repository.insertMessage({ senderId: studentId, recipientId: peerId, body: normalizedBody, createdAt: now.toISOString() })) };
+        const message = messageView(await repository.insertMessage({ senderId: studentId, recipientId: peerId, body: normalizedBody, createdAt: now.toISOString() }));
+        if (realtimeBridge) {
+          try {
+            await realtimeBridge.notifyMessage({ messageId: message.id, recipientId: message.recipientId });
+          } catch {
+            // Durable chat delivery must remain available when the best-effort notification path is down.
+          }
+        }
+        return { message };
       } catch (error) {
         if (error instanceof Error && error.message === 'rate_limited') return failure('rate-limited', 'Bạn đã gửi quá nhanh; hãy thử lại sau một lát.');
         throw error;
@@ -90,6 +100,10 @@ export function createClassroomService(repository: ClassroomRepository, clock: (
       const peer = await activePeerOrFailure(repository, studentId, peerId);
       if (peer !== true) return peer;
       return { marked: await repository.markMessagesRead(studentId, peerId, clock().toISOString()) };
+    },
+
+    async realtimeConfig(studentId) {
+      return realtimeBridge ? realtimeBridge.configForStudent(studentId) : null;
     },
   };
 }

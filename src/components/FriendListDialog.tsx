@@ -7,12 +7,13 @@ export type FriendListDialogProps = {
   friends: readonly FriendSummary[];
   loading: boolean;
   error: string;
+  messageRevision?: number;
   onRefresh: () => Promise<void> | void;
   onFriendsChanged: () => Promise<void> | void;
   onClose: () => void;
 };
 
-export function FriendListDialog({ friends, loading, error, onRefresh, onFriendsChanged, onClose }: FriendListDialogProps) {
+export function FriendListDialog({ friends, loading, error, messageRevision = 0, onRefresh, onFriendsChanged, onClose }: FriendListDialogProps) {
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -69,7 +70,7 @@ export function FriendListDialog({ friends, loading, error, onRefresh, onFriends
   return (
     <div className="dialog-backdrop feature-dialog-backdrop" role="presentation" onMouseDown={onClose}>
       <section ref={dialogRef} className="feature-dialog" data-friend-list-dialog role="dialog" tabIndex={-1} aria-modal="true" aria-labelledby="friend-dialog-title" onMouseDown={(event) => event.stopPropagation()}>
-        {selectedFriend ? <FriendConversationPanel friend={selectedFriend} onBack={() => setSelectedFriendId(null)} onClose={onClose} onFriendsChanged={onFriendsChanged} /> : (
+        {selectedFriend ? <FriendConversationPanel friend={selectedFriend} messageRevision={messageRevision} onBack={() => setSelectedFriendId(null)} onClose={onClose} onFriendsChanged={onFriendsChanged} /> : (
           <>
             <div className="feature-dialog-heading">
               <div>

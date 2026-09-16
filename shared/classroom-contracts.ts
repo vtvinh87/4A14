@@ -22,3 +22,8 @@ export type ClassroomMessage = {
 
 export type FriendsResponse = { friends: FriendSummary[]; unreadCount: number };
 export type ClassroomMessagesResponse = { messages: ClassroomMessage[] };
+export type ClassroomRealtimeConfig = {
+  supabaseUrl: string;
+  publishableKey: string;
+  topic: string;
+};

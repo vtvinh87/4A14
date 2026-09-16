@@ -22,6 +22,9 @@ Các biến sau chỉ được đặt trong môi trường Edge/server, không c
 - `HOC_VUI_DATABASE_URL`: connection transaction pooler của custom role `hoc_vui_runtime`, có SSL bắt buộc. Role này bị giới hạn vào private schema/tables và các quyền CRUD cần cho server API.
 - `SUPABASE_DB_URL`: fallback do Supabase cung cấp. Fallback này không tương đương custom `hoc_vui_runtime` role và không được dùng cho production khi rollout yêu cầu custom runtime role.
 - `HOC_VUI_DB_POOL_MAX=1`, `HOC_VUI_COOKIE_SECURE=true`, và `PGSSLMODE=require`.
+- `HOC_VUI_REALTIME_TOPIC_SECRET`: secret HMAC chỉ ở Edge, dùng để tạo topic Broadcast opaque riêng cho từng học sinh. Không đưa secret này, Supabase secret key hoặc database credential vào browser/bundle.
+
+Classroom chat dùng Supabase Realtime Broadcast ở mức notification-only: Edge gửi `{ messageId }` tới topic opaque; browser nhận event rồi gọi lại API session-scoped để lấy nội dung tin nhắn. Vì session hiện tại của Học Vui là opaque application session, không mở private Realtime channel bằng cách đưa token ứng dụng vào `setAuth`; database table/grant vẫn private và API vẫn là source of truth. Nếu secret hoặc Realtime config chưa sẵn sàng, roster/conversation polling hiện tại vẫn là fallback.
 
 Các policy RLS hiện tại dành cho `hoc_vui_runtime` là broad server-side policies (`using (true)`/`with check (true)`). Cô lập dữ liệu theo từng trẻ được thực thi tại boundary auth/session của ứng dụng; không được coi database RLS riêng lẻ là cơ chế per-child isolation.
 
@@ -69,7 +72,7 @@ npx firebase-tools use <CONFIRMED_FIREBASE_PROJECT_ID>
 
 ### 3. Configure, deploy, and smoke-test Edge
 
-1. Đặt `HOC_VUI_ALLOWED_ORIGINS` và `HOC_VUI_DATABASE_URL` bằng Supabase Edge Function secrets. Dùng transaction pooler của `hoc_vui_runtime`; không thay bằng `SUPABASE_DB_URL` trong production khi custom runtime role là yêu cầu của rollout.
+1. Đặt `HOC_VUI_ALLOWED_ORIGINS`, `HOC_VUI_DATABASE_URL` và `HOC_VUI_REALTIME_TOPIC_SECRET` bằng Supabase Edge Function secrets. Dùng transaction pooler của `hoc_vui_runtime`; không thay bằng `SUPABASE_DB_URL` trong production khi custom runtime role là yêu cầu của rollout. Tạo secret HMAC mới bằng password manager hoặc trình tạo ngẫu nhiên rồi truyền trực tiếp cho CLI; không ghi giá trị vào file/log.
 2. Xác nhận allowlist chứa origin Firebase cụ thể `https://<CONFIRMED_FIREBASE_PROJECT_ID>.web.app`, cộng exact custom domain và localhost chỉ khi cần; không dùng wildcard.
 3. Deploy riêng function `api`:
 
@@ -78,6 +81,8 @@ npx supabase@latest functions deploy api --project-ref <CONFIRMED_SUPABASE_PROJE
 ```
 
 4. Chạy lại `npm run check:edge-runtime`, sau đó trước khi build frontend mới smoke-test trực tiếp function URL bằng origin Firebase đã xác nhận và tài khoản synthetic: kiểm tra CORS preflight, login, bearer session, `/auth/me`, logout và một request được bảo vệ. Response 401 cho `/auth/me` khi chưa có session là đúng; response 503, origin phản chiếu ngoài allowlist hoặc CORS wildcard là lỗi rollout.
+
+Supabase Realtime Free hiện có hạn mức đủ cho pilot nhỏ (2 triệu messages/tháng, 200 kết nối đồng thời); Broadcast tính theo số client nhận được fan-out, vì vậy cần theo dõi usage nếu mở rộng lớp học. Xem [Realtime pricing](https://supabase.com/docs/guides/realtime/pricing), [Realtime limits](https://supabase.com/docs/guides/realtime/limits) và [Realtime message counting](https://supabase.com/docs/guides/platform/manage-your-usage/realtime-messages).
 
 ### 4. Build and deploy Firebase Hosting
 

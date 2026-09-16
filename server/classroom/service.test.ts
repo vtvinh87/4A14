@@ -110,4 +110,19 @@ describe('ClassroomService', () => {
       message: 'Bạn đã gửi quá nhanh; hãy thử lại sau một lát.',
     });
   });
+
+  it('persists first, then notifies the recipient without making realtime a delivery dependency', async () => {
+    const now = new Date('2026-09-16T08:00:00.000Z');
+    const repository = fixtureRepository();
+    const realtime = {
+      configForStudent: async () => ({ supabaseUrl: 'https://example.supabase.co', publishableKey: 'public-key', topic: 'classroom:student:opaque' }),
+      notifyMessage: async () => { throw new Error('broadcast unavailable'); },
+    };
+    const service = createClassroomService(repository, () => now, realtime);
+
+    const result = await service.sendMessage('student-a', 'peer-online', 'Tin vẫn phải lưu');
+
+    expect(result).toMatchObject({ message: { senderId: 'student-a', recipientId: 'peer-online', body: 'Tin vẫn phải lưu' } });
+    await expect(service.realtimeConfig('student-a')).resolves.toEqual({ supabaseUrl: 'https://example.supabase.co', publishableKey: 'public-key', topic: 'classroom:student:opaque' });
+  });
 });

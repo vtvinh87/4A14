@@ -98,6 +98,22 @@ describe('FriendListDialog', () => {
     expect(onFriendsChanged).toHaveBeenCalledOnce();
   });
 
+  it('reloads the open conversation when the classroom message revision changes', async () => {
+    const onFriendsChanged = vi.fn();
+    renderDialog({ friends: [friend('online', true)], messageRevision: 0, onFriendsChanged });
+    await act(async () => {
+      mount.querySelector<HTMLButtonElement>('[data-friend-row="online"]')?.click();
+      await Promise.resolve();
+    });
+    mockedGetFriendMessages.mockResolvedValueOnce({ ok: true, messages: [{ id: 'incoming-1', senderId: 'online', recipientId: 'me', body: 'Tin mới', createdAt: '2026-09-16T08:00:00.000Z', readAt: null }] });
+
+    renderDialog({ friends: [friend('online', true)], messageRevision: 1, onFriendsChanged });
+    await act(async () => { await Promise.resolve(); });
+
+    expect(mockedGetFriendMessages).toHaveBeenCalledTimes(2);
+    expect(mount.textContent).toContain('Tin mới');
+  });
+
   it('sends a trimmed message and rejects empty or too-long drafts locally', async () => {
     renderDialog();
     await act(async () => {

@@ -133,6 +133,7 @@ describe('App cross-feature account flow', () => {
     classroomMocks.useClassroomFriends.mockReturnValue({
       friends: [classroomFriend],
       unreadCount: classroomFriend.unreadCount,
+      messageRevision: 0,
       loading: false,
       error: null,
       refresh: vi.fn(async () => undefined),

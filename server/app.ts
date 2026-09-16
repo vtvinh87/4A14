@@ -7,6 +7,7 @@ import { createLearningService } from './learning/service.ts';
 import type { LearningEventInput, LearningFailure } from '../shared/learning-contracts.ts';
 import type { StudentProfilePatch } from '../shared/account-contracts.ts';
 import { PostgresClassroomRepository } from './classroom/postgresRepository.ts';
+import { createSupabaseClassroomRealtimeBridge } from './classroom/realtime.ts';
 import { createClassroomService, type ClassroomFailure, type ClassroomService } from './classroom/service.ts';
 import { getEnv } from './runtime/env.ts';
 
@@ -250,6 +251,14 @@ export function createApp(dependencies: AppDependencies) {
       if (!dependencies.classroom) return failure({ ok: false, code: 'unavailable', message: 'Classroom chưa sẵn sàng trên máy chủ.' }, 503);
       return success(await dependencies.classroom.listFriends(student.studentId));
     }
+    if (method === 'GET' && pathname === '/api/me/realtime') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.classroom) return failure({ ok: false, code: 'unavailable', message: 'Classroom chưa sẵn sàng trên máy chủ.' }, 503);
+      const config = await dependencies.classroom.realtimeConfig(student.studentId);
+      if (!config) return failure({ ok: false, code: 'unavailable', message: 'Realtime classroom chưa sẵn sàng trên máy chủ.' }, 503);
+      return success(config);
+    }
     if (method === 'POST' && pathname === '/api/me/presence') {
       const student = await authorizeStudent(request);
       if (!student.ok) return student.response;
@@ -461,7 +470,7 @@ export async function getDefaultApp(): Promise<{ app: ReturnType<typeof createAp
       const db = createDbClient();
       const auth = createAuthService(new PostgresAuthRepository(db));
       const learning = createLearningService(new PostgresLearningRepository(db));
-      const classroom = createClassroomService(new PostgresClassroomRepository(db));
+      const classroom = createClassroomService(new PostgresClassroomRepository(db), () => new Date(), createSupabaseClassroomRealtimeBridge());
       return { app: createApp({ auth, learning, classroom }), db };
     }).catch((error) => {
       defaultAppPromise = null;

@@ -49,6 +49,7 @@ describe('same-origin account API', () => {
       listMessages: vi.fn(),
       sendMessage: vi.fn(),
       markRead: vi.fn(),
+      realtimeConfig: vi.fn(async () => null),
     };
     const app = createApp({ auth, classroom });
 
@@ -85,7 +86,13 @@ describe('same-origin account API', () => {
     ]);
     await classroomRepository.insertMessage({ senderId: peerId, recipientId: selfId, body: 'Chào An', createdAt: now.toISOString() });
     await classroomRepository.insertMessage({ senderId: selfId, recipientId: peerId, body: 'Chào Bình', createdAt: now.toISOString() });
-    const app = createApp({ auth, classroom: createClassroomService(classroomRepository, () => now) });
+    const app = createApp({
+      auth,
+      classroom: createClassroomService(classroomRepository, () => now, {
+        configForStudent: async () => ({ supabaseUrl: 'https://example.supabase.co', publishableKey: 'publishable-key', topic: 'classroom:student:opaque' }),
+        notifyMessage: async () => {},
+      }),
+    });
 
     const changeOnly = await request(app, { method: 'POST', path: '/api/auth/student/login', body: { username: 'an01', pin: '123456' } });
     expect((await request(app, { method: 'GET', path: '/api/me/friends', cookie: cookieValue(changeOnly) })).statusCode).toBe(403);
@@ -97,6 +104,10 @@ describe('same-origin account API', () => {
     expect(roster.statusCode).toBe(200);
     expect(roster.body.friends).toEqual([expect.objectContaining({ id: peerId, unreadCount: 1 })]);
     expect(JSON.stringify(roster.body)).not.toMatch(/admin|active|birthDate|token|credential|lastSeen/i);
+
+    const realtime = await request(app, { method: 'GET', path: '/api/me/realtime', cookie: studentCookie });
+    expect(realtime.statusCode).toBe(200);
+    expect(realtime.body).toEqual({ ok: true, supabaseUrl: 'https://example.supabase.co', publishableKey: 'publishable-key', topic: 'classroom:student:opaque' });
 
     const rejectedSender = await request(app, { method: 'POST', path: `/api/me/friends/${encodeURIComponent(peerId)}/messages`, cookie: studentCookie, body: { senderId: inactiveId, body: 'Tin không hợp lệ' } });
     expect(rejectedSender.statusCode).toBe(400);

@@ -4,14 +4,22 @@ import { getFriendMessages, markFriendMessagesRead, sendFriendMessage } from '..
 
 type FriendConversationPanelProps = {
   friend: FriendSummary;
+  messageRevision?: number;
   onBack: () => void;
   onClose: () => void;
   onFriendsChanged: () => Promise<void> | void;
 };
 
 const MESSAGE_MAX_LENGTH = 500;
+const FALLBACK_POLL_INTERVAL_MS = 15_000;
 
-export function FriendConversationPanel({ friend, onBack, onClose, onFriendsChanged }: FriendConversationPanelProps) {
+function mergeMessages(current: readonly ClassroomMessage[], incoming: readonly ClassroomMessage[]): ClassroomMessage[] {
+  const byId = new Map(current.map((message) => [message.id, message]));
+  for (const message of incoming) byId.set(message.id, message);
+  return [...byId.values()].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+}
+
+export function FriendConversationPanel({ friend, messageRevision = 0, onBack, onClose, onFriendsChanged }: FriendConversationPanelProps) {
   const [messages, setMessages] = useState<ClassroomMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState('');
@@ -32,7 +40,12 @@ export function FriendConversationPanel({ friend, onBack, onClose, onFriendsChan
     setLoading(true);
     setError('');
 
-    const loadConversation = async () => {
+    const loadConversation = async (showLoading: boolean) => {
+      if (showLoading) {
+        setMessages([]);
+        setLoading(true);
+        setError('');
+      }
       const result = await getFriendMessages(friend.id);
       if (!active) return;
       if (!result.ok) {
@@ -40,9 +53,11 @@ export function FriendConversationPanel({ friend, onBack, onClose, onFriendsChan
         setLoading(false);
         return;
       }
-      setMessages([...result.messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt)));
+      setMessages((current) => mergeMessages(current, result.messages));
       setLoading(false);
 
+      const hasUnreadIncoming = result.messages.some((message) => message.senderId === friend.id && !message.readAt);
+      if (!showLoading && !hasUnreadIncoming) return;
       const readResult = await markFriendMessagesRead(friend.id);
       if (!active) return;
       if (!readResult.ok) {
@@ -52,9 +67,13 @@ export function FriendConversationPanel({ friend, onBack, onClose, onFriendsChan
       await onFriendsChanged();
     };
 
-    void loadConversation();
-    return () => { active = false; };
-  }, [friend.id, onFriendsChanged]);
+    void loadConversation(true);
+    const interval = window.setInterval(() => void loadConversation(false), FALLBACK_POLL_INTERVAL_MS);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [friend.id, messageRevision, onFriendsChanged]);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -78,7 +97,7 @@ export function FriendConversationPanel({ friend, onBack, onClose, onFriendsChan
       setSending(false);
       return;
     }
-    setMessages((current) => [...current, result.message].sort((a, b) => a.createdAt.localeCompare(b.createdAt)));
+    setMessages((current) => mergeMessages(current, [result.message]));
     setDraft('');
     setSending(false);
     if (!isMountedRef.current || currentFriendIdRef.current !== sendingFriendId) return;

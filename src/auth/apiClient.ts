@@ -1,7 +1,7 @@
 import type { AccountApiFailure, AccountApiFailureCode, AccountView, ClientAuthSession, StudentProfilePatch, StudentProfileView } from '../../shared/account-contracts';
 import type { AccountProgressSnapshot, CurrentLearningRun, LearningEventAcknowledgement, LearningEventInput, LearningEventRecord, MigrationPreview } from '../../shared/learning-contracts';
 import type { DashboardRange, ParentDashboardData } from '../../shared/dashboard-contracts';
-import type { ClassroomMessage, ClassroomMessagesResponse, FriendsResponse } from '../../shared/classroom-contracts';
+import type { ClassroomMessage, ClassroomMessagesResponse, ClassroomRealtimeConfig, FriendsResponse } from '../../shared/classroom-contracts';
 
 export type ClientSession = ClientAuthSession & { mustChange: boolean };
 export type ClientAccount = AccountView;
@@ -206,6 +206,10 @@ export async function sendLearningEvents(events: LearningEventInput[]): Promise<
 
 export async function getFriends(): Promise<ApiResult<FriendsResponse>> {
   return request('/api/me/friends');
+}
+
+export async function getClassroomRealtimeConfig(): Promise<ApiResult<ClassroomRealtimeConfig>> {
+  return request('/api/me/realtime');
 }
 
 export async function sendPresence(): Promise<ApiResult<Record<string, never>>> {

@@ -8,6 +8,7 @@ import type { FriendSummary } from '../../shared/classroom-contracts';
 type FriendsState = {
   friends: FriendSummary[];
   unreadCount: number;
+  messageRevision: number;
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
@@ -41,6 +42,12 @@ const lan: FriendSummary = {
   online: true,
   unreadCount: 2,
 };
+
+const realtimeMocks = vi.hoisted(() => ({
+  subscribeToClassroomRealtime: vi.fn(),
+}));
+
+vi.mock('./realtime', () => realtimeMocks);
 
 describe('Classroom Friends browser client', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -107,7 +114,7 @@ describe('Classroom Friends browser client', () => {
     try {
       act(() => root.render(createElement(FriendsProbe, { enabled: true })));
       await settle();
-      expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/api/me/presence', '/api/me/friends']);
+      expect(fetchMock.mock.calls.map(([url]) => url).filter((url) => url !== '/api/me/realtime')).toEqual(['/api/me/presence', '/api/me/friends']);
       expect(state?.friends).toEqual([lan]);
 
       await act(async () => {
@@ -149,7 +156,7 @@ describe('Classroom Friends browser client', () => {
         document.dispatchEvent(new Event('visibilitychange'));
         await settle();
       });
-      expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/api/me/presence', '/api/me/friends']);
+      expect(fetchMock.mock.calls.map(([url]) => url).filter((url) => url !== '/api/me/realtime')).toEqual(['/api/me/presence', '/api/me/friends']);
 
       await act(async () => {
         window.dispatchEvent(new Event('online'));
@@ -169,6 +176,7 @@ describe('Classroom Friends browser client', () => {
     let friendsIndex = 0;
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const path = String(input);
+      if (path === '/api/me/realtime') return Promise.resolve(jsonResponse({ ok: false, code: 'unavailable', message: 'Realtime chưa sẵn sàng.' }, 503));
       return path === '/api/me/presence'
         ? presenceResponses[presenceIndex++]!.promise
         : friendsResponses[friendsIndex++]!.promise;
@@ -256,6 +264,46 @@ describe('Classroom Friends browser client', () => {
         await settle();
       });
       expect(fetchMock).toHaveBeenCalledTimes(callsBefore);
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
+  it('refreshes the roster and increments the conversation revision when a realtime event arrives', async () => {
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+    let onMessage: ((messageId: string) => void) | undefined;
+    realtimeMocks.subscribeToClassroomRealtime.mockImplementation((_config, handler) => {
+      onMessage = handler;
+      return { close: vi.fn() };
+    });
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/me/friends') return jsonResponse({ ok: true, friends: [lan], unreadCount: 2 });
+      if (path === '/api/me/realtime') return jsonResponse({ ok: true, supabaseUrl: 'https://example.supabase.co', publishableKey: 'public-key', topic: 'classroom:student:opaque' });
+      return jsonResponse({ ok: true });
+    });
+    const { useClassroomFriends } = await import('./useClassroomFriends');
+    let state: FriendsState | undefined;
+    const FriendsProbe = () => {
+      state = useClassroomFriends(true);
+      return null;
+    };
+    const mount = document.createElement('div');
+    const root = createRoot(mount);
+
+    try {
+      act(() => root.render(createElement(FriendsProbe)));
+      await settle();
+      expect(realtimeMocks.subscribeToClassroomRealtime).toHaveBeenCalledOnce();
+      expect(state?.messageRevision).toBe(0);
+
+      await act(async () => {
+        onMessage?.('message-123');
+        await settle();
+      });
+
+      expect(state?.messageRevision).toBe(1);
+      expect(fetchMock.mock.calls.filter(([url]) => url === '/api/me/friends')).toHaveLength(2);
     } finally {
       act(() => root.unmount());
     }
