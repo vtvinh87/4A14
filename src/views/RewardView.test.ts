@@ -116,6 +116,7 @@ describe('RewardView artwork', () => {
     expect(stamp).not.toBeNull();
     act(() => stamp?.click());
     expect(document.querySelector('[data-stamp-dialog]')).not.toBeNull();
+    expect(document.querySelector('[data-stamp-dialog-backdrop]')?.parentElement).toBe(document.body);
     expect(document.querySelector('[data-stamp-dialog-title]')?.textContent).toContain('Chùa Cầu Hội An');
     expect(document.querySelector('[data-stamp-dialog]')?.textContent).toContain('Chùa Cầu bắc qua');
     expect(document.querySelector<HTMLImageElement>('[data-stamp-dialog] img')?.getAttribute('src')).toBe('/art/stamps/stamp-19.png');

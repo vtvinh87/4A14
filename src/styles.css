@@ -502,6 +502,7 @@ button:focus-visible {
 .user-menu-item {
   display: flex;
   align-items: center;
+  gap: 9px;
   min-height: 44px;
   padding: 0 12px;
   border-radius: 11px;
@@ -510,6 +511,24 @@ button:focus-visible {
   font-size: 0.82rem;
   font-weight: 900;
   text-align: left;
+}
+
+.user-menu-item-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #d8f3ed, #b6e4df);
+}
+
+.user-menu-item-icon img {
+  display: block;
+  width: 27px;
+  height: 27px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 1px rgba(6, 54, 75, 0.2));
 }
 
 .user-menu-item:hover,
@@ -1042,6 +1061,7 @@ button:focus-visible {
 }
 
 .journey-feature-button {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr;
   align-items: center;
@@ -1099,6 +1119,25 @@ button:focus-visible {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+[data-friends-unread-badge] {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: grid;
+  min-width: 21px;
+  height: 21px;
+  place-items: center;
+  padding: 0 5px;
+  border: 2px solid #fff8dd;
+  border-radius: 999px;
+  background: #e85d43;
+  box-shadow: 0 3px 0 rgba(117, 47, 29, 0.28);
+  color: white;
+  font-size: 0.67rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3488,6 +3527,10 @@ button:focus-visible {
   gap: 13px;
 }
 
+[data-friend-list-dialog] .feature-dialog-heading {
+  grid-template-columns: minmax(0, 1fr) 48px;
+}
+
 .feature-dialog-art {
   display: grid;
   place-items: center;
@@ -3517,6 +3560,10 @@ button:focus-visible {
   line-height: 1.05;
 }
 
+[data-friend-list-dialog] h2 {
+  font-size: clamp(1.2rem, 2.7vw, 1.6rem);
+}
+
 .feature-dialog-copy {
   margin: 23px 0 0;
   color: var(--ink-soft);
@@ -3529,6 +3576,51 @@ button:focus-visible {
   width: 100%;
   margin-top: 22px;
 }
+
+[data-friend-list-dialog] {
+  max-height: min(680px, calc(100svh - 36px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+[data-friend-list] { display: grid; gap: 12px; margin-top: 20px; }
+[data-friend-list] section { display: grid; gap: 8px; }
+[data-friend-list] h3 { margin: 0; color: #277884; font-size: 0.72rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+
+[data-friend-row] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 58px;
+  padding: 9px 11px;
+  border: 2px solid rgba(20, 105, 119, 0.16);
+  border-radius: 15px;
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.96), rgba(222, 244, 240, 0.92));
+  color: var(--ink);
+  font-weight: 900;
+  text-align: left;
+}
+
+[data-friend-row]:hover,
+[data-friend-row]:focus-visible { border-color: rgba(18, 132, 137, 0.52); background: #e1f7eb; }
+[data-friend-row] span:nth-child(2) { display: inline-flex; align-items: center; gap: 5px; color: #5e7e86; font-size: 0.7rem; font-weight: 800; white-space: nowrap; }
+[data-friend-row] span:nth-child(2)::before { width: 8px; height: 8px; border-radius: 50%; background: #9aabb0; content: ''; }
+[aria-label="Bạn đang online"] [data-friend-row] span:nth-child(2)::before { background: #35a873; box-shadow: 0 0 0 3px rgba(53, 168, 115, 0.14); }
+[data-friend-row] [data-testid^="friend-unread-"] { display: grid; min-width: 23px; height: 23px; place-items: center; padding: 0 6px; border-radius: 999px; background: #e85d43; color: white; font-size: 0.7rem; }
+[data-testid="friend-online-separator"] { width: 100%; height: 1px; margin: 2px 0; border: 0; background: rgba(8, 73, 106, 0.16); }
+
+[data-friend-conversation] > .secondary-button { margin-top: 17px; }
+[data-friend-messages] { display: grid; gap: 8px; max-height: min(300px, 38svh); margin-top: 16px; overflow-y: auto; padding: 4px; }
+[data-friend-message] { width: fit-content; max-width: 84%; margin: 0; padding: 9px 11px; border-radius: 14px 14px 14px 5px; background: #dff3ec; color: var(--ink); font-size: 0.82rem; font-weight: 700; line-height: 1.35; }
+[data-message-from="self"] { justify-self: end; border-radius: 14px 14px 5px 14px; background: #ffdf7c; }
+[data-friend-composer-form] { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 15px; }
+[data-friend-composer-form] label { grid-column: 1 / -1; color: #557785; font-size: 0.73rem; font-weight: 800; }
+[data-friend-composer] { min-width: 0; min-height: 46px; padding: 0 12px; border: 2px solid rgba(18, 111, 124, 0.25); border-radius: 13px; background: #fafff7; outline: none; }
+[data-friend-composer]:focus { border-color: #208d8a; box-shadow: 0 0 0 4px rgba(32, 141, 138, 0.13); }
+[data-friend-retry] { margin-top: 10px; }
+[data-friend-list-dialog] [aria-live="polite"] { color: #a25242; font-size: 0.78rem; font-weight: 800; }
 
 .dialog-heading {
   display: grid;
@@ -4850,6 +4942,8 @@ button:focus-visible {
   .feature-dialog-heading { grid-template-columns: 54px minmax(0, 1fr) 42px; gap: 9px; }
   .feature-dialog-art { width: 54px; height: 54px; border-radius: 15px; }
   .feature-dialog h2 { font-size: 1.25rem; }
+  [data-friend-list-dialog] .feature-dialog-heading { grid-template-columns: minmax(0, 1fr) 42px; }
+  [data-friend-list-dialog] h2 { font-size: 1.18rem; }
   .feature-dialog-copy { margin-top: 18px; font-size: 0.88rem; }
   .feature-dialog-action { margin-top: 18px; }
   .dialog-heading h2 { font-size: 1.26rem; }
@@ -5241,4 +5335,30 @@ button:focus-visible {
   .profile-pin-toggle {
     align-self: flex-start;
   }
+
+  .feature-dialog-backdrop {
+    place-items: start center;
+    padding: max(12px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom));
+  }
+
+  [data-friend-list-dialog] {
+    width: min(100%, 510px);
+    max-height: calc(100svh - 24px);
+  }
+
+  [data-friend-row] {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  [data-friend-row] [data-testid^="friend-unread-"] {
+    grid-column: 2;
+  }
+
+  [data-friend-composer-form] {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (orientation: landscape) and (min-width: 701px) {
+  .pet-zone { transform: translateY(48px); }
 }

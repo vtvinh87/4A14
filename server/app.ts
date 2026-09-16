@@ -6,6 +6,8 @@ import { PostgresLearningRepository } from './learning/postgresRepository.ts';
 import { createLearningService } from './learning/service.ts';
 import type { LearningEventInput, LearningFailure } from '../shared/learning-contracts.ts';
 import type { StudentProfilePatch } from '../shared/account-contracts.ts';
+import { PostgresClassroomRepository } from './classroom/postgresRepository.ts';
+import { createClassroomService, type ClassroomFailure, type ClassroomService } from './classroom/service.ts';
 import { getEnv } from './runtime/env.ts';
 
 const SESSION_COOKIE = 'hoc_vui_session';
@@ -31,10 +33,12 @@ type LearningService = ReturnType<typeof createLearningService>;
 export type AppDependencies = {
   auth: AuthService;
   learning?: LearningService;
+  classroom?: ClassroomService;
   close?: () => Promise<void>;
 };
 
 type ParentAuthorization = { ok: true; token: string; studentId: string } | { ok: false; response: AppResponse };
+type StudentAuthorization = { ok: true; token: string; studentId: string } | { ok: false; response: AppResponse };
 
 function header(request: AppRequest, name: string): string | undefined {
   const entries = request.headers ?? {};
@@ -85,17 +89,19 @@ function success(body: Record<string, unknown>, extraHeaders: Record<string, str
   return { statusCode: 200, headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/json; charset=utf-8', ...extraHeaders }, body: { ok: true, ...body } };
 }
 
-function failure(failure: AuthFailure | LearningFailure, statusCode = statusForFailure(failure)): AppResponse {
+function failure(failure: AuthFailure | LearningFailure | ClassroomFailure, statusCode = statusForFailure(failure)): AppResponse {
   return { statusCode, headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/json; charset=utf-8' }, body: failure };
 }
 
-function statusForFailure(failure: AuthFailure | LearningFailure): number {
+function statusForFailure(failure: AuthFailure | LearningFailure | ClassroomFailure): number {
   if (failure.code === 'forbidden') return 403;
   if (failure.code === 'conflict') return 409;
   if (failure.code === 'locked') return 423;
   if (failure.code === 'expired') return 401;
   if (failure.code === 'stale') return 409;
   if (failure.code === 'unavailable') return 503;
+  if (failure.code === 'not-found') return 404;
+  if (failure.code === 'rate-limited') return 429;
   return 400;
 }
 
@@ -147,6 +153,14 @@ function requireToken(request: AppRequest): string | AuthFailure {
   return sessionToken(request) ?? { ok: false, code: 'expired', message: 'Phiên đăng nhập đã hết; hãy đăng nhập lại.' };
 }
 
+function decodeClassroomPeerId(value: string): string | ClassroomFailure {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return { ok: false, code: 'invalid', message: 'Đường dẫn bạn học không hợp lệ.' };
+  }
+}
+
 function isLearningEvent(value: unknown): value is LearningEventInput {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Record<string, unknown>;
@@ -168,6 +182,17 @@ export function createApp(dependencies: AppDependencies) {
     if (typeof token !== 'string') return { ok: false, response: failure(token, 401) };
     const result = await auth.getParentDashboard(token, parentGrantToken(request), requestedStudentId);
     return result.ok ? { ok: true, token, studentId: result.studentId } : { ok: false, response: failure(result) };
+  }
+
+  async function authorizeStudent(request: AppRequest): Promise<StudentAuthorization> {
+    const token = requireToken(request);
+    if (typeof token !== 'string') return { ok: false, response: failure(token, 401) };
+    const session = await auth.getSession(token);
+    if ('ok' in session) return { ok: false, response: failure(session, 401) };
+    if (session.account.role !== 'student' || session.mode !== 'full') {
+      return { ok: false, response: failure({ ok: false, code: 'forbidden', message: 'Hãy hoàn tất đăng nhập tài khoản học sinh trước.' }) };
+    }
+    return { ok: true, token, studentId: session.account.id };
   }
 
   async function handle(request: AppRequest): Promise<AppResponse> {
@@ -218,6 +243,47 @@ export function createApp(dependencies: AppDependencies) {
       const result = await auth.changeAdminPassword(token, String(body.currentPassword ?? ''), String(body.newPassword ?? ''));
       if (!result.ok) return failure(result);
       return withCookie(success({ accessToken: result.token, session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'admin'));
+    }
+    if (method === 'GET' && pathname === '/api/me/friends') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.classroom) return failure({ ok: false, code: 'unavailable', message: 'Classroom chưa sẵn sàng trên máy chủ.' }, 503);
+      return success(await dependencies.classroom.listFriends(student.studentId));
+    }
+    if (method === 'POST' && pathname === '/api/me/presence') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.classroom) return failure({ ok: false, code: 'unavailable', message: 'Classroom chưa sẵn sàng trên máy chủ.' }, 503);
+      await dependencies.classroom.heartbeat(student.studentId);
+      return success({});
+    }
+    const classroomMessagesMatch = pathname.match(/^\/api\/me\/friends\/([^/]+)\/messages$/);
+    if (classroomMessagesMatch && (method === 'GET' || method === 'POST')) {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.classroom) return failure({ ok: false, code: 'unavailable', message: 'Classroom chưa sẵn sàng trên máy chủ.' }, 503);
+      const peerId = decodeClassroomPeerId(classroomMessagesMatch[1]);
+      if (typeof peerId !== 'string') return failure(peerId);
+      if (method === 'GET') {
+        const requestedLimit = Number(query.get('limit') ?? 50);
+        const limit = Math.min(50, Math.max(1, Number.isFinite(requestedLimit) ? Math.floor(requestedLimit) : 50));
+        const result = await dependencies.classroom.listMessages(student.studentId, peerId, limit);
+        return 'ok' in result ? failure(result) : success(result);
+      }
+      const body = bodyObject(request);
+      if (Object.keys(body).some((key) => key !== 'body') || typeof body.body !== 'string') return failure({ ok: false, code: 'invalid', message: 'Tin nhắn chỉ cho phép nội dung.' });
+      const result = await dependencies.classroom.sendMessage(student.studentId, peerId, body.body);
+      return 'ok' in result ? failure(result) : success(result);
+    }
+    const classroomReadMatch = pathname.match(/^\/api\/me\/friends\/([^/]+)\/read$/);
+    if (classroomReadMatch && method === 'POST') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.classroom) return failure({ ok: false, code: 'unavailable', message: 'Classroom chưa sẵn sàng trên máy chủ.' }, 503);
+      const peerId = decodeClassroomPeerId(classroomReadMatch[1]);
+      if (typeof peerId !== 'string') return failure(peerId);
+      const result = await dependencies.classroom.markRead(student.studentId, peerId);
+      return 'ok' in result ? failure(result) : success(result);
     }
     if (method === 'GET' && pathname === '/api/me/profile') {
       const token = requireToken(request);
@@ -395,7 +461,8 @@ export async function getDefaultApp(): Promise<{ app: ReturnType<typeof createAp
       const db = createDbClient();
       const auth = createAuthService(new PostgresAuthRepository(db));
       const learning = createLearningService(new PostgresLearningRepository(db));
-      return { app: createApp({ auth, learning }), db };
+      const classroom = createClassroomService(new PostgresClassroomRepository(db));
+      return { app: createApp({ auth, learning, classroom }), db };
     }).catch((error) => {
       defaultAppPromise = null;
       throw error;

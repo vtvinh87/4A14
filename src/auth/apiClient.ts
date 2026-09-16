@@ -1,6 +1,7 @@
 import type { AccountApiFailure, AccountApiFailureCode, AccountView, ClientAuthSession, StudentProfilePatch, StudentProfileView } from '../../shared/account-contracts';
 import type { AccountProgressSnapshot, CurrentLearningRun, LearningEventAcknowledgement, LearningEventInput, LearningEventRecord, MigrationPreview } from '../../shared/learning-contracts';
 import type { DashboardRange, ParentDashboardData } from '../../shared/dashboard-contracts';
+import type { ClassroomMessage, ClassroomMessagesResponse, FriendsResponse } from '../../shared/classroom-contracts';
 
 export type ClientSession = ClientAuthSession & { mustChange: boolean };
 export type ClientAccount = AccountView;
@@ -201,4 +202,24 @@ export async function getAccountProgress(): Promise<ApiResult<{ snapshot: Accoun
 
 export async function sendLearningEvents(events: LearningEventInput[]): Promise<ApiResult<{ snapshot: AccountProgressSnapshot; acknowledgements: LearningEventAcknowledgement[] }>> {
   return request('/api/me/events', jsonBody({ events }));
+}
+
+export async function getFriends(): Promise<ApiResult<FriendsResponse>> {
+  return request('/api/me/friends');
+}
+
+export async function sendPresence(): Promise<ApiResult<Record<string, never>>> {
+  return request('/api/me/presence', jsonBody({}));
+}
+
+export async function getFriendMessages(friendId: string, limit = 50): Promise<ApiResult<ClassroomMessagesResponse>> {
+  return request(`/api/me/friends/${encodeURIComponent(friendId)}/messages?limit=${limit}`);
+}
+
+export async function sendFriendMessage(friendId: string, body: string): Promise<ApiResult<{ message: ClassroomMessage }>> {
+  return request(`/api/me/friends/${encodeURIComponent(friendId)}/messages`, jsonBody({ body }));
+}
+
+export async function markFriendMessagesRead(friendId: string): Promise<ApiResult<{ marked: number }>> {
+  return request(`/api/me/friends/${encodeURIComponent(friendId)}/read`, jsonBody({}));
 }

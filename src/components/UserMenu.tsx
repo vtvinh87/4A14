@@ -85,9 +85,18 @@ export function UserMenu({ displayName, avatarId, onOpenProfile, onOpenParent, o
 
       {open && (
         <div ref={menuRef} id={menuId} className="user-menu-panel" role="menu" aria-label="Menu tài khoản">
-          <button className="user-menu-item" type="button" role="menuitem" onClick={() => selectItem(onOpenProfile)}>Hồ sơ</button>
-          <button className="user-menu-item" type="button" role="menuitem" onClick={() => selectItem(onOpenParent)}>Phụ huynh</button>
-          <button className="user-menu-item" type="button" role="menuitem" onClick={() => selectItem(onLogout)}>Đăng xuất</button>
+          <button className="user-menu-item" type="button" role="menuitem" onClick={() => selectItem(onOpenProfile)}>
+            <span className="user-menu-item-icon" aria-hidden="true"><img src="/art/hud/profile.png" alt="" /></span>
+            <span>Hồ sơ</span>
+          </button>
+          <button className="user-menu-item" type="button" role="menuitem" onClick={() => selectItem(onOpenParent)}>
+            <span className="user-menu-item-icon" aria-hidden="true"><img src="/art/hud/parent.png" alt="" /></span>
+            <span>Phụ huynh</span>
+          </button>
+          <button className="user-menu-item" type="button" role="menuitem" onClick={() => selectItem(onLogout)}>
+            <span className="user-menu-item-icon" aria-hidden="true"><img src="/art/hud/logout.png" alt="" /></span>
+            <span>Đăng xuất</span>
+          </button>
         </div>
       )}
     </div>

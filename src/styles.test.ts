@@ -40,4 +40,48 @@ describe('Journey layout', () => {
     expect(styles).toMatch(/\.journey-feature-label \{\s+position: absolute;/);
     expect(styles).toContain('right: -4px;');
   });
+
+  it('lowers the large journey Pet slightly on landscape screens', () => {
+    const style = document.createElement('style');
+    style.textContent = styles;
+    document.head.append(style);
+    try {
+      const landscapeRule = [...(style.sheet?.cssRules ?? [])].find((rule) => (
+        rule.constructor.name === 'CSSMediaRule'
+        && (rule as CSSMediaRule).conditionText === '(orientation: landscape) and (min-width: 701px)'
+      )) as CSSMediaRule | undefined;
+      const petRule = [...(landscapeRule?.cssRules ?? [])].find((rule) => (
+        rule.constructor.name === 'CSSStyleRule'
+        && (rule as CSSStyleRule).selectorText === '.pet-zone'
+      )) as CSSStyleRule | undefined;
+
+      expect(petRule?.style.transform).toBe('translateY(48px)');
+    } finally {
+      style.remove();
+    }
+  });
+});
+
+describe('Friends dialog layout', () => {
+  it('gives the friend heading a full title column and a compact title scale', () => {
+    const style = document.createElement('style');
+    style.textContent = styles;
+    document.head.append(style);
+    const dialog = document.createElement('section');
+    try {
+      dialog.className = 'feature-dialog';
+      dialog.setAttribute('data-friend-list-dialog', '');
+      const heading = document.createElement('div');
+      heading.className = 'feature-dialog-heading';
+      heading.innerHTML = '<div><p class="eyebrow">BẠN BÈ</p><h2>Bạn cùng lớp</h2></div><button type="button">×</button>';
+      dialog.append(heading);
+      document.body.append(dialog);
+
+      expect(getComputedStyle(heading).gridTemplateColumns).toBe('minmax(0, 1fr) 48px');
+      expect(getComputedStyle(heading.querySelector('h2')!).fontSize).toContain('1.6rem');
+    } finally {
+      dialog.remove();
+      style.remove();
+    }
+  });
 });

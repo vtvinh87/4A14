@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowIcon, LockIcon } from '../components/icons';
 import { FloatingPet } from '../components/FloatingPet';
 import { MVP_LESSONS } from '../content/catalog';
@@ -96,7 +97,7 @@ export function RewardView({ progress, reducedMotion, onPetTap, onOpenLessons }:
         </div>
       </div>
       <div className="empty-action-card"><span className="empty-action-icon"><img className="empty-action-art" data-reward-art src="/art/reward/start-journey.png" alt="" aria-hidden="true" draggable={false} /></span><div><strong>{earned ? 'Tiếp tục một chặng đang mở' : 'Bắt đầu từ một chặng đang mở'}</strong><p>Dấu chỉ được cấp sau khi hoàn thành đủ các nhiệm vụ.</p></div><button className="secondary-button" type="button" onClick={onOpenLessons}>Xem bài học <ArrowIcon size={17} /></button></div>
-      {selectedReward && selectedArtifact ? (
+      {selectedReward && selectedArtifact && typeof document !== 'undefined' ? createPortal(
         <div className="stamp-dialog-backdrop" data-stamp-dialog-backdrop onClick={() => setSelectedLessonId(null)}>
           <section className={`stamp-dialog${selectedReward.state.stamped ? '' : ' is-locked'}`} data-stamp-dialog role="dialog" aria-modal="true" aria-labelledby="stamp-dialog-title" onClick={(event) => event.stopPropagation()}>
             <button className="stamp-dialog-close" data-stamp-dialog-close type="button" aria-label="Đóng câu chuyện dấu" onClick={() => setSelectedLessonId(null)}>×</button>
@@ -116,7 +117,8 @@ export function RewardView({ progress, reducedMotion, onPetTap, onOpenLessons }:
               {selectedReward.state.stamped ? <small className="stamp-dialog-source">{selectedArtifact.sourceNote}</small> : <small className="stamp-dialog-source">Vào bài học này, hoàn thành các nhiệm vụ rồi quay lại hộ chiếu để nhận dấu.</small>}
             </div>
           </section>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </section>
   );

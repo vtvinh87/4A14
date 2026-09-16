@@ -10,9 +10,11 @@ type JourneyViewProps = {
   reducedMotion: boolean;
   onPetTap: () => void;
   onOpenLessons: () => void;
+  onOpenFriends?: () => void;
+  friendsUnreadCount?: number;
 };
 
-export function JourneyView({ petMood, reducedMotion, onPetTap, onOpenLessons }: JourneyViewProps) {
+export function JourneyView({ petMood, reducedMotion, onPetTap, onOpenLessons, onOpenFriends, friendsUnreadCount }: JourneyViewProps) {
   const [homeDialogue, setHomeDialogue] = useState(() => pickPetHomeDialogue());
   const homeDialogueIndexRef = useRef(homeDialogue.index);
   const chooseHomeDialogue = useCallback(() => {
@@ -42,7 +44,7 @@ export function JourneyView({ petMood, reducedMotion, onPetTap, onOpenLessons }:
         </div>
       </div>
 
-      <JourneyFeatureRail />
+      <JourneyFeatureRail onOpenFriends={onOpenFriends ?? (() => undefined)} friendsUnreadCount={friendsUnreadCount ?? 0} />
     </section>
   );
 }

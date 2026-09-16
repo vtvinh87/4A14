@@ -41,6 +41,8 @@ import { ProfileDialog } from './components/ProfileDialog';
 import { DEFAULT_AVATAR_ID, type StudentProfilePatch, type StudentProfileView } from '../shared/account-contracts';
 import { BirthdayCelebration } from './components/BirthdayCelebration';
 import { getCalendarDateInTimeZone, hasCelebratedBirthday, isBirthdayToday, markBirthdayCelebrated } from './profile/birthday';
+import { useClassroomFriends } from './classroom/useClassroomFriends';
+import { FriendListDialog } from './components/FriendListDialog';
 
 export const NAVIGATION_STATE_KEY = 'hoc-vui-navigation-v1';
 
@@ -171,6 +173,7 @@ export function App() {
   const [petMood, setPetMood] = useState<PetMood>('idle');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [friendsDialogOpen, setFriendsDialogOpen] = useState(false);
   const [birthdayCelebration, setBirthdayCelebration] = useState<StudentProfileView | null>(null);
   const [toast, setToast] = useState('');
   const [offlineStatus, setOfflineStatus] = useState<OfflineStatus>(() => getInitialOfflineStatus(import.meta.env.PROD));
@@ -184,6 +187,8 @@ export function App() {
   const profileOwnerId = authSession?.account.role === 'student' && authSession.mode === 'full' ? authSession.account.id : null;
   const accountRole = authSession?.account.role;
   const accountMode = authSession?.mode;
+  const classroomFriendsEnabled = Boolean(authSession?.account.role === 'student' && authSession.mode === 'full');
+  const classroomFriends = useClassroomFriends(classroomFriendsEnabled);
   const authAccountIdRef = useRef<string | null>(null);
   authAccountIdRef.current = authSession?.account.id ?? null;
   const sessionEpochRef = useRef(0);
@@ -216,11 +221,11 @@ export function App() {
   }, [audio, effectiveReducedMotion, settings.sound]);
 
   useEffect(() => {
-    const modalOpen = settingsOpen || profileDialogOpen || Boolean(birthdayCelebration) || parentGateOpen || parentPinChangeDialogOpen;
+    const modalOpen = settingsOpen || profileDialogOpen || friendsDialogOpen || Boolean(birthdayCelebration) || parentGateOpen || parentPinChangeDialogOpen;
     const previousOverflow = document.body.style.overflow;
     if (modalOpen) document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = previousOverflow; };
-  }, [birthdayCelebration, parentGateOpen, parentPinChangeDialogOpen, profileDialogOpen, settingsOpen]);
+  }, [birthdayCelebration, friendsDialogOpen, parentGateOpen, parentPinChangeDialogOpen, profileDialogOpen, settingsOpen]);
 
   useEffect(() => {
     document.documentElement.scrollTop = 0;
@@ -696,6 +701,7 @@ export function App() {
     replaceAuthSession(null);
     setStudentProfile(null);
     setProfileDialogOpen(false);
+    setFriendsDialogOpen(false);
     setParentDashboard(null);
     setParentProfile(null);
     setParentProfileBusy(false);
@@ -861,7 +867,7 @@ export function App() {
   const renderView = () => {
     switch (activeView) {
       case 'journey':
-        return <JourneyView petMood={petMood} reducedMotion={effectiveReducedMotion} onPetTap={() => setMood('greet')} onOpenLessons={() => navigate('lessons')} />;
+        return <JourneyView petMood={petMood} reducedMotion={effectiveReducedMotion} onPetTap={() => setMood('greet')} onOpenLessons={() => navigate('lessons')} onOpenFriends={() => setFriendsDialogOpen(true)} friendsUnreadCount={classroomFriends.unreadCount} />;
       case 'lessons':
         return <LessonsView progress={progress} onOpenLesson={openLesson} onBack={() => navigate('journey')} />;
       case 'lesson':
@@ -905,6 +911,7 @@ export function App() {
       </div>
       {settingsOpen && <SettingsDialog settings={settings} saveStatus={storageRecovery ? 'recovery' : storageWriteWarning ? 'warning' : 'saved'} onChange={updateSettings} onClose={() => setSettingsOpen(false)} onLogout={handleLogout} />}
       {profileDialogOpen && visibleStudentProfile && <ProfileDialog profile={visibleStudentProfile} onSave={handleProfileSave} onChangePin={handleProfilePinChange} onClose={() => setProfileDialogOpen(false)} onLogout={handleLogout} />}
+      {friendsDialogOpen && <FriendListDialog friends={classroomFriends.friends} loading={classroomFriends.loading} error={classroomFriends.error ?? ''} onRefresh={classroomFriends.refresh} onFriendsChanged={classroomFriends.refresh} onClose={() => setFriendsDialogOpen(false)} />}
       {birthdayCelebration && <BirthdayCelebration displayName={birthdayCelebration.displayName} avatarId={birthdayCelebration.avatarId} reducedMotion={effectiveReducedMotion} soundEnabled={settings.sound} onPlaySound={() => audio.play('success')} onClose={() => setBirthdayCelebration(null)} />}
       {parentGateOpen && <ParentPinDialog childName={authSession.account.displayName} onSubmit={handleParentUnlock} onCancel={() => setParentGateOpen(false)} error={parentGateError} busy={authBusy} />}
       {parentPinChangeDialogOpen && <ParentPinChangeDialog childName={authSession.account.displayName} onSubmit={handleParentPinChange} onCancel={() => { setParentPinChangeDialogOpen(false); setAuthError(''); }} error={authError} busy={authBusy} />}

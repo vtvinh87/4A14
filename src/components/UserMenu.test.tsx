@@ -62,6 +62,19 @@ describe('UserMenu', () => {
     expect(chevron.getAttribute('data-state')).toBe('open');
   });
 
+  it('renders the dedicated HUD artwork for every account action', () => {
+    renderMenu();
+    const trigger = mount.querySelector<HTMLButtonElement>('[aria-label="Mở menu tài khoản"]')!;
+    act(() => trigger.click());
+
+    const items = Array.from(mount.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+    expect(items.map((item) => item.querySelector('img')?.getAttribute('src'))).toEqual([
+      '/art/hud/profile.png',
+      '/art/hud/parent.png',
+      '/art/hud/logout.png',
+    ]);
+  });
+
   it('routes each action and returns focus to the trigger after selection', () => {
     const onOpenProfile = vi.fn();
     const onOpenParent = vi.fn();

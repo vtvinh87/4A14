@@ -87,6 +87,36 @@ describe('JourneyView launch surface', () => {
     }
   });
 
+  it('opens the live friends feature and exposes its total unread badge', () => {
+    const mount = document.createElement('div');
+    const root = createRoot(mount);
+    const onOpenFriends = vi.fn();
+
+    try {
+      act(() => root.render(createElement(JourneyView, {
+        petMood: 'idle',
+        reducedMotion: false,
+        onPetTap: vi.fn(),
+        onOpenLessons: vi.fn(),
+        onOpenFriends,
+        friendsUnreadCount: 3,
+      })));
+
+      const friends = mount.querySelector<HTMLButtonElement>('[data-journey-feature="friends"]');
+      expect(mount.querySelectorAll('[data-journey-feature]')).toHaveLength(3);
+      expect(friends?.querySelector('img')?.getAttribute('src')).toBe('/art/hud/friends.png');
+      expect(friends?.getAttribute('aria-label')).toContain('Bạn bè');
+      expect(mount.querySelector('[data-friends-unread-badge]')?.textContent).toBe('3');
+      expect(mount.querySelector('[data-friends-unread-badge]')?.getAttribute('aria-label')).toContain('3');
+
+      act(() => friends?.click());
+      expect(onOpenFriends).toHaveBeenCalledOnce();
+      expect(mount.querySelector('[data-coming-soon-dialog]')).toBeNull();
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
   it('traps modal focus and restores it to the feature button after Escape', () => {
     const mount = document.createElement('div');
     document.body.appendChild(mount);

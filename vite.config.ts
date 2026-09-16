@@ -6,7 +6,7 @@ import { createServiceWorkerSource } from './src/pwa/offline';
 
 const LOCAL_ART_URLS = ['/art/world-background.png', '/art/world-background-portrait.png', '/art/fox-pet-alpha.png', '/art/brand-plaque-4a14.png',
   ...['journey', 'lessons', 'reward', 'pet', 'collection'].map((id) => `/art/dock/${id}.png`),
-  ...['sound', 'settings', 'parent', 'leaderboard', 'challenge'].map((id) => `/art/hud/${id}.png`),
+  ...['sound', 'settings', 'parent', 'leaderboard', 'challenge', 'friends', 'profile', 'logout'].map((id) => `/art/hud/${id}.png`),
   ...['passport-cover-lettered', 'start-journey'].map((id) => `/art/reward/${id}.png`),
   ...Array.from({ length: 29 }, (_, index) => `/art/stamps/stamp-${String(index + 1).padStart(2, '0')}.png`),
   ...['voi-nui-xanh', 'cu-tim-tham-hiem', 'rong-ngoc'].map((id) => `/art/pets/${id}.png`),
@@ -64,6 +64,9 @@ const LOCAL_ART_VERSIONS = [
   '/art/brand-plaque-4a14.png:602f1761fdaf3effcf5f3fed0573cfacca959896d0d60b4ff32fdb6dfa2f01b1',
   '/art/hud/leaderboard.png:4f7dd6dbd60ad388cbe03928f6f1b1b6bb94ed618872a78c57f4a61bf2b70390',
   '/art/hud/challenge.png:ea18d3350c5151f0aed716928d01cd181c1ce279819ceaf0a85625a3f5017748',
+  '/art/hud/friends.png:e99ebefab63c949ce81c436862d58bef42d128078c44f47cc043fdfeca60386d',
+  '/art/hud/profile.png:fce670d3596468db58a5088967bcb4252600fe66fe701244078566f235d35d9f',
+  '/art/hud/logout.png:5b6cdef995d8b0570abdda09e8af8c3e74929e1c686817dd36441173f9dc3f6b',
   '/art/reward/passport-cover-lettered.png:0d24397c1c5eabf5ead97e828ccacb94a82a7b63be9284078545ae60b3faa3e6',
   '/art/reward/start-journey.png:2f19f8dd9d89b0778a21404bdd9b0e6eb724c64fbce358a2a6c66b7f12b000dc',
   '/art/stamps/stamp-01.png:4c48df37264766585714bc6508fa2dd290794caa50ad988f5ef3b5804dd45afd',

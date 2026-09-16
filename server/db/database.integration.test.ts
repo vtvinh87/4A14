@@ -21,6 +21,8 @@ describeDatabase('local Supabase database', () => {
       'admin_audits',
       'auth_sessions',
       'accounts',
+      'classroom_messages',
+      'classroom_presence',
       'credentials',
       'learning_events',
       'learning_runs',

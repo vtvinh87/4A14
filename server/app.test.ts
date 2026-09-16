@@ -1,10 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createApp, type AppRequest, type AppResponse } from './app';
 import { MemoryAuthRepository } from './auth/memoryRepository';
 import { createAuthService } from './auth/service';
 import { databaseUrlFromEnv } from './db/client';
 import { MemoryLearningRepository } from './learning/memoryRepository';
 import { createLearningService } from './learning/service';
+import { MemoryClassroomRepository } from './classroom/memoryRepository';
+import { createClassroomService, type ClassroomService } from './classroom/service';
 
 function cookieValue(response: AppResponse): string {
   const cookie = response.headers['Set-Cookie'] ?? '';
@@ -31,6 +33,89 @@ function expectNoAccessToken(response: AppResponse): void {
 }
 
 describe('same-origin account API', () => {
+  it('returns controlled invalid failures for malformed message and read peer IDs before classroom operations', async () => {
+    const authRepository = new MemoryAuthRepository();
+    const auth = createAuthService(authRepository);
+    const provisionalApp = createApp({ auth });
+    const admin = await request(provisionalApp, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'admin', password: '123456@' } });
+    const created = await request(provisionalApp, { method: 'POST', path: '/api/admin/students', cookie: cookieValue(admin), body: { username: 'decode01', displayName: 'Decode' } });
+    expect(created.statusCode).toBe(200);
+    const changeOnly = await request(provisionalApp, { method: 'POST', path: '/api/auth/student/login', body: { username: 'decode01', pin: '123456' } });
+    const changed = await request(provisionalApp, { method: 'POST', path: '/api/auth/student/change-pin', cookie: cookieValue(changeOnly), body: { currentPin: '123456', newPin: '246810' } });
+    const studentCookie = cookieValue(changed);
+    const classroom: ClassroomService = {
+      listFriends: vi.fn(),
+      heartbeat: vi.fn(),
+      listMessages: vi.fn(),
+      sendMessage: vi.fn(),
+      markRead: vi.fn(),
+    };
+    const app = createApp({ auth, classroom });
+
+    const messageGet = await request(app, { method: 'GET', path: '/api/me/friends/%/messages', cookie: studentCookie });
+    const messagePost = await request(app, { method: 'POST', path: '/api/me/friends/%/messages', cookie: studentCookie, body: { body: 'Không gửi' } });
+    const read = await request(app, { method: 'POST', path: '/api/me/friends/%/read', cookie: studentCookie });
+
+    expect(messageGet.statusCode).toBe(400);
+    expect(messagePost.statusCode).toBe(400);
+    expect(read.statusCode).toBe(400);
+    expect(classroom.listMessages).not.toHaveBeenCalled();
+    expect(classroom.sendMessage).not.toHaveBeenCalled();
+    expect(classroom.markRead).not.toHaveBeenCalled();
+  });
+
+  it('scopes friends chat to a full student session and never trusts a client sender id', async () => {
+    const now = new Date('2026-09-16T08:00:00.000Z');
+    const authRepository = new MemoryAuthRepository();
+    const auth = createAuthService(authRepository, () => now);
+    const provisionalApp = createApp({ auth });
+    const admin = await request(provisionalApp, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'admin', password: '123456@' } });
+    const adminCookie = cookieValue(admin);
+    const self = await request(provisionalApp, { method: 'POST', path: '/api/admin/students', cookie: adminCookie, body: { username: 'an01', displayName: 'An' } });
+    const peer = await request(provisionalApp, { method: 'POST', path: '/api/admin/students', cookie: adminCookie, body: { username: 'binh02', displayName: 'Bình' } });
+    const inactive = await request(provisionalApp, { method: 'POST', path: '/api/admin/students', cookie: adminCookie, body: { username: 'chi03', displayName: 'Chi' } });
+    const selfId = String((self.body.account as { id: string }).id);
+    const peerId = String((peer.body.account as { id: string }).id);
+    const inactiveId = String((inactive.body.account as { id: string }).id);
+    const classroomRepository = new MemoryClassroomRepository([
+      { id: selfId, username: 'an01', displayName: 'An', avatarId: 'fox-scout', role: 'student', active: true },
+      { id: peerId, username: 'binh02', displayName: 'Bình', avatarId: 'fox-leaf', role: 'student', active: true },
+      { id: inactiveId, username: 'chi03', displayName: 'Chi', avatarId: 'fox-night', role: 'student', active: false },
+      { id: 'admin', username: 'admin', displayName: 'Admin', avatarId: 'fox-scout', role: 'admin', active: true },
+    ]);
+    await classroomRepository.insertMessage({ senderId: peerId, recipientId: selfId, body: 'Chào An', createdAt: now.toISOString() });
+    await classroomRepository.insertMessage({ senderId: selfId, recipientId: peerId, body: 'Chào Bình', createdAt: now.toISOString() });
+    const app = createApp({ auth, classroom: createClassroomService(classroomRepository, () => now) });
+
+    const changeOnly = await request(app, { method: 'POST', path: '/api/auth/student/login', body: { username: 'an01', pin: '123456' } });
+    expect((await request(app, { method: 'GET', path: '/api/me/friends', cookie: cookieValue(changeOnly) })).statusCode).toBe(403);
+    expect((await request(app, { method: 'GET', path: '/api/me/friends', cookie: adminCookie })).statusCode).toBe(403);
+    const changed = await request(app, { method: 'POST', path: '/api/auth/student/change-pin', cookie: cookieValue(changeOnly), body: { currentPin: '123456', newPin: '246810' } });
+    const studentCookie = cookieValue(changed);
+
+    const roster = await request(app, { method: 'GET', path: '/api/me/friends', cookie: studentCookie });
+    expect(roster.statusCode).toBe(200);
+    expect(roster.body.friends).toEqual([expect.objectContaining({ id: peerId, unreadCount: 1 })]);
+    expect(JSON.stringify(roster.body)).not.toMatch(/admin|active|birthDate|token|credential|lastSeen/i);
+
+    const rejectedSender = await request(app, { method: 'POST', path: `/api/me/friends/${encodeURIComponent(peerId)}/messages`, cookie: studentCookie, body: { senderId: inactiveId, body: 'Tin không hợp lệ' } });
+    expect(rejectedSender.statusCode).toBe(400);
+    const sent = await request(app, { method: 'POST', path: `/api/me/friends/${encodeURIComponent(peerId)}/messages`, cookie: studentCookie, body: { body: '  Tin của An  ' } });
+    expect(sent.statusCode).toBe(200);
+    expect(sent.body.message).toMatchObject({ senderId: selfId, recipientId: peerId, body: 'Tin của An' });
+    expect(JSON.stringify(sent.body)).not.toMatch(/role|active|birthDate|token|credential/i);
+    expect((await request(app, { method: 'POST', path: `/api/me/friends/${encodeURIComponent(inactiveId)}/messages`, cookie: studentCookie, body: { body: 'Không gửi' } })).statusCode).toBe(404);
+
+    const read = await request(app, { method: 'POST', path: `/api/me/friends/${encodeURIComponent(peerId)}/read`, cookie: studentCookie, body: { senderId: inactiveId } });
+    expect(read.body).toMatchObject({ ok: true, marked: 1 });
+    const messages = await request(app, { method: 'GET', path: `/api/me/friends/${encodeURIComponent(peerId)}/messages?limit=999`, cookie: studentCookie });
+    expect(messages.statusCode).toBe(200);
+    expect(messages.body.messages).toEqual(expect.arrayContaining([
+      expect.objectContaining({ senderId: peerId, recipientId: selfId, readAt: now.toISOString() }),
+      expect.objectContaining({ senderId: selfId, recipientId: peerId, readAt: null }),
+    ]));
+  });
+
   it('keeps credentials out of responses and enforces student/admin boundaries', async () => {
     const repository = new MemoryAuthRepository();
     const app = createApp({ auth: createAuthService(repository) });

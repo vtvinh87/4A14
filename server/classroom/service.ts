@@ -1,0 +1,95 @@
+import { CLASSROOM_MESSAGE_MAX_LENGTH, type ClassroomMessage, type ClassroomMessagesResponse, type FriendSummary, type FriendsResponse } from '../../shared/classroom-contracts.ts';
+import type { ClassroomMessageRecord, ClassroomRepository } from './types.ts';
+
+export type ClassroomFailureCode = 'invalid' | 'forbidden' | 'not-found' | 'rate-limited' | 'unavailable';
+export type ClassroomFailure = { ok: false; code: ClassroomFailureCode; message: string };
+
+export type ClassroomService = {
+  listFriends(studentId: string): Promise<FriendsResponse>;
+  heartbeat(studentId: string): Promise<void>;
+  listMessages(studentId: string, peerId: string, limit: number): Promise<ClassroomMessagesResponse | ClassroomFailure>;
+  sendMessage(studentId: string, peerId: string, body: string): Promise<{ message: ClassroomMessage } | ClassroomFailure>;
+  markRead(studentId: string, peerId: string): Promise<{ marked: number } | ClassroomFailure>;
+};
+
+const ONLINE_WINDOW_MS = 120_000;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_MESSAGES = 30;
+
+function messageView(message: ClassroomMessageRecord): ClassroomMessage {
+  return {
+    id: message.id,
+    senderId: message.senderId,
+    recipientId: message.recipientId,
+    body: message.body,
+    createdAt: message.createdAt,
+    readAt: message.readAt,
+  };
+}
+
+function failure(code: ClassroomFailureCode, message: string): ClassroomFailure {
+  return { ok: false, code, message };
+}
+
+async function activePeerOrFailure(repository: ClassroomRepository, studentId: string, peerId: string): Promise<ClassroomFailure | true> {
+  if (peerId === studentId) return failure('invalid', 'Không thể gửi tin nhắn cho chính mình.');
+  if (!await repository.findActivePeer(peerId)) return failure('not-found', 'Không tìm thấy bạn học này.');
+  return true;
+}
+
+export function createClassroomService(repository: ClassroomRepository, clock: () => Date = () => new Date()): ClassroomService {
+  return {
+    async listFriends(studentId) {
+      const now = clock();
+      const peers = await repository.listActivePeers(studentId);
+      const [presence, unreadCounts] = await Promise.all([
+        repository.listPresence(peers.map((peer) => peer.id)),
+        repository.listUnreadCounts(studentId),
+      ]);
+      const friends: FriendSummary[] = peers.map((peer) => ({
+        id: peer.id,
+        username: peer.username,
+        displayName: peer.displayName,
+        avatarId: peer.avatarId,
+        online: Date.parse(presence.get(peer.id) ?? '') >= now.getTime() - ONLINE_WINDOW_MS,
+        unreadCount: unreadCounts.get(peer.id) ?? 0,
+      })).sort((left, right) => Number(right.online) - Number(left.online)
+        || left.displayName.localeCompare(right.displayName)
+        || left.username.localeCompare(right.username));
+      return { friends, unreadCount: friends.reduce((total, friend) => total + friend.unreadCount, 0) };
+    },
+
+    async heartbeat(studentId) {
+      await repository.upsertPresence(studentId, clock().toISOString());
+    },
+
+    async listMessages(studentId, peerId, limit) {
+      const peer = await activePeerOrFailure(repository, studentId, peerId);
+      if (peer !== true) return peer;
+      return { messages: (await repository.listMessages(studentId, peerId, limit)).map(messageView) };
+    },
+
+    async sendMessage(studentId, peerId, body) {
+      const normalizedBody = body.trim();
+      if (!normalizedBody) return failure('invalid', 'Tin nhắn không được để trống.');
+      if (normalizedBody.length > CLASSROOM_MESSAGE_MAX_LENGTH) return failure('invalid', `Tin nhắn dài tối đa ${CLASSROOM_MESSAGE_MAX_LENGTH} ký tự.`);
+      const peer = await activePeerOrFailure(repository, studentId, peerId);
+      if (peer !== true) return peer;
+      const now = clock();
+      const recentCount = await repository.countRecentSentMessages(studentId, new Date(now.getTime() - RATE_LIMIT_WINDOW_MS).toISOString());
+      if (recentCount >= RATE_LIMIT_MAX_MESSAGES) return failure('rate-limited', 'Bạn đã gửi quá nhanh; hãy thử lại sau một lát.');
+      try {
+        return { message: messageView(await repository.insertMessage({ senderId: studentId, recipientId: peerId, body: normalizedBody, createdAt: now.toISOString() })) };
+      } catch (error) {
+        if (error instanceof Error && error.message === 'rate_limited') return failure('rate-limited', 'Bạn đã gửi quá nhanh; hãy thử lại sau một lát.');
+        throw error;
+      }
+    },
+
+    async markRead(studentId, peerId) {
+      const peer = await activePeerOrFailure(repository, studentId, peerId);
+      if (peer !== true) return peer;
+      return { marked: await repository.markMessagesRead(studentId, peerId, clock().toISOString()) };
+    },
+  };
+}

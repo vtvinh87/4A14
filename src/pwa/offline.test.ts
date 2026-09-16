@@ -84,7 +84,7 @@ describe('offline readiness', () => {
     const artAllowlist = viteConfigSource.match(/const LOCAL_ART_URLS = \[(.*?)\];/s)?.[1] ?? '';
     const artVersions = viteConfigSource.match(/const LOCAL_ART_VERSIONS = \[(.*?)\];/s)?.[1] ?? '';
 
-    expect(artAllowlist).toContain("['sound', 'settings', 'parent', 'leaderboard', 'challenge']");
+    expect(artAllowlist).toContain("['sound', 'settings', 'parent', 'leaderboard', 'challenge', 'friends', 'profile', 'logout']");
     for (const asset of ['leaderboard', 'challenge']) {
       expect(artVersions).toMatch(new RegExp(`/art/hud/${asset}\\.png:[a-f0-9]{64}`));
     }
@@ -94,6 +94,22 @@ describe('offline readiness', () => {
     const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
     for (const asset of ['leaderboard', 'challenge']) {
+      const bytes = readFileSync(resolve(process.cwd(), 'public', 'art', 'hud', `${asset}.png`));
+      const expectedHash = artVersions.match(new RegExp(`/art/hud/${asset}\\.png:([a-f0-9]{64})`))?.[1];
+
+      expect(bytes.subarray(0, 8)).toEqual(pngSignature);
+      expect(bytes[25]).toBe(6);
+      expect(expectedHash).toBe(createHash('sha256').update(bytes).digest('hex'));
+    }
+  });
+
+  it('precaches the friends and account-menu PNGs with matching RGBA bytes and version hashes', () => {
+    const artAllowlist = viteConfigSource.match(/const LOCAL_ART_URLS = \[(.*?)\];/s)?.[1] ?? '';
+    const artVersions = viteConfigSource.match(/const LOCAL_ART_VERSIONS = \[(.*?)\];/s)?.[1] ?? '';
+    const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+
+    expect(artAllowlist).toContain("['sound', 'settings', 'parent', 'leaderboard', 'challenge', 'friends', 'profile', 'logout']");
+    for (const asset of ['friends', 'profile', 'logout']) {
       const bytes = readFileSync(resolve(process.cwd(), 'public', 'art', 'hud', `${asset}.png`));
       const expectedHash = artVersions.match(new RegExp(`/art/hud/${asset}\\.png:([a-f0-9]{64})`))?.[1];
 

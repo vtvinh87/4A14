@@ -1,8 +1,11 @@
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ParentDashboardData } from '../shared/dashboard-contracts';
 import type { StudentProfileView } from '../shared/account-contracts';
+import type { FriendSummary } from '../shared/classroom-contracts';
 import type { ClientSession } from './auth/apiClient';
 import { createAccountProgressSnapshot } from './progress/accountProgress';
 import { createDefaultProgress } from './progress/storage';
@@ -23,12 +26,17 @@ const apiMocks = vi.hoisted(() => ({
   logout: vi.fn(),
 }));
 
+const classroomMocks = vi.hoisted(() => ({
+  useClassroomFriends: vi.fn(),
+}));
+
 vi.mock('./auth/apiClient', async () => {
   const actual = await vi.importActual<typeof import('./auth/apiClient')>('./auth/apiClient');
   return { ...actual, ...apiMocks };
 });
 
 vi.mock('./components/Pet', () => ({ Pet: () => null }));
+vi.mock('./classroom/useClassroomFriends', () => classroomMocks);
 
 const session: ClientSession = {
   account: { id: 'student-a', username: 'bebao', displayName: 'Bé Bảo', role: 'student', active: true, credentialVersion: 1 },
@@ -49,6 +57,15 @@ const studentProfile: StudentProfileView = {
     return `${today.year - 10}-${String(today.month).padStart(2, '0')}-${String(today.day).padStart(2, '0')}`;
   })(),
   birthdayWishesEnabled: false,
+};
+
+const classroomFriend: FriendSummary = {
+  id: 'friend-lan',
+  username: 'lan04',
+  displayName: 'Bạn Lan',
+  avatarId: 'fox-leaf',
+  online: true,
+  unreadCount: 3,
 };
 
 function createDashboard(): { snapshot: ReturnType<typeof createAccountProgressSnapshot>; dashboard: ParentDashboardData } {
@@ -113,6 +130,14 @@ describe('App cross-feature account flow', () => {
     apiMocks.updateParentProfilePreferences.mockResolvedValue({ ok: true, profile: { ...studentProfile, birthdayWishesEnabled: true } });
     apiMocks.lockParent.mockResolvedValue({ ok: true });
     apiMocks.logout.mockRejectedValue(new Error('offline'));
+    classroomMocks.useClassroomFriends.mockReturnValue({
+      friends: [classroomFriend],
+      unreadCount: classroomFriend.unreadCount,
+      loading: false,
+      error: null,
+      refresh: vi.fn(async () => undefined),
+      clear: vi.fn(),
+    });
     mount = document.createElement('div');
     document.body.appendChild(mount);
     root = createRoot(mount);
@@ -191,5 +216,33 @@ describe('App cross-feature account flow', () => {
     await act(async () => { progressRequest.resolve({ ok: true, snapshot }); await Promise.resolve(); });
     await settle();
     expect(mount.querySelector('#journey-title')?.textContent).toBe('Ba lô thám hiểm');
+  });
+
+  it('opens the classroom friends dialog for a full student session and closes it on logout', async () => {
+    act(() => root.render(createElement(App)));
+    await settle();
+    act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng lời chúc sinh nhật"]')?.click());
+
+    const friendsButton = mount.querySelector<HTMLButtonElement>('[data-journey-feature="friends"]');
+    expect(friendsButton).not.toBeNull();
+    expect(friendsButton?.querySelector('[data-friends-unread-badge]')?.textContent).toBe('3');
+    act(() => friendsButton?.click());
+
+    expect(mount.querySelector('[data-friend-list-dialog]')).not.toBeNull();
+    expect(mount.textContent).toContain('Bạn Lan');
+    expect(document.body.style.overflow).toBe('hidden');
+
+    clickText(mount, '[aria-label="Mở menu tài khoản"]', '');
+    clickText(mount, '[role="menuitem"]', 'Đăng xuất');
+    await settle();
+
+    expect(mount.querySelector('[data-friend-list-dialog]')).toBeNull();
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('keeps the desktop landscape pet adjustment separate from the mobile transform', () => {
+    const stylesSource = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    expect(stylesSource).toMatch(/@media \(orientation: landscape\) and \(min-width: 701px\)\s*\{\s*\.pet-zone \{ transform: translateY\(48px\); \}/);
+    expect(stylesSource).toMatch(/@media \(max-width: 700px\)[\s\S]*?\.pet-zone \{[^}]*transform: translateY\(28px\);/);
   });
 });
