@@ -28,6 +28,15 @@ describe('cross-origin API transport', () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe('https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api/auth/admin/login');
   });
 
+  it('keeps production pointed at the Edge API when the build variable is missing', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', '');
+    vi.stubEnv('PROD', true);
+    const api = await import('./apiClient');
+    await api.loginAdmin('admin', 'password');
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api/auth/admin/login');
+  });
+
   it('stores the opaque access token and sends it as a bearer credential on later requests', async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ ok: true, accessToken: 'token-a', session: { mode: 'full' } }))

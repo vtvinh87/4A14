@@ -10,6 +10,7 @@ export type ApiFailure = AccountApiFailure | { ok: false; code: AccountApiFailur
 export type ApiResult<T> = { ok: true } & T | ApiFailure;
 
 const SESSION_TOKEN_KEY = 'hoc_vui_session_token';
+const PRODUCTION_EDGE_API_BASE_URL = 'https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api';
 
 function readSessionToken(): string | null {
   try {
@@ -40,7 +41,8 @@ function failureFromNetwork(): ApiFailure {
 }
 
 function apiBaseUrl(): string {
-  return (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '');
+  const configured = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '');
+  return configured || (import.meta.env.PROD ? PRODUCTION_EDGE_API_BASE_URL : '');
 }
 
 function requestUrl(path: string): string {

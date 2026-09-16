@@ -49,7 +49,7 @@ export function LoginView({ onStudentLogin, onAdminLogin, error, busy = false }:
         </form>
         <div className="auth-note">
           <p>Liên hệ Admin để tạo tài khoản hoặc đặt lại mật khẩu.</p>
-          <a className="auth-admin-contact" href="https://zalo.me/0948584429" target="_blank" rel="noreferrer"><img className="auth-admin-icon" src="/art/hud/zalo.webp" alt="" aria-hidden="true" width="22" height="22" /><span>Thành Vinh</span></a>
+          <a className="auth-admin-contact" href="https://zalo.me/0948584429" target="_blank" rel="noreferrer"><img className="auth-admin-icon" src="/art/hud/zalo.webp" alt="" aria-hidden="true" width="22" height="22" /><span>Admin</span></a>
         </div>
       </section>
     </main>

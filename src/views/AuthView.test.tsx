@@ -43,7 +43,7 @@ describe('account entry views', () => {
     expect(mount.textContent).toContain('Liên hệ Admin để tạo tài khoản hoặc đặt lại mật khẩu.');
 
     const zalo = mount.querySelector<HTMLAnchorElement>('a.auth-admin-contact');
-    expect(zalo?.textContent).toBe('Thành Vinh');
+    expect(zalo?.textContent).toBe('Admin');
     expect(zalo?.querySelector('img.auth-admin-icon')?.getAttribute('src')).toBe('/art/hud/zalo.webp');
     expect(zalo?.querySelector('img.auth-admin-icon')?.getAttribute('alt')).toBe('');
     expect(zalo?.getAttribute('href')).toBe('https://zalo.me/0948584429');
