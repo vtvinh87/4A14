@@ -19,14 +19,14 @@ export function PetView({ petMood, reducedMotion, onPetTap, onOpenSettings, stam
   const selectedPetUnlocked = isPetUnlocked(selectedPet, stamps);
   const unlockedCount = PETS.filter((pet) => isPetUnlocked(pet, stamps)).length;
   const activePet = selectedPetUnlocked ? selectedPet : getPetById(DEFAULT_PET_ID);
-  const [homeDialogue, setHomeDialogue] = useState(() => pickPetHomeDialogue());
+  const [homeDialogue, setHomeDialogue] = useState(() => pickPetHomeDialogue(activePet.id));
   const homeDialogueIndexRef = useRef(homeDialogue.index);
 
   const chooseHomeDialogue = useCallback(() => {
-    const next = pickPetHomeDialogue(homeDialogueIndexRef.current);
+    const next = pickPetHomeDialogue(activePet.id, homeDialogueIndexRef.current);
     homeDialogueIndexRef.current = next.index;
     setHomeDialogue(next);
-  }, []);
+  }, [activePet.id]);
 
   useEffect(() => {
     chooseHomeDialogue();

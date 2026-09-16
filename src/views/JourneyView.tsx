@@ -4,6 +4,7 @@ import { pickPetHomeDialogue } from '../motion/petHomeConversation';
 import { ArrowIcon } from '../components/icons';
 import { Pet } from '../components/Pet';
 import { JourneyFeatureRail } from '../components/JourneyFeatureRail';
+import { DEFAULT_PET_ID } from '../content/pets';
 
 type JourneyViewProps = {
   petMood: PetMood;
@@ -15,10 +16,10 @@ type JourneyViewProps = {
 };
 
 export function JourneyView({ petMood, reducedMotion, onPetTap, onOpenLessons, onOpenFriends, friendsUnreadCount }: JourneyViewProps) {
-  const [homeDialogue, setHomeDialogue] = useState(() => pickPetHomeDialogue());
+  const [homeDialogue, setHomeDialogue] = useState(() => pickPetHomeDialogue(DEFAULT_PET_ID));
   const homeDialogueIndexRef = useRef(homeDialogue.index);
   const chooseHomeDialogue = useCallback(() => {
-    const next = pickPetHomeDialogue(homeDialogueIndexRef.current);
+    const next = pickPetHomeDialogue(DEFAULT_PET_ID, homeDialogueIndexRef.current);
     homeDialogueIndexRef.current = next.index;
     setHomeDialogue(next);
   }, []);
