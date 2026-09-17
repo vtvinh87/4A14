@@ -2,10 +2,10 @@
 
 Tài liệu này mô tả rollout production cho Học Vui. Firebase chỉ phục vụ static frontend/PWA; Supabase Edge Function `api` là lớp API duy nhất nói chuyện với PostgreSQL private schema. Không dùng Firebase Functions, Firestore, Firebase Auth hoặc Supabase Data API cho `hoc_vui_private`.
 
-## Current rollout status — 2026-09-15
+## Current rollout status — 2026-09-17
 
-- Supabase project `4A14` (`tvlpabqkternfvsxqovi`): Edge Function `api` is `ACTIVE`, `verify_jwt=false`, exact-origin CORS preflight passes for both Firebase sites, and synthetic Admin login/logout smoke checks pass.
-- Firebase project `4A14` (`a14-82a69`): Hosting is deployed to both [https://a14-82a69.web.app](https://a14-82a69.web.app) and [https://4a14.web.app](https://4a14.web.app). Root, manifest, Service Worker and SPA deep-link checks return HTTP 200; the deployed bundle contains the public Edge URL and no database credential markers.
+- Supabase project `4A14` (`tvlpabqkternfvsxqovi`): Edge Function `api` is `ACTIVE` at version 11, `verify_jwt=false`, exact-origin CORS preflight passes for both Firebase sites, and live unauthenticated boundary/timing smoke checks pass.
+- Firebase project `4A14` (`a14-82a69`): Hosting is deployed to both [https://a14-82a69.web.app](https://a14-82a69.web.app) and [https://4a14.web.app](https://4a14.web.app). The release versions are `dd71f302e27eda3a` and `e0eb9f35d54e5eb3`; root, manifest, Service Worker and SPA deep-link checks return HTTP 200; the deployed bundle contains the public Edge URL and no database credential markers.
 - The credential smoke uses the existing bootstrap Admin account only; no student account or learner data is modified.
 
 ## Configuration boundary
