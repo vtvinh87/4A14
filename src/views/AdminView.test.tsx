@@ -58,7 +58,7 @@ describe('AdminView', () => {
     const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
     act(() => {
       const input = mount.querySelector<HTMLInputElement>('#student-username')!;
-      valueSetter.call(input, 'bao04');
+      valueSetter.call(input, 'BAO04');
       input.dispatchEvent(new Event('input', { bubbles: true }));
     });
     act(() => {
@@ -73,6 +73,9 @@ describe('AdminView', () => {
     });
 
     expect(apiMocks.createStudentAccount).toHaveBeenCalledWith('bao04', 'Bé Bảo');
+    expect(mount.querySelector('#student-username')?.getAttribute('autocapitalize')).toBe('none');
+    expect(mount.querySelector('#student-username')?.getAttribute('autocorrect')).toBe('off');
+    expect(mount.querySelector('#student-username')?.getAttribute('spellcheck')).toBe('false');
     expect(mount.querySelector('[role="status"]')?.textContent).toContain('Đã tạo tài khoản');
     expect(mount.textContent).toContain('Bé Bảo');
     expect(mount.textContent).toContain('@bao04');

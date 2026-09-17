@@ -20,6 +20,7 @@ export function LoginView({ onStudentLogin, onAdminLogin, error, busy = false }:
     setLocalError('');
     const form = event.currentTarget as HTMLFormElement;
     const submittedUsername = (form.elements.namedItem('auth-username') as HTMLInputElement | null)?.value ?? username;
+    const normalizedUsername = submittedUsername.trim().toLocaleLowerCase('en-US');
     const submittedSecret = (form.elements.namedItem(mode === 'student' ? 'auth-pin' : 'auth-password') as HTMLInputElement | null)?.value ?? secret;
     if (mode === 'student') {
       const user = validateUsername(submittedUsername);
@@ -29,8 +30,8 @@ export function LoginView({ onStudentLogin, onAdminLogin, error, busy = false }:
       void onStudentLogin(user.value, pin.value, rememberDevice);
       return;
     }
-    if (!submittedUsername.trim() || !submittedSecret) { setLocalError('Nhập tên và mật khẩu quản trị.'); return; }
-    void onAdminLogin(submittedUsername.trim(), submittedSecret);
+    if (!normalizedUsername || !submittedSecret) { setLocalError('Nhập tên và mật khẩu quản trị.'); return; }
+    void onAdminLogin(normalizedUsername, submittedSecret);
   };
   return (
     <main className="auth-screen" aria-labelledby="auth-title">
@@ -43,7 +44,7 @@ export function LoginView({ onStudentLogin, onAdminLogin, error, busy = false }:
           <button type="button" className={mode === 'admin' ? 'is-active' : ''} onClick={() => { setMode('admin'); setSecret(''); setLocalError(''); }}>Quản trị</button>
         </div>
         <form className="auth-form" onSubmit={submit}>
-          <label className="auth-field" htmlFor="auth-username"><span>{mode === 'student' ? 'Tên tài khoản' : 'Tên quản trị'}</span><input id="auth-username" name="username" type="text" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} autoFocus /></label>
+          <label className="auth-field" htmlFor="auth-username"><span>{mode === 'student' ? 'Tên tài khoản' : 'Tên quản trị'}</span><input id="auth-username" name="username" type="text" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={username} onChange={(event) => setUsername(event.target.value.toLocaleLowerCase('en-US'))} autoFocus /></label>
           {mode === 'student' ? <PinField id="auth-pin" label="Mã PIN 6 số" value={secret} onChange={setSecret} autoComplete="current-password" /> : <label className="auth-field" htmlFor="auth-password"><span>Mật khẩu quản trị</span><input id="auth-password" name="password" type="password" autoComplete="current-password" value={secret} onChange={(event) => setSecret(event.target.value)} /></label>}
           {mode === 'student' && <div className="auth-remember-wrap">
             <label className="auth-remember" htmlFor="remember-device"><input id="remember-device" name="remember-device" type="checkbox" checked={rememberDevice} onChange={(event) => setRememberDevice(event.target.checked)} /><span>Ghi nhớ thiết bị này (tối đa 30 ngày)</span></label>

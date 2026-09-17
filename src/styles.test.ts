@@ -94,3 +94,20 @@ describe('Challenge responsive layout', () => {
     expect(styles).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*?transition-duration: 0\.001ms !important;/);
   });
 });
+
+describe('Challenge actions and approval modal', () => {
+  it('makes incomplete challenge submission visibly disabled', () => {
+    const rule = ruleFor('.primary-small-button:disabled');
+    expect(rule).toContain('cursor: not-allowed;');
+    expect(rule).toContain('opacity: 0.46;');
+    expect(rule).toContain('transform: none;');
+  });
+
+  it('keeps the approval backdrop viewport-wide and frosted', () => {
+    const rule = ruleFor('.challenge-approval-modal-backdrop');
+    expect(rule).toContain('position: fixed;');
+    expect(rule).toContain('inset: 0;');
+    expect(rule).toContain('backdrop-filter: blur(8px);');
+    expect(rule).toContain('-webkit-backdrop-filter: blur(8px);');
+  });
+});

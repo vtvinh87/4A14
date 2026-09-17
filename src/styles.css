@@ -678,6 +678,14 @@ button:focus-visible {
   color: var(--ink);
 }
 
+.primary-small-button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.55);
+  opacity: 0.46;
+  transform: none;
+  box-shadow: none;
+}
+
 .primary-cta {
   min-height: 67px;
   padding: 0 31px;
@@ -3228,17 +3236,22 @@ button:focus-visible {
 
 .challenge-approval-modal-backdrop {
   position: fixed;
-  z-index: 70;
+  z-index: 1000;
   inset: 0;
   display: grid;
   place-items: center;
+  overflow-y: auto;
   padding: clamp(14px, 3vw, 30px);
   background: rgba(3, 31, 57, 0.52);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .challenge-approval-modal {
   display: grid;
   width: min(100%, 560px);
+  max-height: calc(100dvh - 2 * clamp(14px, 3vw, 30px));
+  overflow-y: auto;
   gap: 12px;
   padding: clamp(20px, 3vw, 28px);
   border: 4px solid rgba(94, 72, 47, 0.52);

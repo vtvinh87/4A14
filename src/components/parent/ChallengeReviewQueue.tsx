@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { ChallengePreferences, ChallengeQuestionParent } from '../../../shared/challenge-contracts';
 
 export type ChallengeReviewQueueProps = {
@@ -74,7 +75,7 @@ export function ChallengeReviewQueue({ questions, settings, loading, error, busy
         })}
       </div>}
 
-      {approvalQuestion && <div className="challenge-approval-modal-backdrop" data-challenge-approval-modal>
+      {approvalQuestion && typeof document !== 'undefined' && createPortal(<div className="challenge-approval-modal-backdrop" data-challenge-approval-modal>
         <section className="challenge-approval-modal" role="dialog" aria-modal="true" aria-labelledby="challenge-approval-title" aria-describedby="challenge-approval-description">
           <p className="eyebrow">XÁC NHẬN PHÊ DUYỆT</p>
           <h3 id="challenge-approval-title">Phụ huynh đã kiểm tra câu đố chưa?</h3>
@@ -85,7 +86,7 @@ export function ChallengeReviewQueue({ questions, settings, loading, error, busy
             <button className="primary-small-button" type="button" data-challenge-approval-confirm disabled={approvalSubmitting || busyQuestionId === approvalQuestion.id} onClick={() => void confirmApproval()}>{approvalSubmitting ? 'Đang phê duyệt…' : 'Phê duyệt câu hỏi'}</button>
           </div>
         </section>
-      </div>}
+      </div>, document.body)}
     </section>
   );
 }

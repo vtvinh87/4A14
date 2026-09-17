@@ -27,13 +27,16 @@ describe('account entry views', () => {
     act(() => {
       const username = inputs[0] as HTMLInputElement;
       const pin = inputs[1] as HTMLInputElement;
-      username.value = 'bao04';
+      username.value = 'BAO04';
       pin.value = '012345';
       username.dispatchEvent(new Event('input', { bubbles: true }));
       pin.dispatchEvent(new Event('input', { bubbles: true }));
     });
     act(() => mount.querySelector('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
     expect(onLogin).toHaveBeenCalledWith('bao04', '012345', true);
+    expect(mount.querySelector('#auth-username')?.getAttribute('autocapitalize')).toBe('none');
+    expect(mount.querySelector('#auth-username')?.getAttribute('autocorrect')).toBe('off');
+    expect(mount.querySelector('#auth-username')?.getAttribute('spellcheck')).toBe('false');
   });
 
   it('allows a student to turn off remembering on a shared device', () => {
@@ -68,7 +71,7 @@ describe('account entry views', () => {
     act(() => {
       const username = inputs[0] as HTMLInputElement;
       const password = inputs[1] as HTMLInputElement;
-      username.value = 'admin';
+      username.value = 'ADMIN';
       password.value = '123456@';
       username.dispatchEvent(new Event('input', { bubbles: true }));
       password.dispatchEvent(new Event('input', { bubbles: true }));
