@@ -2,7 +2,7 @@ import { getDefaultApp, type AppRequest, type AppResponse } from '../../../serve
 import { getEnv } from '../../../server/runtime/env.ts';
 
 const ALLOWED_METHODS = 'GET,POST,PATCH,PUT,DELETE,OPTIONS';
-const ALLOWED_HEADERS = 'Authorization,Content-Type,X-Parent-Grant';
+const ALLOWED_HEADERS = 'Authorization,Content-Type,X-Parent-Grant,Idempotency-Key';
 const PREFLIGHT_MAX_AGE_SECONDS = '300';
 
 type EdgeApp = { handle: (request: AppRequest) => Promise<AppResponse> };

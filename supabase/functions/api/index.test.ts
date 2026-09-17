@@ -65,14 +65,18 @@ describe('Supabase Edge API adapter', () => {
     const handler = createEdgeHandler(async () => ({ app }));
     const result = await handler(new Request('https://project.supabase.co/functions/v1/api/auth/me', {
       method: 'OPTIONS',
-      headers: { Origin: 'https://hoc-vui.web.app', 'Access-Control-Request-Method': 'GET' },
+      headers: {
+        Origin: 'https://hoc-vui.web.app',
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'authorization,content-type,idempotency-key',
+      },
     }));
 
     expect(result.status).toBe(204);
     expect(result.headers.get('Access-Control-Allow-Origin')).toBe('https://hoc-vui.web.app');
     expect(result.headers.get('Access-Control-Allow-Credentials')).toBe('true');
     expect(result.headers.get('Access-Control-Allow-Methods')).toBe('GET,POST,PATCH,PUT,DELETE,OPTIONS');
-    expect(result.headers.get('Access-Control-Allow-Headers')).toBe('Authorization,Content-Type,X-Parent-Grant');
+    expect(result.headers.get('Access-Control-Allow-Headers')).toBe('Authorization,Content-Type,X-Parent-Grant,Idempotency-Key');
     expect(result.headers.get('Access-Control-Max-Age')).toBe('300');
     expect(result.headers.get('Access-Control-Expose-Headers')).toBe('X-Request-Id,Server-Timing');
     expect(result.headers.get('Vary')).toBe('Origin');

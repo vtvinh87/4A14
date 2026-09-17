@@ -99,7 +99,7 @@ try {
     headers: {
       Origin: allowedOrigin,
       'Access-Control-Request-Method': 'GET',
-      'Access-Control-Request-Headers': 'Authorization,Content-Type,X-Parent-Grant',
+      'Access-Control-Request-Headers': 'Authorization,Content-Type,X-Parent-Grant,Idempotency-Key',
     },
     signal: AbortSignal.timeout(5_000),
   });
@@ -108,7 +108,7 @@ try {
     'access-control-allow-origin': allowedOrigin,
     'access-control-allow-credentials': 'true',
     'access-control-allow-methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
-    'access-control-allow-headers': 'Authorization,Content-Type,X-Parent-Grant',
+    'access-control-allow-headers': 'Authorization,Content-Type,X-Parent-Grant,Idempotency-Key',
     vary: 'Origin',
   };
 
