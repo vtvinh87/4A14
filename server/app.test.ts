@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp, type AppRequest, type AppResponse } from './app';
 import { MemoryAuthRepository } from './auth/memoryRepository';
 import { createAuthService } from './auth/service';
@@ -7,6 +7,14 @@ import { MemoryLearningRepository } from './learning/memoryRepository';
 import { createLearningService } from './learning/service';
 import { MemoryClassroomRepository } from './classroom/memoryRepository';
 import { createClassroomService, type ClassroomService } from './classroom/service';
+import { VERIFIED_CHALLENGE_FACTS } from '../shared/challenge-source';
+import { MemoryAuthoringRepository } from './challenge/memoryAuthoringRepository';
+import { createChallengeAuthoringService } from './challenge/authoringService';
+import { createChallengeReviewService } from './challenge/reviewService';
+import { MemoryPlayRepository } from './challenge/memoryPlayRepository';
+import { createChallengePlayService } from './challenge/playService';
+import { createChallengeSocialService } from './challenge/socialService';
+import { createChallengeWeeklyService } from './challenge/weeklyService';
 
 function cookieValue(response: AppResponse): string {
   const cookie = response.headers['Set-Cookie'] ?? '';
@@ -328,5 +336,266 @@ describe('same-origin account API', () => {
     expect(expiredProfile.statusCode).toBe(403);
     const expiredPreference = await request(app, { method: 'PATCH', path: '/api/parent/profile-preferences', cookie: parentCookie, parentGrant: grant, body: { birthdayWishesEnabled: false } });
     expect(expiredPreference.statusCode).toBe(403);
+  });
+});
+
+describe('student challenge authoring API', () => {
+  beforeEach(() => vi.stubEnv('HOC_VUI_CHALLENGE_MODE', 'pilot'));
+  afterEach(() => vi.unstubAllEnvs());
+
+  async function readyStudent() {
+    const now = new Date('2026-09-17T08:00:00.000Z');
+    const authRepository = new MemoryAuthRepository();
+    const auth = createAuthService(authRepository, () => now);
+    const setup = createApp({ auth });
+    const admin = await request(setup, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'admin', password: '123456@' } });
+    const created = await request(setup, { method: 'POST', path: '/api/admin/students', cookie: cookieValue(admin), body: { username: 'challenge01', displayName: 'Challenge Student' } });
+    const login = await request(setup, { method: 'POST', path: '/api/auth/student/login', body: { username: 'challenge01', pin: '123456' } });
+    const changed = await request(setup, { method: 'POST', path: '/api/auth/student/change-pin', cookie: cookieValue(login), body: { currentPin: '123456', newPin: '246810' } });
+    const repository = new MemoryAuthoringRepository({ now: () => now });
+    const challengeAuthoring = createChallengeAuthoringService({
+      repository,
+      sourceCatalog: VERIFIED_CHALLENGE_FACTS,
+      activeStudentDisplayNames: async () => ['Challenge Student'],
+      clock: () => now,
+      idFactory: () => 'challenge-question-1',
+    });
+    return { now, authRepository, auth, adminCookie: cookieValue(admin), studentCookie: cookieValue(changed), studentId: String((created.body.account as { id: string }).id), repository, challengeAuthoring };
+  }
+
+  const validBody = {
+    sourceFactId: 'map',
+    prompt: 'Theo con, bản đồ giúp chúng ta học điều gì?',
+    correctAnswer: 'Bản đồ giúp tìm và đọc thông tin về khu vực.',
+    distractors: ['Một bài hát về ngày hội.', 'Một loại bánh truyền thống.', 'Một câu chuyện kể về nhân vật.'],
+    explanation: 'Bản đồ giúp thể hiện thu nhỏ một khu vực hoặc toàn bộ bề mặt Trái Đất theo tỉ lệ.',
+  };
+
+  it('requires a full student session, ignores no forged actor field, and returns only that student mine data', async () => {
+    const ready = await readyStudent();
+    const app = createApp({ auth: ready.auth, challengeAuthoring: ready.challengeAuthoring });
+    const forged = await request(app, { method: 'POST', path: '/api/me/challenge/questions', cookie: ready.studentCookie, body: { ...validBody, authorId: 'other-student', correctOptionId: 'wrong-1' } });
+    expect(forged.statusCode).toBe(400);
+    expect(ready.repository.questions).toHaveLength(0);
+
+    const created = await request(app, { method: 'POST', path: '/api/me/challenge/questions', cookie: ready.studentCookie, body: validBody });
+    expect(created.statusCode).toBe(200);
+    expect(created.body.question).toEqual(expect.objectContaining({ authorId: ready.studentId, status: 'pending_parent_review', sourceFactId: 'map' }));
+    expect(JSON.stringify(created.body)).not.toContain('other-student');
+
+    const list = await request(app, { method: 'GET', path: '/api/me/challenge/questions/mine', cookie: ready.studentCookie });
+    expect(list.statusCode).toBe(200);
+    expect(list.body.questions).toEqual([expect.objectContaining({ id: created.body.question && (created.body.question as { id: string }).id, authorId: ready.studentId })]);
+    expect(JSON.stringify(list.body)).not.toContain('studentCredential');
+    expect((await request(app, { method: 'POST', path: '/api/me/challenge/questions', cookie: ready.adminCookie, body: validBody })).statusCode).toBe(403);
+    await request(app, { method: 'POST', path: '/api/admin/students', cookie: ready.adminCookie, body: { username: 'challenge02', displayName: 'Challenge Student Two' } });
+    const changeOnly = await request(app, { method: 'POST', path: '/api/auth/student/login', body: { username: 'challenge02', pin: '123456' } });
+    expect((await request(app, { method: 'POST', path: '/api/me/challenge/questions', cookie: cookieValue(changeOnly), body: validBody })).statusCode).toBe(403);
+    expect((await request(app, { method: 'GET', path: '/api/me/challenge/questions/mine' })).statusCode).toBe(401);
+  });
+
+  it('supports a requested revision and reports quota and unavailable dependency failures', async () => {
+    const ready = await readyStudent();
+    const app = createApp({ auth: ready.auth, challengeAuthoring: ready.challengeAuthoring });
+    const created = await request(app, { method: 'POST', path: '/api/me/challenge/questions', cookie: ready.studentCookie, body: validBody });
+    const questionId = String((created.body.question as { id: string }).id);
+    const record = await ready.repository.findForAuthor(ready.studentId, questionId);
+    if (!record) throw new Error('expected question fixture');
+    await ready.repository.reviewQuestion(ready.studentId, questionId, record.revision, { decision: 'request_revision', reason: 'Con hãy viết rõ hơn nhé.' });
+
+    const revised = await request(app, { method: 'PATCH', path: `/api/me/challenge/questions/${questionId}`, cookie: ready.studentCookie, body: {
+      revision: 1,
+      sourceFactId: 'festival',
+      prompt: 'Theo sách, ngày Giỗ Tổ Hùng Vương diễn ra vào ngày nào?',
+      correctAnswer: 'Mồng 10 tháng Ba âm lịch hằng năm.',
+      distractors: ['Mồng một tháng Giêng.', 'Ngày Quốc khánh.', 'Ngày cuối năm.'],
+      explanation: 'Theo sách, Giỗ Tổ Hùng Vương diễn ra vào mồng 10 tháng Ba âm lịch hằng năm.',
+    } });
+    expect(revised.statusCode).toBe(200);
+    expect(revised.body.question).toEqual(expect.objectContaining({ revision: 2, status: 'pending_parent_review', sourceFactId: 'festival' }));
+
+    const stale = await request(app, { method: 'PATCH', path: `/api/me/challenge/questions/${questionId}`, cookie: ready.studentCookie, body: { ...validBody, revision: 1 } });
+    expect(stale.statusCode).toBe(409);
+    expect(stale.body).toMatchObject({ ok: false, code: 'conflict', reason: 'revision_conflict' });
+
+    const unavailable = createApp({ auth: ready.auth });
+    expect((await request(unavailable, { method: 'GET', path: '/api/me/challenge/questions/mine', cookie: ready.studentCookie })).statusCode).toBe(503);
+  });
+});
+
+describe('parent challenge review API', () => {
+  beforeEach(() => vi.stubEnv('HOC_VUI_CHALLENGE_MODE', 'pilot'));
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('keeps review scope behind the page grant, approves the child question, and pauses creation through settings', async () => {
+    const validBody = {
+      sourceFactId: 'map',
+      prompt: 'Theo con, bản đồ giúp chúng ta học điều gì?',
+      correctAnswer: 'Bản đồ giúp tìm và đọc thông tin về khu vực.',
+      distractors: ['Một bài hát về ngày hội.', 'Một loại bánh truyền thống.', 'Một câu chuyện kể về nhân vật.'],
+      explanation: 'Bản đồ giúp thể hiện thu nhỏ một khu vực hoặc toàn bộ bề mặt Trái Đất theo tỉ lệ.',
+    };
+    const now = new Date('2026-09-17T08:00:00.000Z');
+    const authRepository = new MemoryAuthRepository();
+    const auth = createAuthService(authRepository, () => now);
+    const setup = createApp({ auth });
+    const admin = await request(setup, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'admin', password: '123456@' } });
+    const adminCookie = cookieValue(admin);
+    const createdStudent = await request(setup, { method: 'POST', path: '/api/admin/students', cookie: adminCookie, body: { username: 'review01', displayName: 'Bạn Review' } });
+    const studentId = String((createdStudent.body.account as { id: string }).id);
+    const studentLogin = await request(setup, { method: 'POST', path: '/api/auth/student/login', body: { username: 'review01', pin: '123456' } });
+    const changed = await request(setup, { method: 'POST', path: '/api/auth/student/change-pin', cookie: cookieValue(studentLogin), body: { currentPin: '123456', newPin: '246810' } });
+    const studentCookie = cookieValue(changed);
+    const repository = new MemoryAuthoringRepository({ now: () => now });
+    const challengeAuthoring = createChallengeAuthoringService({
+      repository,
+      sourceCatalog: VERIFIED_CHALLENGE_FACTS,
+      activeStudentDisplayNames: async () => ['Bạn Review'],
+      clock: () => now,
+      idFactory: () => 'review-question-1',
+    });
+    const challengeReview = createChallengeReviewService({ repository, clock: () => now });
+    const app = createApp({ auth, challengeAuthoring, challengeReview });
+    const created = await request(app, { method: 'POST', path: '/api/me/challenge/questions', cookie: studentCookie, body: validBody });
+    const questionId = String((created.body.question as { id: string }).id);
+
+    expect((await request(app, { method: 'GET', path: '/api/parent/challenge/questions/pending', cookie: studentCookie })).statusCode).toBe(403);
+    const firstUnlock = await request(app, { method: 'POST', path: '/api/parent/unlock', cookie: studentCookie, body: { pin: '123456' } });
+    const parentChanged = await request(app, { method: 'POST', path: '/api/parent/change-pin', cookie: cookieValue(firstUnlock), body: { currentPin: '123456', newPin: '864208' } });
+    const unlocked = await request(app, { method: 'POST', path: '/api/parent/unlock', cookie: cookieValue(parentChanged), body: { pin: '864208' } });
+    const parentCookie = cookieValue(unlocked);
+    const grant = String(unlocked.body.parentGrantToken ?? '');
+    const pending = await request(app, { method: 'GET', path: '/api/parent/challenge/questions/pending', cookie: parentCookie, parentGrant: grant });
+    expect(pending.statusCode).toBe(200);
+    expect(pending.body.questions).toEqual([expect.objectContaining({ id: questionId, authorId: studentId, status: 'pending_parent_review' })]);
+    expect(JSON.stringify(pending.body)).not.toContain('parentGrantToken');
+
+    const approved = await request(app, { method: 'POST', path: `/api/parent/challenge/questions/${questionId}/review`, cookie: parentCookie, parentGrant: grant, body: { revision: 1, decision: 'approve', studentId: 'other-student' } });
+    expect(approved.statusCode).toBe(200);
+    expect(approved.body.question).toEqual(expect.objectContaining({ id: questionId, status: 'approved' }));
+    expect((await request(app, { method: 'GET', path: '/api/parent/challenge/questions/pending', cookie: parentCookie, parentGrant: grant })).body.questions).toEqual([]);
+
+    const initialSettings = await request(app, { method: 'GET', path: '/api/parent/challenge/settings', cookie: parentCookie, parentGrant: grant });
+    expect(initialSettings.statusCode).toBe(200);
+    expect(initialSettings.body.settings).toEqual(expect.objectContaining({ studentId, canCreate: true, canParticipate: true }));
+
+    const settings = await request(app, { method: 'PATCH', path: '/api/parent/challenge/settings', cookie: parentCookie, parentGrant: grant, body: { canCreate: false, canParticipate: true, studentId: 'other-student' } });
+    expect(settings.statusCode).toBe(200);
+    expect(settings.body.settings).toEqual(expect.objectContaining({ studentId, canCreate: false, canParticipate: true }));
+    const studentAfterParentChange = await request(app, { method: 'POST', path: '/api/auth/student/login', body: { username: 'review01', pin: '246810' } });
+    const paused = await request(app, { method: 'POST', path: '/api/me/challenge/questions', cookie: cookieValue(studentAfterParentChange), body: validBody });
+    expect(paused.statusCode).toBe(403);
+
+    expect((await request(app, { method: 'GET', path: '/api/parent/challenge/questions/pending', cookie: parentCookie, parentGrant: 'wrong-grant' })).statusCode).toBe(403);
+    expect((await request(app, { method: 'GET', path: '/api/parent/challenge/questions/pending', cookie: adminCookie, parentGrant: grant })).statusCode).toBe(403);
+    expect((await request(app, { method: 'GET', path: '/api/parent/challenge/questions/pending' })).statusCode).toBe(401);
+  });
+});
+
+describe('daily challenge play API', () => {
+  beforeEach(() => vi.stubEnv('HOC_VUI_CHALLENGE_MODE', 'pilot'));
+  afterEach(() => vi.unstubAllEnvs());
+
+  const validBody = {
+    sourceFactId: 'map',
+    prompt: 'Theo con, bản đồ giúp chúng ta học điều gì?',
+    correctAnswer: 'Bản đồ giúp tìm và đọc thông tin về khu vực.',
+    distractors: ['Một bài hát về ngày hội.', 'Một loại bánh truyền thống.', 'Một câu chuyện kể về nhân vật.'],
+    explanation: 'Bản đồ giúp thể hiện thu nhỏ một khu vực hoặc toàn bộ bề mặt Trái Đất theo tỉ lệ.',
+  };
+
+  async function readyDaily() {
+    const now = new Date('2026-09-17T08:00:00.000Z');
+    const authRepository = new MemoryAuthRepository();
+    const auth = createAuthService(authRepository, () => now);
+    const setup = createApp({ auth });
+    const admin = await request(setup, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'admin', password: '123456@' } });
+    const adminCookie = cookieValue(admin);
+    const author = await request(setup, { method: 'POST', path: '/api/admin/students', cookie: adminCookie, body: { username: 'daily01', displayName: 'Bạn Tạo Câu' } });
+    const player = await request(setup, { method: 'POST', path: '/api/admin/students', cookie: adminCookie, body: { username: 'daily02', displayName: 'Bạn Trả Lời' } });
+    const authorId = String((author.body.account as { id: string }).id);
+    const playerId = String((player.body.account as { id: string }).id);
+    const playerLogin = await request(setup, { method: 'POST', path: '/api/auth/student/login', body: { username: 'daily02', pin: '123456' } });
+    const playerChanged = await request(setup, { method: 'POST', path: '/api/auth/student/change-pin', cookie: cookieValue(playerLogin), body: { currentPin: '123456', newPin: '246810' } });
+    const authoringRepository = new MemoryAuthoringRepository({ now: () => now });
+    const challengeAuthoring = createChallengeAuthoringService({
+      repository: authoringRepository,
+      sourceCatalog: VERIFIED_CHALLENGE_FACTS,
+      activeStudentDisplayNames: async () => ['Bạn Tạo Câu', 'Bạn Trả Lời'],
+      clock: () => now,
+      idFactory: () => 'daily-question-1',
+    });
+    const created = await challengeAuthoring.createQuestion(authorId, { ...validBody, distractors: [...validBody.distractors] as [string, string, string] });
+    if (!created.ok) throw new Error('fixture question create failed');
+    const approved = await authoringRepository.reviewQuestion(authorId, created.id, created.revision, { decision: 'approve' });
+    if (typeof approved === 'string' || !approved) throw new Error('fixture question approval failed');
+    let nextId = 0;
+    const playRepository = new MemoryPlayRepository({ now: () => now, idFactory: () => `daily-item-${++nextId}` });
+    const challengePlay = createChallengePlayService({ authoring: authoringRepository, play: playRepository, clock: () => now, activeStudentCount: async () => 2, idFactory: () => `daily-generated-${++nextId}` });
+    const challengeSocial = createChallengeSocialService({ authoring: authoringRepository, play: playRepository, clock: () => now });
+    const challengeWeekly = createChallengeWeeklyService({ authoring: authoringRepository, play: playRepository, now: () => now, activeStudentIds: async () => [authorId, playerId] });
+    const app = createApp({ auth, challengeAuthoring, challengePlay, challengeSocial, challengeWeekly });
+    return { app, auth, adminCookie, studentCookie: cookieValue(playerChanged), parentGrant: 'parent-grant-should-not-be-used', playerId, playRepository, challengeAuthoring, challengePlay, challengeSocial, challengeWeekly };
+  }
+
+  it('returns a private-answer-safe today round and accepts idempotent server-checked attempts', async () => {
+    const ready = await readyDaily();
+    const today = await request(ready.app, { method: 'GET', path: '/api/me/challenge/today', cookie: ready.studentCookie });
+    expect(today.statusCode).toBe(200);
+    expect(today.body.questions).toHaveLength(1);
+    expect(JSON.stringify(today.body)).not.toContain('correctOptionId');
+    expect(JSON.stringify(today.body)).not.toContain('explanation');
+    expect(JSON.stringify(today.body)).not.toContain('sourceText');
+    const itemId = String((today.body.questions as Array<{ roundItemId: string }>)[0].roundItemId);
+    const weekly = await request(ready.app, { method: 'GET', path: '/api/me/challenge/week', cookie: ready.studentCookie });
+    expect(weekly.statusCode).toBe(200);
+    expect(weekly.body.days).toHaveLength(7);
+    expect(JSON.stringify(weekly.body)).not.toMatch(/leaderboard|rank|scoreByStudent|fastest/i);
+
+    const attempt = await request(ready.app, { method: 'POST', path: `/api/me/challenge/items/${itemId}/attempt`, cookie: ready.studentCookie, body: { selectedOptionId: 'correct', idempotencyKey: 'api-attempt-1', correct: false, contribution: 99, studentId: 'other-student' } });
+    expect(attempt.statusCode).toBe(200);
+    expect(attempt.body).toMatchObject({ ok: true, correct: true, classContributionAdded: true, duplicate: false });
+    const retry = await request(ready.app, { method: 'POST', path: `/api/me/challenge/items/${itemId}/attempt`, cookie: ready.studentCookie, body: { selectedOptionId: 'correct', idempotencyKey: 'api-attempt-1' } });
+    expect(retry.statusCode).toBe(200);
+    expect(retry.body).toMatchObject({ ok: true, correct: true, duplicate: true, classContributionAdded: false });
+    expect((await request(ready.app, { method: 'POST', path: `/api/me/challenge/items/${itemId}/attempt`, cookie: ready.studentCookie, body: { selectedOptionId: 'not-an-option', idempotencyKey: 'api-attempt-2' } })).statusCode).toBe(400);
+  });
+
+  it('rejects anonymous/admin/parent-grant contexts and reports an unavailable play dependency', async () => {
+    const ready = await readyDaily();
+    expect((await request(ready.app, { method: 'GET', path: '/api/me/challenge/today' })).statusCode).toBe(401);
+    expect((await request(ready.app, { method: 'GET', path: '/api/me/challenge/today', cookie: ready.adminCookie })).statusCode).toBe(403);
+    expect((await request(ready.app, { method: 'GET', path: '/api/me/challenge/today', cookie: ready.studentCookie, parentGrant: ready.parentGrant })).statusCode).toBe(403);
+    expect((await request(ready.app, { method: 'GET', path: '/api/me/challenge/week', cookie: ready.adminCookie })).statusCode).toBe(403);
+    const unavailable = createApp({ auth: ready.auth });
+    expect((await request(unavailable, { method: 'GET', path: '/api/me/challenge/today', cookie: ready.studentCookie })).statusCode).toBe(503);
+    expect((await request(unavailable, { method: 'GET', path: '/api/me/challenge/week', cookie: ready.studentCookie })).statusCode).toBe(503);
+  });
+
+  it('accepts positive reactions and private reports, then keeps moderation routes admin-only', async () => {
+    const ready = await readyDaily();
+    const today = await request(ready.app, { method: 'GET', path: '/api/me/challenge/today', cookie: ready.studentCookie });
+    const itemId = String((today.body.questions as Array<{ roundItemId: string }>)[0].roundItemId);
+
+    const reaction = await request(ready.app, { method: 'POST', path: `/api/me/challenge/items/${itemId}/reactions`, cookie: ready.studentCookie, body: { reactionType: 'learned', idempotencyKey: 'api-reaction-1' } });
+    expect(reaction.statusCode).toBe(200);
+    expect(reaction.body).toMatchObject({ ok: true, roundItemId: itemId, reactionType: 'learned' });
+    const reactionRetry = await request(ready.app, { method: 'POST', path: `/api/me/challenge/items/${itemId}/reactions`, cookie: ready.studentCookie, body: { reactionType: 'learned', idempotencyKey: 'api-reaction-1' } });
+    expect(reactionRetry.body).toEqual(reaction.body);
+    expect((await request(ready.app, { method: 'POST', path: `/api/me/challenge/items/${itemId}/reactions`, cookie: ready.studentCookie, body: { reactionType: 'downvote', idempotencyKey: 'api-reaction-2' } })).statusCode).toBe(400);
+
+    const report = await request(ready.app, { method: 'POST', path: `/api/me/challenge/items/${itemId}/report`, cookie: ready.studentCookie, body: { reason: 'unclear', details: '<b>Chưa rõ</b>', idempotencyKey: 'api-report-1' } });
+    expect(report.statusCode).toBe(200);
+    expect(report.body).toMatchObject({ ok: true, roundItemId: itemId, status: 'open' });
+    expect(JSON.stringify(report.body)).not.toMatch(/reporter|details|admin|token/i);
+    expect((await request(ready.app, { method: 'POST', path: `/api/me/challenge/items/${itemId}/report`, cookie: ready.studentCookie, body: { reason: 'inappropriate', idempotencyKey: 'api-report-2' } })).statusCode).toBe(409);
+
+    const reportId = String((report.body as { id: string }).id);
+    expect((await request(ready.app, { method: 'POST', path: `/api/admin/challenge/reports/${reportId}/resolve`, cookie: ready.studentCookie, body: { decision: 'dismissed', reason: 'Đã kiểm tra.' } })).statusCode).toBe(403);
+    const dismissed = await request(ready.app, { method: 'POST', path: `/api/admin/challenge/reports/${reportId}/resolve`, cookie: ready.adminCookie, body: { decision: 'dismissed', reason: 'Đã kiểm tra.' } });
+    expect(dismissed.statusCode).toBe(200);
+    expect((await request(ready.app, { method: 'POST', path: `/api/admin/challenge/reports/${reportId}/resolve`, cookie: ready.adminCookie, body: { decision: 'voided', reason: 'Không thể đổi quyết định.' } })).statusCode).toBe(409);
+    expect((await request(ready.app, { method: 'POST', path: `/api/admin/challenge/questions/${String((today.body.questions as Array<{ id: string }>)[0].id)}/void`, cookie: ready.adminCookie, body: { reason: 'Đã xác nhận cần tạm dừng.' } })).statusCode).toBe(200);
+    expect((await request(ready.app, { method: 'GET', path: '/api/me/challenge/today', cookie: ready.studentCookie })).body.questions).toEqual([]);
   });
 });

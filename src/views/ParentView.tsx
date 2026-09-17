@@ -8,7 +8,9 @@ import { getDashboardMetrics, getSupportSuggestions } from '../analytics/metrics
 import type { LocalMigrationPreview } from '../progress/accountMigration';
 import type { DashboardActivity, DashboardLessonStatus, DashboardRange, DashboardSuggestion, DashboardMetrics, ParentDashboardData } from '../../shared/dashboard-contracts';
 import type { StudentProfileView } from '../../shared/account-contracts';
+import type { ParentChallengeReviewState } from '../challenge/useParentChallengeReview';
 import { ActivityChart } from '../components/parent/ActivityChart';
+import { ChallengeReviewQueue } from '../components/parent/ChallengeReviewQueue';
 import { DataTools } from '../components/parent/DataTools';
 import { History } from '../components/parent/History';
 import { LessonMap } from '../components/parent/LessonMap';
@@ -34,6 +36,7 @@ type ParentViewProps = {
   onChangeParentPin: () => void;
   onImportLegacy?: () => void | Promise<void>;
   onLockParent: () => void;
+  challengeReview?: ParentChallengeReviewState;
 };
 
 function fallbackLessons(progress: Progress): DashboardLessonStatus[] {
@@ -79,7 +82,7 @@ function ParentArt({ src }: { src: string }) {
   return <img className="hud-art-icon" src={src} alt="" aria-hidden="true" data-parent-art draggable={false} />;
 }
 
-export function ParentView({ progress, settings, dashboard, parentProfile = null, parentProfileBusy = false, parentProfileError = '', onBirthdayWishesEnabledChange = () => undefined, onRangeChange, childName, storageRecovery, storageWriteWarning, legacyMigrationPreview, onOpenSettings, onOpenLessons, onChangeParentPin, onImportLegacy, onLockParent }: ParentViewProps) {
+export function ParentView({ progress, settings, dashboard, parentProfile = null, parentProfileBusy = false, parentProfileError = '', onBirthdayWishesEnabledChange = () => undefined, onRangeChange, childName, storageRecovery, storageWriteWarning, legacyMigrationPreview, onOpenSettings, onOpenLessons, onChangeParentPin, onImportLegacy, onLockParent, challengeReview }: ParentViewProps) {
   const [range, setRange] = useState<DashboardRange>(dashboard?.range ?? '7d');
 
   useEffect(() => {
@@ -122,6 +125,19 @@ export function ParentView({ progress, settings, dashboard, parentProfile = null
       />
 
       {(storageRecovery || storageWriteWarning) && <div className="storage-recovery-banner" role="alert"><ParentArt src="/art/collection/collection-emblem.png" /><span>{storageRecovery ? <><strong>Trạng thái lưu cần được phục hồi.</strong> Dữ liệu cũ chưa bị ghi đè. Hãy nhập một tệp sao lưu hợp lệ hoặc đặt lại sau khi đã xuất dữ liệu cần giữ.</> : <><strong>Thay đổi hiện chưa được lưu.</strong> Bộ nhớ thiết bị không nhận bản ghi mới; máy chủ vẫn là nguồn xác nhận.</>}</span></div>}
+
+      {challengeReview && <ChallengeReviewQueue
+        questions={challengeReview.questions}
+        settings={challengeReview.settings}
+        loading={challengeReview.loading}
+        error={challengeReview.error}
+        busyQuestionId={challengeReview.busyQuestionId}
+        onRetry={challengeReview.refresh}
+        onApprove={challengeReview.approve}
+        onRequestRevision={challengeReview.requestRevision}
+        onWithdraw={challengeReview.withdraw}
+        onSettingsChange={challengeReview.updateSettings}
+      />}
 
       <div className="parent-dashboard-toolbar">
         <div className="parent-range-switch" role="group" aria-label="Khoảng thời gian Dashboard">

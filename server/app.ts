@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { createDbClient, type DatabaseClient } from './db/client.ts';
 import { PostgresAuthRepository } from './auth/postgresRepository.ts';
 import { createAuthService } from './auth/service.ts';
@@ -9,7 +10,17 @@ import type { StudentProfilePatch } from '../shared/account-contracts.ts';
 import { PostgresClassroomRepository } from './classroom/postgresRepository.ts';
 import { createSupabaseClassroomRealtimeBridge } from './classroom/realtime.ts';
 import { createClassroomService, type ClassroomFailure, type ClassroomService } from './classroom/service.ts';
+import { PostgresAuthoringRepository } from './challenge/postgresAuthoringRepository.ts';
+import { createChallengeAuthoringService } from './challenge/authoringService.ts';
+import { createChallengeReviewService, type ChallengeReviewRequest } from './challenge/reviewService.ts';
+import { PostgresPlayRepository } from './challenge/postgresPlayRepository.ts';
+import { createChallengePlayService } from './challenge/playService.ts';
+import { createChallengeSocialService } from './challenge/socialService.ts';
+import { createChallengeWeeklyService } from './challenge/weeklyService.ts';
+import { CHALLENGE_SOURCE_FACTS } from '../shared/challenge-source.ts';
+import type { AddChallengeReactionInput, ChallengeFailure, ChallengePreferencesPatch, CreateChallengeQuestionInput, ReportChallengeItemInput, ResolveChallengeReportInput, ReviseChallengeQuestionInput, SubmitChallengeAttemptInput } from '../shared/challenge-contracts.ts';
 import { getEnv } from './runtime/env.ts';
+import { challengeRolloutFailure, getChallengeRolloutConfig, isChallengeRolloutEnabled } from './challenge/rollout.ts';
 
 const SESSION_COOKIE = 'hoc_vui_session';
 const LOCAL_SESSION_MAX_AGE = 7 * 24 * 60 * 60;
@@ -30,11 +41,21 @@ export type AppResponse = {
 
 type AuthService = ReturnType<typeof createAuthService>;
 type LearningService = ReturnType<typeof createLearningService>;
+type ChallengeAuthoringService = ReturnType<typeof createChallengeAuthoringService>;
+type ChallengeReviewService = ReturnType<typeof createChallengeReviewService>;
+type ChallengePlayService = ReturnType<typeof createChallengePlayService>;
+type ChallengeSocialService = ReturnType<typeof createChallengeSocialService>;
+type ChallengeWeeklyService = ReturnType<typeof createChallengeWeeklyService>;
 
 export type AppDependencies = {
   auth: AuthService;
   learning?: LearningService;
   classroom?: ClassroomService;
+  challengeAuthoring?: ChallengeAuthoringService;
+  challengeReview?: ChallengeReviewService;
+  challengePlay?: ChallengePlayService;
+  challengeSocial?: ChallengeSocialService;
+  challengeWeekly?: ChallengeWeeklyService;
   close?: () => Promise<void>;
 };
 
@@ -90,11 +111,11 @@ function success(body: Record<string, unknown>, extraHeaders: Record<string, str
   return { statusCode: 200, headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/json; charset=utf-8', ...extraHeaders }, body: { ok: true, ...body } };
 }
 
-function failure(failure: AuthFailure | LearningFailure | ClassroomFailure, statusCode = statusForFailure(failure)): AppResponse {
+function failure(failure: AuthFailure | LearningFailure | ClassroomFailure | ChallengeFailure, statusCode = statusForFailure(failure)): AppResponse {
   return { statusCode, headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/json; charset=utf-8' }, body: failure };
 }
 
-function statusForFailure(failure: AuthFailure | LearningFailure | ClassroomFailure): number {
+function statusForFailure(failure: AuthFailure | LearningFailure | ClassroomFailure | ChallengeFailure): number {
   if (failure.code === 'forbidden') return 403;
   if (failure.code === 'conflict') return 409;
   if (failure.code === 'locked') return 423;
@@ -162,6 +183,44 @@ function decodeClassroomPeerId(value: string): string | ClassroomFailure {
   }
 }
 
+function decodeChallengeQuestionId(value: string): string | ChallengeFailure {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return { ok: false, code: 'invalid', message: 'Mã câu hỏi không hợp lệ.' };
+  }
+}
+
+function challengeAttemptInputFromBody(body: Record<string, unknown>): SubmitChallengeAttemptInput {
+  const input: SubmitChallengeAttemptInput = {
+    selectedOptionId: typeof body.selectedOptionId === 'string' ? body.selectedOptionId : '',
+  };
+  if (typeof body.attemptId === 'string') input.attemptId = body.attemptId;
+  if (typeof body.idempotencyKey === 'string') input.idempotencyKey = body.idempotencyKey;
+  if (typeof body.isPractice === 'boolean') input.isPractice = body.isPractice;
+  return input;
+}
+
+function challengeReactionInputFromBody(body: Record<string, unknown>, request: AppRequest): AddChallengeReactionInput {
+  return {
+    reactionType: body.reactionType as AddChallengeReactionInput['reactionType'],
+    idempotencyKey: typeof body.idempotencyKey === 'string' ? body.idempotencyKey : header(request, 'idempotency-key') ?? '',
+  };
+}
+
+function challengeReportInputFromBody(body: Record<string, unknown>, request: AppRequest): ReportChallengeItemInput {
+  return {
+    reason: body.reason as ReportChallengeItemInput['reason'],
+    ...(Object.prototype.hasOwnProperty.call(body, 'details') ? { details: body.details as string } : {}),
+    idempotencyKey: typeof body.idempotencyKey === 'string' ? body.idempotencyKey : header(request, 'idempotency-key') ?? '',
+  };
+}
+
+function challengeObjectHasOnly(body: Record<string, unknown>, keys: readonly string[]): boolean {
+  const allowed = new Set(keys);
+  return Object.keys(body).every((key) => allowed.has(key));
+}
+
 function isLearningEvent(value: unknown): value is LearningEventInput {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Record<string, unknown>;
@@ -173,6 +232,12 @@ function isLearningEvent(value: unknown): value is LearningEventInput {
     && Number.isInteger(candidate.lessonVersion)
     && typeof candidate.deviceId === 'string'
     && Number.isInteger(candidate.generation);
+}
+
+function isChallengePath(pathname: string): boolean {
+  return pathname.startsWith('/api/me/challenge/')
+    || pathname.startsWith('/api/parent/challenge/')
+    || pathname.startsWith('/api/admin/challenge/');
 }
 
 export function createApp(dependencies: AppDependencies) {
@@ -188,6 +253,9 @@ export function createApp(dependencies: AppDependencies) {
   async function authorizeStudent(request: AppRequest): Promise<StudentAuthorization> {
     const token = requireToken(request);
     if (typeof token !== 'string') return { ok: false, response: failure(token, 401) };
+    if (parentGrantToken(request)) {
+      return { ok: false, response: failure({ ok: false, code: 'forbidden', message: 'Parent grant chỉ được dùng cho vùng phụ huynh.' }) };
+    }
     const session = await auth.getSession(token);
     if ('ok' in session) return { ok: false, response: failure(session, 401) };
     if (session.account.role !== 'student' || session.mode !== 'full') {
@@ -196,11 +264,29 @@ export function createApp(dependencies: AppDependencies) {
     return { ok: true, token, studentId: session.account.id };
   }
 
+  async function authorizeAdmin(request: AppRequest): Promise<{ ok: true; token: string; adminId: string } | { ok: false; response: AppResponse }> {
+    const token = requireToken(request);
+    if (typeof token !== 'string') return { ok: false, response: failure(token, 401) };
+    const session = await auth.getSession(token);
+    if ('ok' in session) return { ok: false, response: failure(session, 401) };
+    if (session.account.role !== 'admin' || session.mode !== 'full') {
+      return { ok: false, response: failure({ ok: false, code: 'forbidden', message: 'Chỉ Admin mới xử lý được báo cáo Thách đố.' }) };
+    }
+    return { ok: true, token, adminId: session.account.id };
+  }
+
   async function handle(request: AppRequest): Promise<AppResponse> {
     const { pathname, query } = routeParts(request);
     const method = request.method.toUpperCase();
     const isWrite = method === 'POST' || method === 'PATCH' || method === 'PUT' || method === 'DELETE';
     if (isWrite && !sameOrigin(request)) return failure({ ok: false, code: 'forbidden', message: 'Yêu cầu không cùng nguồn.' }, 403);
+
+    if (method === 'GET' && pathname === '/api/me/challenge/config') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      return success({ config: getChallengeRolloutConfig() });
+    }
+    if (isChallengePath(pathname) && !isChallengeRolloutEnabled()) return failure(challengeRolloutFailure(), 503);
 
     if (method === 'POST' && pathname === '/api/auth/student/login') {
       const body = bodyObject(request);
@@ -265,6 +351,93 @@ export function createApp(dependencies: AppDependencies) {
       if (!dependencies.classroom) return failure({ ok: false, code: 'unavailable', message: 'Classroom chưa sẵn sàng trên máy chủ.' }, 503);
       await dependencies.classroom.heartbeat(student.studentId);
       return success({});
+    }
+    if (method === 'POST' && pathname === '/api/me/challenge/questions') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.challengeAuthoring) return failure({ ok: false, code: 'unavailable', message: 'Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const result = await dependencies.challengeAuthoring.createQuestion(student.studentId, bodyObject(request) as CreateChallengeQuestionInput);
+      if (!result.ok) return failure(result);
+      const { ok: _ok, ...question } = result;
+      return success({ question });
+    }
+    const challengeReactionMatch = pathname.match(/^\/api\/me\/challenge\/items\/([^/]+)\/reactions$/);
+    if (challengeReactionMatch && method === 'POST') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.challengeSocial) return failure({ ok: false, code: 'unavailable', message: 'Phản hồi Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const itemId = decodeChallengeQuestionId(challengeReactionMatch[1]);
+      if (typeof itemId !== 'string') return failure(itemId);
+      const body = bodyObject(request);
+      if (!challengeObjectHasOnly(body, ['reactionType', 'idempotencyKey'])) return failure({ ok: false, code: 'invalid', message: 'Phản hồi chỉ cho phép loại phản hồi và mã thử lại.' });
+      const result = await dependencies.challengeSocial.addReaction(student.studentId, itemId, challengeReactionInputFromBody(body, request));
+      if (!result.ok) return failure(result);
+      const { ok: _ok, ...reaction } = result;
+      return success(reaction);
+    }
+    const challengeReportMatch = pathname.match(/^\/api\/me\/challenge\/items\/([^/]+)\/report$/);
+    if (challengeReportMatch && method === 'POST') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.challengeSocial) return failure({ ok: false, code: 'unavailable', message: 'Báo cáo Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const itemId = decodeChallengeQuestionId(challengeReportMatch[1]);
+      if (typeof itemId !== 'string') return failure(itemId);
+      const body = bodyObject(request);
+      if (!challengeObjectHasOnly(body, ['reason', 'details', 'idempotencyKey'])) return failure({ ok: false, code: 'invalid', message: 'Báo cáo chỉ cho phép lý do, mô tả và mã thử lại.' });
+      const result = await dependencies.challengeSocial.reportItem(student.studentId, itemId, challengeReportInputFromBody(body, request));
+      if (!result.ok) return failure(result);
+      const { ok: _ok, ...report } = result;
+      return success(report);
+    }
+    if (method === 'GET' && pathname === '/api/me/challenge/questions/mine') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.challengeAuthoring) return failure({ ok: false, code: 'unavailable', message: 'Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const result = await dependencies.challengeAuthoring.listMine(student.studentId);
+      if (!result.ok) return failure(result);
+      return success({ questions: result.items });
+    }
+    if (method === 'GET' && pathname === '/api/me/challenge/today') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.challengePlay) return failure({ ok: false, code: 'unavailable', message: 'Vòng Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const result = await dependencies.challengePlay.getToday(student.studentId);
+      if (!result.ok) return failure(result);
+      const { ok: _ok, ...today } = result;
+      return success(today);
+    }
+    const challengeAttemptMatch = pathname.match(/^\/api\/me\/challenge\/items\/([^/]+)\/attempt$/);
+    if (challengeAttemptMatch && method === 'POST') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.challengePlay) return failure({ ok: false, code: 'unavailable', message: 'Vòng Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const itemId = decodeChallengeQuestionId(challengeAttemptMatch[1]);
+      if (typeof itemId !== 'string') return failure(itemId);
+      const result = await dependencies.challengePlay.submitAttempt(student.studentId, itemId, challengeAttemptInputFromBody(bodyObject(request)));
+      if (!result.ok) return failure(result);
+      const { ok: _ok, ...answer } = result;
+      return success(answer);
+    }
+    if (method === 'GET' && pathname === '/api/me/challenge/week') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.challengeWeekly) return failure({ ok: false, code: 'unavailable', message: 'Bản đồ tuần Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const result = await dependencies.challengeWeekly.getWeekly(student.studentId);
+      if (!result.ok) return failure(result);
+      const { ok: _ok, ...weekly } = result;
+      return success(weekly);
+    }
+    const challengeQuestionMatch = pathname.match(/^\/api\/me\/challenge\/questions\/([^/]+)$/);
+    if (challengeQuestionMatch && method === 'PATCH') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.challengeAuthoring) return failure({ ok: false, code: 'unavailable', message: 'Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      let questionId: string;
+      try { questionId = decodeURIComponent(challengeQuestionMatch[1]); } catch { return failure({ ok: false, code: 'invalid', message: 'Mã câu hỏi không hợp lệ.' }); }
+      const result = await dependencies.challengeAuthoring.reviseQuestion(student.studentId, questionId, bodyObject(request) as ReviseChallengeQuestionInput);
+      if (!result.ok) return failure(result);
+      const { ok: _ok, ...question } = result;
+      return success({ question });
     }
     const classroomMessagesMatch = pathname.match(/^\/api\/me\/friends\/([^/]+)\/messages$/);
     if (classroomMessagesMatch && (method === 'GET' || method === 'POST')) {
@@ -335,6 +508,93 @@ export function createApp(dependencies: AppDependencies) {
     if (method === 'POST' && pathname === '/api/parent/lock') {
       const token = sessionToken(request);
       if (token) await auth.clearParentGrant(token);
+      return success({});
+    }
+    if (method === 'GET' && pathname === '/api/parent/challenge/questions/pending') {
+      const parent = await authorizeParent(request);
+      if (!parent.ok) return parent.response;
+      if (!dependencies.challengeReview) return failure({ ok: false, code: 'unavailable', message: 'Hàng đợi duyệt Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const result = await dependencies.challengeReview.listPending(parent.studentId);
+      if (!result.ok) return failure(result);
+      return success({ questions: result.items });
+    }
+    const parentReviewMatch = pathname.match(/^\/api\/parent\/challenge\/questions\/([^/]+)\/review$/);
+    if (parentReviewMatch && method === 'POST') {
+      const parent = await authorizeParent(request);
+      if (!parent.ok) return parent.response;
+      if (!dependencies.challengeReview) return failure({ ok: false, code: 'unavailable', message: 'Hàng đợi duyệt Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const questionId = decodeChallengeQuestionId(parentReviewMatch[1]);
+      if (typeof questionId !== 'string') return failure(questionId);
+      const body = bodyObject(request);
+      const revision = typeof body.revision === 'number' ? body.revision : undefined;
+      const reviewInput: ChallengeReviewRequest = body.decision === 'request_revision'
+        ? { decision: 'request_revision', reason: typeof body.reason === 'string' ? body.reason : '', revision }
+        : body.decision === 'approve'
+          ? { decision: 'approve', revision }
+          : { decision: body.decision, revision } as unknown as ChallengeReviewRequest;
+      const result = await dependencies.challengeReview.review(parent.studentId, questionId, reviewInput);
+      if (!result.ok) return failure(result);
+      const { ok: _ok, ...question } = result;
+      return success({ question });
+    }
+    const parentWithdrawMatch = pathname.match(/^\/api\/parent\/challenge\/questions\/([^/]+)\/withdraw$/);
+    if (parentWithdrawMatch && method === 'POST') {
+      const parent = await authorizeParent(request);
+      if (!parent.ok) return parent.response;
+      if (!dependencies.challengeReview) return failure({ ok: false, code: 'unavailable', message: 'Hàng đợi duyệt Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const questionId = decodeChallengeQuestionId(parentWithdrawMatch[1]);
+      if (typeof questionId !== 'string') return failure(questionId);
+      const result = await dependencies.challengeReview.withdraw(parent.studentId, questionId);
+      if (!result.ok) return failure(result);
+      return success({});
+    }
+    if (method === 'GET' && pathname === '/api/parent/challenge/settings') {
+      const parent = await authorizeParent(request);
+      if (!parent.ok) return parent.response;
+      if (!dependencies.challengeReview) return failure({ ok: false, code: 'unavailable', message: 'Cài đặt Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const result = await dependencies.challengeReview.getSettings(parent.studentId);
+      if (!result.ok) return failure(result);
+      const { ok: _ok, ...settings } = result;
+      return success({ settings });
+    }
+    if (method === 'PATCH' && pathname === '/api/parent/challenge/settings') {
+      const parent = await authorizeParent(request);
+      if (!parent.ok) return parent.response;
+      if (!dependencies.challengeReview) return failure({ ok: false, code: 'unavailable', message: 'Cài đặt Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const body = bodyObject(request);
+      const patch: ChallengePreferencesPatch = {};
+      if (Object.prototype.hasOwnProperty.call(body, 'canCreate')) patch.canCreate = body.canCreate as boolean;
+      if (Object.prototype.hasOwnProperty.call(body, 'canParticipate')) patch.canParticipate = body.canParticipate as boolean;
+      const result = await dependencies.challengeReview.updateSettings(parent.studentId, patch);
+      if (!result.ok) return failure(result);
+      const { ok: _ok, ...settings } = result;
+      return success({ settings });
+    }
+    const challengeResolveReportMatch = pathname.match(/^\/api\/admin\/challenge\/reports\/([^/]+)\/resolve$/);
+    if (challengeResolveReportMatch && method === 'POST') {
+      const admin = await authorizeAdmin(request);
+      if (!admin.ok) return admin.response;
+      if (!dependencies.challengeSocial) return failure({ ok: false, code: 'unavailable', message: 'Kiểm duyệt Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const reportId = decodeChallengeQuestionId(challengeResolveReportMatch[1]);
+      if (typeof reportId !== 'string') return failure(reportId);
+      const body = bodyObject(request);
+      if (!challengeObjectHasOnly(body, ['decision', 'reason'])) return failure({ ok: false, code: 'invalid', message: 'Xử lý báo cáo chỉ cho phép quyết định và lý do.' });
+      const input: ResolveChallengeReportInput = { decision: body.decision as ResolveChallengeReportInput['decision'], reason: typeof body.reason === 'string' ? body.reason : '' };
+      const result = await dependencies.challengeSocial.resolveReport(admin.adminId, reportId, input);
+      if (!result.ok) return failure(result);
+      return success({});
+    }
+    const challengeVoidQuestionMatch = pathname.match(/^\/api\/admin\/challenge\/questions\/([^/]+)\/void$/);
+    if (challengeVoidQuestionMatch && method === 'POST') {
+      const admin = await authorizeAdmin(request);
+      if (!admin.ok) return admin.response;
+      if (!dependencies.challengeSocial) return failure({ ok: false, code: 'unavailable', message: 'Kiểm duyệt Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+      const questionId = decodeChallengeQuestionId(challengeVoidQuestionMatch[1]);
+      if (typeof questionId !== 'string') return failure(questionId);
+      const body = bodyObject(request);
+      if (!challengeObjectHasOnly(body, ['reason'])) return failure({ ok: false, code: 'invalid', message: 'Tạm dừng câu hỏi cần một lý do.' });
+      const result = await dependencies.challengeSocial.voidQuestion(admin.adminId, questionId, typeof body.reason === 'string' ? body.reason : '');
+      if (!result.ok) return failure(result);
       return success({});
     }
     if (method === 'GET' && pathname === '/api/parent/profile') {
@@ -468,10 +728,35 @@ export async function getDefaultApp(): Promise<{ app: ReturnType<typeof createAp
   if (!defaultAppPromise) {
     defaultAppPromise = Promise.resolve().then(() => {
       const db = createDbClient();
-      const auth = createAuthService(new PostgresAuthRepository(db));
+      const authRepository = new PostgresAuthRepository(db);
+      const auth = createAuthService(authRepository);
       const learning = createLearningService(new PostgresLearningRepository(db));
       const classroom = createClassroomService(new PostgresClassroomRepository(db), () => new Date(), createSupabaseClassroomRealtimeBridge());
-      return { app: createApp({ auth, learning, classroom }), db };
+      const challengeAuthoringRepository = new PostgresAuthoringRepository(db);
+      const challengeAuthoring = createChallengeAuthoringService({
+        repository: challengeAuthoringRepository,
+        sourceCatalog: CHALLENGE_SOURCE_FACTS,
+        activeStudentDisplayNames: async () => (await authRepository.listStudents()).filter((account) => account.role === 'student' && account.active).map((account) => account.displayName),
+        clock: () => new Date(),
+        idFactory: randomUUID,
+      });
+      const challengeReview = createChallengeReviewService({ repository: challengeAuthoringRepository, clock: () => new Date() });
+      const challengePlayRepository = new PostgresPlayRepository(db);
+      const challengePlay = createChallengePlayService({
+        authoring: challengeAuthoringRepository,
+        play: challengePlayRepository,
+        clock: () => new Date(),
+        activeStudentCount: async () => (await authRepository.listStudents()).filter((account) => account.role === 'student' && account.active).length,
+        idFactory: randomUUID,
+      });
+      const challengeSocial = createChallengeSocialService({ authoring: challengeAuthoringRepository, play: challengePlayRepository, clock: () => new Date() });
+      const challengeWeekly = createChallengeWeeklyService({
+        authoring: challengeAuthoringRepository,
+        play: challengePlayRepository,
+        now: () => new Date(),
+        activeStudentIds: async () => (await authRepository.listStudents()).filter((account) => account.role === 'student' && account.active).map((account) => account.id),
+      });
+      return { app: createApp({ auth, learning, classroom, challengeAuthoring, challengeReview, challengePlay, challengeSocial, challengeWeekly }), db };
     }).catch((error) => {
       defaultAppPromise = null;
       throw error;

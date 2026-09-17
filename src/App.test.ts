@@ -24,6 +24,12 @@ const apiMocks = vi.hoisted(() => ({
   updateParentProfilePreferences: vi.fn(),
   lockParent: vi.fn(),
   logout: vi.fn(),
+  getPendingChallengeQuestions: vi.fn(),
+  getChallengeSettings: vi.fn(),
+  reviewChallengeQuestion: vi.fn(),
+  updateChallengeSettings: vi.fn(),
+  withdrawChallengeQuestion: vi.fn(),
+  getChallengeRolloutConfig: vi.fn(),
 }));
 
 const classroomMocks = vi.hoisted(() => ({
@@ -36,6 +42,13 @@ vi.mock('./auth/apiClient', async () => {
 });
 
 vi.mock('./components/Pet', () => ({ Pet: () => null }));
+vi.mock('./components/ChallengeDialog', () => ({
+  ChallengeDialog: ({ onClose }: { onClose: () => void }) => createElement(
+    'section',
+    { 'data-test-challenge-dialog': true },
+    createElement('button', { type: 'button', onClick: onClose }, 'Đóng Thách đố'),
+  ),
+}));
 vi.mock('./classroom/useClassroomFriends', () => classroomMocks);
 
 const session: ClientSession = {
@@ -130,6 +143,12 @@ describe('App cross-feature account flow', () => {
     apiMocks.updateParentProfilePreferences.mockResolvedValue({ ok: true, profile: { ...studentProfile, birthdayWishesEnabled: true } });
     apiMocks.lockParent.mockResolvedValue({ ok: true });
     apiMocks.logout.mockRejectedValue(new Error('offline'));
+    apiMocks.getPendingChallengeQuestions.mockResolvedValue({ ok: true, questions: [] });
+    apiMocks.getChallengeSettings.mockResolvedValue({ ok: true, settings: { studentId: 'student-a', canCreate: true, canParticipate: true, updatedAt: '2026-09-14T05:00:00.000Z' } });
+    apiMocks.reviewChallengeQuestion.mockResolvedValue({ ok: true, question: {} });
+    apiMocks.updateChallengeSettings.mockResolvedValue({ ok: true, settings: { studentId: 'student-a', canCreate: true, canParticipate: true, updatedAt: '2026-09-14T05:00:00.000Z' } });
+    apiMocks.withdrawChallengeQuestion.mockResolvedValue({ ok: true });
+    apiMocks.getChallengeRolloutConfig.mockResolvedValue({ ok: true, config: { enabled: true, mode: 'pilot', scope: 'single-class' } });
     classroomMocks.useClassroomFriends.mockReturnValue({
       friends: [classroomFriend],
       unreadCount: classroomFriend.unreadCount,
@@ -239,6 +258,34 @@ describe('App cross-feature account flow', () => {
 
     expect(mount.querySelector('[data-friend-list-dialog]')).toBeNull();
     expect(document.body.style.overflow).toBe('');
+  });
+
+  it('waits for a rollout acknowledgement and closes the challenge when the server kill switch turns off', async () => {
+    apiMocks.getChallengeRolloutConfig
+      .mockResolvedValueOnce({ ok: true, config: { enabled: true, mode: 'pilot', scope: 'single-class' } })
+      .mockResolvedValueOnce({ ok: true, config: { enabled: false, mode: 'off', scope: 'single-class' } });
+    act(() => root.render(createElement(App)));
+    await settle();
+    act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng lời chúc sinh nhật"]')?.click());
+
+    act(() => mount.querySelector<HTMLButtonElement>('[data-journey-feature="challenge"]')?.click());
+    expect(mount.querySelector('[data-test-challenge-dialog]')).not.toBeNull();
+
+    await act(async () => { document.dispatchEvent(new Event('visibilitychange')); await settle(); });
+    expect(mount.querySelector('[data-test-challenge-dialog]')).toBeNull();
+    expect(document.body.style.overflow).toBe('');
+    expect(apiMocks.getChallengeRolloutConfig).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not open the live challenge before the rollout config is acknowledged', async () => {
+    apiMocks.getChallengeRolloutConfig.mockResolvedValue({ ok: true, config: { enabled: false, mode: 'off', scope: 'single-class' } });
+    act(() => root.render(createElement(App)));
+    await settle();
+    act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng lời chúc sinh nhật"]')?.click());
+
+    act(() => mount.querySelector<HTMLButtonElement>('[data-journey-feature="challenge"]')?.click());
+    expect(mount.querySelector('[data-test-challenge-dialog]')).toBeNull();
+    expect(mount.querySelector('[data-coming-soon-dialog="challenge"]')).not.toBeNull();
   });
 
   it('keeps the desktop landscape pet adjustment separate from the mobile transform', () => {

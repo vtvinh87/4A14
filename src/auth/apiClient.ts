@@ -2,13 +2,19 @@ import type { AccountApiFailure, AccountApiFailureCode, AccountView, ClientAuthS
 import type { AccountProgressSnapshot, CurrentLearningRun, LearningEventAcknowledgement, LearningEventInput, LearningEventRecord, MigrationPreview } from '../../shared/learning-contracts';
 import type { DashboardRange, ParentDashboardData } from '../../shared/dashboard-contracts';
 import type { ClassroomMessage, ClassroomMessagesResponse, ClassroomRealtimeConfig, FriendsResponse } from '../../shared/classroom-contracts';
+import type { ChallengeAnswerResult, ChallengeFailure, ChallengePreferences, ChallengePreferencesPatch, ChallengeQuestionMine, ChallengeQuestionParent, ChallengeReactionRecord, ChallengeReactionType, ChallengeReportRecord, ChallengeRolloutConfig, ChallengeTodayResponse, ChallengeWeeklyResponse, CreateChallengeQuestionInput, ReportChallengeItemInput, ReviewChallengeQuestionInput, ReviseChallengeQuestionInput, SubmitChallengeAttemptInput } from '../../shared/challenge-contracts';
 
 export type ClientSession = ClientAuthSession & { mustChange: boolean };
 export type ClientAccount = AccountView;
 export type StudentProfileResponse = { profile: StudentProfileView };
 export type ParentDashboardResponse = { studentId: string; snapshot: AccountProgressSnapshot; dashboard: ParentDashboardData; events: LearningEventRecord[] };
-export type ApiFailure = AccountApiFailure | { ok: false; code: AccountApiFailureCode | 'unavailable'; message: string };
+export type ApiFailure = AccountApiFailure | ChallengeFailure | { ok: false; code: AccountApiFailureCode | 'unavailable'; message: string };
 export type ApiResult<T> = { ok: true } & T | ApiFailure;
+export type ChallengeQuestionResponse = { question: ChallengeQuestionMine };
+export type ChallengeQuestionsMineResponse = { questions: ChallengeQuestionMine[] };
+export type PendingChallengeQuestionsResponse = { questions: ChallengeQuestionParent[] };
+export type ChallengeSettingsResponse = { settings: ChallengePreferences };
+export type ChallengeRolloutResponse = { config: ChallengeRolloutConfig };
 
 const SESSION_TOKEN_KEY = 'hoc_vui_session_token';
 const PRODUCTION_EDGE_API_BASE_URL = 'https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api';
@@ -202,6 +208,73 @@ export async function getAccountProgress(): Promise<ApiResult<{ snapshot: Accoun
 
 export async function sendLearningEvents(events: LearningEventInput[]): Promise<ApiResult<{ snapshot: AccountProgressSnapshot; acknowledgements: LearningEventAcknowledgement[] }>> {
   return request('/api/me/events', jsonBody({ events }));
+}
+
+export async function getMyChallengeQuestions(): Promise<ApiResult<ChallengeQuestionsMineResponse>> {
+  return request('/api/me/challenge/questions/mine');
+}
+
+export async function createChallengeQuestion(input: CreateChallengeQuestionInput, idempotencyKey: string): Promise<ApiResult<ChallengeQuestionResponse>> {
+  return request('/api/me/challenge/questions', {
+    method: 'POST',
+    body: JSON.stringify(input),
+    headers: { 'Idempotency-Key': idempotencyKey },
+  });
+}
+
+export async function reviseChallengeQuestion(questionId: string, input: ReviseChallengeQuestionInput, idempotencyKey: string): Promise<ApiResult<ChallengeQuestionResponse>> {
+  return request(`/api/me/challenge/questions/${encodeURIComponent(questionId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+    headers: { 'Idempotency-Key': idempotencyKey },
+  });
+}
+
+export async function getTodayChallenge(): Promise<ApiResult<ChallengeTodayResponse>> {
+  return request('/api/me/challenge/today');
+}
+
+export async function getChallengeRolloutConfig(): Promise<ApiResult<ChallengeRolloutResponse>> {
+  return request('/api/me/challenge/config');
+}
+
+export async function submitChallengeAttempt(itemId: string, input: SubmitChallengeAttemptInput): Promise<ApiResult<ChallengeAnswerResult>> {
+  return request(`/api/me/challenge/items/${encodeURIComponent(itemId)}/attempt`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function getWeeklyChallenge(): Promise<ApiResult<ChallengeWeeklyResponse>> {
+  return request('/api/me/challenge/week');
+}
+
+export async function addChallengeReaction(itemId: string, reactionType: ChallengeReactionType, idempotencyKey: string): Promise<ApiResult<ChallengeReactionRecord>> {
+  return request(`/api/me/challenge/items/${encodeURIComponent(itemId)}/reactions`, jsonBody({ reactionType, idempotencyKey }));
+}
+
+export async function reportChallengeItem(itemId: string, input: Omit<ReportChallengeItemInput, 'idempotencyKey'>, idempotencyKey: string): Promise<ApiResult<ChallengeReportRecord>> {
+  return request(`/api/me/challenge/items/${encodeURIComponent(itemId)}/report`, jsonBody({ ...input, idempotencyKey }));
+}
+
+export async function getPendingChallengeQuestions(): Promise<ApiResult<PendingChallengeQuestionsResponse>> {
+  return request('/api/parent/challenge/questions/pending', {}, true);
+}
+
+export async function reviewChallengeQuestion(questionId: string, input: ReviewChallengeQuestionInput & { revision: number }): Promise<ApiResult<ChallengeQuestionResponse>> {
+  return request(`/api/parent/challenge/questions/${encodeURIComponent(questionId)}/review`, { method: 'POST', body: JSON.stringify(input) }, true);
+}
+
+export async function withdrawChallengeQuestion(questionId: string): Promise<ApiResult<{}>> {
+  return request(`/api/parent/challenge/questions/${encodeURIComponent(questionId)}/withdraw`, jsonBody({}), true);
+}
+
+export async function getChallengeSettings(): Promise<ApiResult<ChallengeSettingsResponse>> {
+  return request('/api/parent/challenge/settings', {}, true);
+}
+
+export async function updateChallengeSettings(patch: ChallengePreferencesPatch): Promise<ApiResult<ChallengeSettingsResponse>> {
+  return request('/api/parent/challenge/settings', { method: 'PATCH', body: JSON.stringify(patch) }, true);
 }
 
 export async function getFriends(): Promise<ApiResult<FriendsResponse>> {

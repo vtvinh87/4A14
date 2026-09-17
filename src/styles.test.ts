@@ -85,3 +85,12 @@ describe('Friends dialog layout', () => {
     }
   });
 });
+
+describe('Challenge responsive layout', () => {
+  it('bounds the daily/report overlays, collapses the weekly map, and honors reduced motion on narrow screens', () => {
+    expect(styles).toMatch(/\.challenge-dialog \{[\s\S]*?max-height: min\(880px, calc\(100svh - 28px\)\);/);
+    expect(styles).toMatch(/\.challenge-report-dialog \{[\s\S]*?max-height: min\(720px, calc\(100svh - 36px\)\);/);
+    expect(styles).toMatch(/@media \(max-width: 700px\)[\s\S]*?\.challenge-weekly-day-grid \{ grid-template-columns: repeat\(4, minmax\(0, 1fr\)\); \}/);
+    expect(styles).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*?transition-duration: 0\.001ms !important;/);
+  });
+});

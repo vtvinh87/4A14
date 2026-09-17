@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEFAULT_STUDENT_PIN } from './auth/account';
 import { ChangePinView, LoginView, ParentPinChangeDialog, ParentPinDialog } from './views/AuthView';
 import { AdminView } from './views/AdminView';
-import { changeParentPin, changeStudentPin, getAccountProgress, getCurrentAuthSession, getParentDashboard, getParentExport, getParentProfile, getStudentProfile, importParentProgress, lockParent, loginAdmin, loginStudent, logout, previewParentImport, resetParentProgress, sendLearningEvents, unlockParent, updateParentProfilePreferences, updateStudentProfile, type ClientSession } from './auth/apiClient';
+import { changeParentPin, changeStudentPin, getAccountProgress, getChallengeRolloutConfig, getCurrentAuthSession, getParentDashboard, getParentExport, getParentProfile, getStudentProfile, importParentProgress, lockParent, loginAdmin, loginStudent, logout, previewParentImport, resetParentProgress, sendLearningEvents, unlockParent, updateParentProfilePreferences, updateStudentProfile, type ClientSession } from './auth/apiClient';
 import { BottomDock } from './components/BottomDock';
 import { SettingsDialog } from './components/SettingsDialog';
 import { TopHud } from './components/TopHud';
@@ -26,6 +26,7 @@ import {
 import type { Progress } from './content/types';
 import type { LearningEventInput } from '../shared/learning-contracts';
 import type { DashboardRange, ParentDashboardData } from '../shared/dashboard-contracts';
+import type { ChallengeRolloutConfig } from '../shared/challenge-contracts';
 import { createAccountProgressSnapshot, loadAccountProgressSnapshot, saveAccountProgressSnapshot } from './progress/accountProgress';
 import { createAccountBackup, previewUnownedLegacyProgress, type LocalMigrationPreview } from './progress/accountMigration';
 import { acknowledgeLearningEvents, enqueueLearningEvent, listQueuedLearningEvents } from './progress/eventQueue';
@@ -43,6 +44,9 @@ import { BirthdayCelebration } from './components/BirthdayCelebration';
 import { getCalendarDateInTimeZone, hasCelebratedBirthday, isBirthdayToday, markBirthdayCelebrated } from './profile/birthday';
 import { useClassroomFriends } from './classroom/useClassroomFriends';
 import { FriendListDialog } from './components/FriendListDialog';
+import { useParentChallengeReview } from './challenge/useParentChallengeReview';
+import { ChallengeDialog } from './components/ChallengeDialog';
+import { CHALLENGE_SOURCE_FACTS } from '../shared/challenge-source';
 
 export const NAVIGATION_STATE_KEY = 'hoc-vui-navigation-v1';
 
@@ -174,6 +178,8 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [friendsDialogOpen, setFriendsDialogOpen] = useState(false);
+  const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
+  const [challengeRollout, setChallengeRollout] = useState<ChallengeRolloutConfig | null>(null);
   const [birthdayCelebration, setBirthdayCelebration] = useState<StudentProfileView | null>(null);
   const [toast, setToast] = useState('');
   const [offlineStatus, setOfflineStatus] = useState<OfflineStatus>(() => getInitialOfflineStatus(import.meta.env.PROD));
@@ -189,6 +195,13 @@ export function App() {
   const accountMode = authSession?.mode;
   const classroomFriendsEnabled = Boolean(authSession?.account.role === 'student' && authSession.mode === 'full');
   const classroomFriends = useClassroomFriends(classroomFriendsEnabled);
+  const parentChallengeReviewEnabled = Boolean(
+    authSession?.account.role === 'student'
+      && authSession.mode === 'full'
+      && activeView === 'parent'
+      && parentDashboard,
+  );
+  const parentChallengeReview = useParentChallengeReview(parentChallengeReviewEnabled);
   const authAccountIdRef = useRef<string | null>(null);
   authAccountIdRef.current = authSession?.account.id ?? null;
   const sessionEpochRef = useRef(0);
@@ -221,11 +234,11 @@ export function App() {
   }, [audio, effectiveReducedMotion, settings.sound]);
 
   useEffect(() => {
-    const modalOpen = settingsOpen || profileDialogOpen || friendsDialogOpen || Boolean(birthdayCelebration) || parentGateOpen || parentPinChangeDialogOpen;
+    const modalOpen = settingsOpen || profileDialogOpen || friendsDialogOpen || challengeDialogOpen || Boolean(birthdayCelebration) || parentGateOpen || parentPinChangeDialogOpen;
     const previousOverflow = document.body.style.overflow;
     if (modalOpen) document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = previousOverflow; };
-  }, [birthdayCelebration, friendsDialogOpen, parentGateOpen, parentPinChangeDialogOpen, profileDialogOpen, settingsOpen]);
+  }, [birthdayCelebration, challengeDialogOpen, friendsDialogOpen, parentGateOpen, parentPinChangeDialogOpen, profileDialogOpen, settingsOpen]);
 
   useEffect(() => {
     document.documentElement.scrollTop = 0;
@@ -285,6 +298,43 @@ export function App() {
     });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    const accountId = authSession?.account.role === 'student' && authSession.mode === 'full' ? authSession.account.id : null;
+    if (!accountId) {
+      setChallengeRollout(null);
+      setChallengeDialogOpen(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    let requestGeneration = 0;
+    setChallengeRollout(null);
+
+    const refreshRollout = async () => {
+      const generation = ++requestGeneration;
+      const result = await getChallengeRolloutConfig();
+      if (cancelled || generation !== requestGeneration || authAccountIdRef.current !== accountId) return;
+      if (!result.ok) return;
+      setChallengeRollout(result.config);
+      if (!result.config.enabled) setChallengeDialogOpen(false);
+    };
+
+    void refreshRollout();
+    const refreshWhenVisible = () => {
+      if (!document.hidden) void refreshRollout();
+    };
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    const timer = window.setInterval(() => {
+      if (!document.hidden) void refreshRollout();
+    }, 60_000);
+    return () => {
+      cancelled = true;
+      requestGeneration += 1;
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+      window.clearInterval(timer);
+    };
+  }, [authSession?.account.id, authSession?.account.role, authSession?.mode]);
 
   useEffect(() => {
     if (!profileOwnerId) {
@@ -683,6 +733,7 @@ export function App() {
 
   const handleParentLock = () => {
     void lockParent();
+    setChallengeDialogOpen(false);
     setParentDashboard(null);
     setParentProfile(null);
     setParentProfileBusy(false);
@@ -702,6 +753,7 @@ export function App() {
     setStudentProfile(null);
     setProfileDialogOpen(false);
     setFriendsDialogOpen(false);
+    setChallengeDialogOpen(false);
     setParentDashboard(null);
     setParentProfile(null);
     setParentProfileBusy(false);
@@ -867,7 +919,7 @@ export function App() {
   const renderView = () => {
     switch (activeView) {
       case 'journey':
-        return <JourneyView petMood={petMood} reducedMotion={effectiveReducedMotion} onPetTap={() => setMood('greet')} onOpenLessons={() => navigate('lessons')} onOpenFriends={() => setFriendsDialogOpen(true)} friendsUnreadCount={classroomFriends.unreadCount} />;
+        return <JourneyView petMood={petMood} reducedMotion={effectiveReducedMotion} onPetTap={() => setMood('greet')} onOpenLessons={() => navigate('lessons')} onOpenFriends={() => setFriendsDialogOpen(true)} onOpenChallenge={challengeRollout?.enabled ? () => setChallengeDialogOpen(true) : undefined} friendsUnreadCount={classroomFriends.unreadCount} />;
       case 'lessons':
         return <LessonsView progress={progress} onOpenLesson={openLesson} onBack={() => navigate('journey')} />;
       case 'lesson':
@@ -880,7 +932,7 @@ export function App() {
       case 'collection':
         return <CollectionView progress={progress} />;
       case 'parent':
-        return <ParentView progress={progress} settings={settings} dashboard={parentDashboard} parentProfile={parentProfile} parentProfileBusy={parentProfileBusy} parentProfileError={parentProfileError} onBirthdayWishesEnabledChange={handleParentBirthdayWishesEnabledChange} onRangeChange={handleParentRangeChange} childName={authSession?.account.displayName} storageRecovery={storageRecovery} storageWriteWarning={storageWriteWarning} legacyMigrationPreview={legacyMigrationPreview} onOpenSettings={openSettings} onOpenLessons={() => navigate('lessons')} onChangeParentPin={() => { setAuthError(''); setParentPinChangeDialogOpen(true); }} onImportLegacy={handleLegacyImport} onLockParent={handleParentLock} />;
+        return <ParentView progress={progress} settings={settings} dashboard={parentDashboard} parentProfile={parentProfile} parentProfileBusy={parentProfileBusy} parentProfileError={parentProfileError} onBirthdayWishesEnabledChange={handleParentBirthdayWishesEnabledChange} onRangeChange={handleParentRangeChange} childName={authSession?.account.displayName} storageRecovery={storageRecovery} storageWriteWarning={storageWriteWarning} legacyMigrationPreview={legacyMigrationPreview} onOpenSettings={openSettings} onOpenLessons={() => navigate('lessons')} onChangeParentPin={() => { setAuthError(''); setParentPinChangeDialogOpen(true); }} onImportLegacy={handleLegacyImport} onLockParent={handleParentLock} challengeReview={parentChallengeReviewEnabled ? parentChallengeReview : undefined} />;
       case 'settings':
         return null;
       default:
@@ -912,6 +964,7 @@ export function App() {
       {settingsOpen && <SettingsDialog settings={settings} saveStatus={storageRecovery ? 'recovery' : storageWriteWarning ? 'warning' : 'saved'} onChange={updateSettings} onClose={() => setSettingsOpen(false)} onLogout={handleLogout} />}
       {profileDialogOpen && visibleStudentProfile && <ProfileDialog profile={visibleStudentProfile} onSave={handleProfileSave} onChangePin={handleProfilePinChange} onClose={() => setProfileDialogOpen(false)} onLogout={handleLogout} />}
       {friendsDialogOpen && <FriendListDialog friends={classroomFriends.friends} loading={classroomFriends.loading} error={classroomFriends.error ?? ''} messageRevision={classroomFriends.messageRevision} onRefresh={classroomFriends.refresh} onFriendsChanged={classroomFriends.refresh} onClose={() => setFriendsDialogOpen(false)} />}
+      {challengeDialogOpen && challengeRollout?.enabled && authSession.account.role === 'student' && authSession.mode === 'full' && <ChallengeDialog sourceFacts={CHALLENGE_SOURCE_FACTS} studentId={authSession.account.id} canCreate onClose={() => setChallengeDialogOpen(false)} />}
       {birthdayCelebration && <BirthdayCelebration displayName={birthdayCelebration.displayName} avatarId={birthdayCelebration.avatarId} reducedMotion={effectiveReducedMotion} soundEnabled={settings.sound} onPlaySound={() => audio.play('success')} onClose={() => setBirthdayCelebration(null)} />}
       {parentGateOpen && <ParentPinDialog childName={authSession.account.displayName} onSubmit={handleParentUnlock} onCancel={() => setParentGateOpen(false)} error={parentGateError} busy={authBusy} />}
       {parentPinChangeDialogOpen && <ParentPinChangeDialog childName={authSession.account.displayName} onSubmit={handleParentPinChange} onCancel={() => { setParentPinChangeDialogOpen(false); setAuthError(''); }} error={authError} busy={authBusy} />}

@@ -34,9 +34,10 @@ export const JOURNEY_FEATURES: readonly JourneyFeatureDefinition[] = [
 export type JourneyFeatureRailProps = {
   onOpenFriends: () => void;
   friendsUnreadCount: number;
+  onOpenChallenge?: () => void;
 };
 
-export function JourneyFeatureRail({ onOpenFriends, friendsUnreadCount }: JourneyFeatureRailProps) {
+export function JourneyFeatureRail({ onOpenFriends, friendsUnreadCount, onOpenChallenge }: JourneyFeatureRailProps) {
   const [activeFeature, setActiveFeature] = useState<JourneyFeatureDefinition | null>(null);
 
   return (
@@ -52,7 +53,11 @@ export function JourneyFeatureRail({ onOpenFriends, friendsUnreadCount }: Journe
               aria-label={feature.id === 'friends' && friendsUnreadCount > 0 ? `${feature.label}, ${friendsUnreadCount} tin nhắn chưa đọc` : feature.label}
               title={feature.label}
               aria-haspopup="dialog"
-              onClick={() => feature.id === 'friends' ? onOpenFriends() : setActiveFeature(feature)}
+              onClick={() => {
+                if (feature.id === 'friends') onOpenFriends();
+                else if (feature.id === 'challenge' && onOpenChallenge) onOpenChallenge();
+                else setActiveFeature(feature);
+              }}
             >
               <span className="journey-feature-art" aria-hidden="true">
                 <img data-journey-feature-art src={feature.art} alt="" />

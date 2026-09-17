@@ -5,6 +5,8 @@ import { ParentView } from './ParentView';
 import { createDefaultProgress } from '../progress/storage';
 import type { ParentDashboardData } from '../../shared/dashboard-contracts';
 import type { LearningEventRecord } from '../../shared/learning-contracts';
+import type { ChallengeQuestionParent } from '../../shared/challenge-contracts';
+import type { ParentChallengeReviewState } from '../challenge/useParentChallengeReview';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -166,5 +168,25 @@ describe('ParentView artwork', () => {
     expect(mount.textContent).not.toContain('2016-09-14');
     expect(mount.textContent).not.toMatch(/\b\d{1,2}\s*tuổi\b/i);
     expect(mount.querySelector('[data-parent-scroll-region="lessons"]')).not.toBeNull();
+  });
+
+  it('mounts the parent-scoped Thách đố review queue without widening the existing dashboard data', () => {
+    const progress = createDefaultProgress();
+    const question = {
+      id: 'parent-question', authorId: 'student-a', sourceFactId: 'map', sourceVersion: 'challenge-facts-v1', lessonId: 'lesson-01',
+      lessonTitle: 'Làm quen với phương tiện học tập môn Lịch sử và Địa lí', prompt: 'Theo con, bản đồ giúp chúng ta học điều gì?',
+      options: [{ id: 'correct', text: 'Bản đồ' }, { id: 'wrong-1', text: 'Một bài hát.' }, { id: 'wrong-2', text: 'Một loại bánh.' }, { id: 'wrong-3', text: 'Một câu chuyện.' }],
+      correctOptionId: 'correct', explanation: 'Bản đồ giúp thể hiện thu nhỏ một khu vực hoặc toàn bộ bề mặt Trái Đất theo tỉ lệ.', status: 'pending_parent_review', revision: 1,
+      createdLocalDate: '2026-09-17', createdAt: '2026-09-17T08:00:00.000Z', updatedAt: '2026-09-17T08:00:00.000Z', submittedAt: '2026-09-17T08:00:00.000Z', reviewedAt: null,
+      featuredAt: null, closedAt: null, reviewReason: null, withdrawnAt: null, voidedAt: null, quotaUsedOnCreatedDate: 1, preview: null, reviewHistory: [],
+    } satisfies ChallengeQuestionParent;
+    const challengeReview = {
+      questions: [question], settings: { studentId: 'student-a', canCreate: true, canParticipate: true, updatedAt: '2026-09-17T08:00:00.000Z' }, loading: false, error: '', busyQuestionId: null,
+      refresh: vi.fn(async () => undefined), approve: vi.fn(async () => true), requestRevision: vi.fn(async () => true), withdraw: vi.fn(async () => true), updateSettings: vi.fn(async () => true), clear: vi.fn(),
+    } satisfies ParentChallengeReviewState;
+    act(() => root.render(createElement(ParentView, { progress, settings: progress.settings, challengeReview, storageRecovery: false, storageWriteWarning: false, onOpenSettings: vi.fn(), onOpenLessons: vi.fn(), onChangeParentPin: vi.fn(), onLockParent: vi.fn() })));
+    expect(mount.querySelector('[data-challenge-review-queue]')).not.toBeNull();
+    expect(mount.textContent).toContain('Chờ phụ huynh duyệt');
+    expect(mount.textContent).toContain('Theo con, bản đồ giúp chúng ta học điều gì?');
   });
 });
