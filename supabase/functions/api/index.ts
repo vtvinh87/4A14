@@ -3,6 +3,7 @@ import { getEnv } from '../../../server/runtime/env.ts';
 
 const ALLOWED_METHODS = 'GET,POST,PATCH,PUT,DELETE,OPTIONS';
 const ALLOWED_HEADERS = 'Authorization,Content-Type,X-Parent-Grant';
+const PREFLIGHT_MAX_AGE_SECONDS = '300';
 
 type EdgeApp = { handle: (request: AppRequest) => Promise<AppResponse> };
 export type LoadedEdgeApp = {
@@ -33,7 +34,7 @@ function isAllowedOrigin(origin: string | null, origins = configuredOrigins()): 
 }
 
 function corsHeaders(origin: string | null): Record<string, string> {
-  const headers: Record<string, string> = { Vary: 'Origin' };
+  const headers: Record<string, string> = { Vary: 'Origin', 'Access-Control-Expose-Headers': 'X-Request-Id,Server-Timing' };
   const normalized = normalizedOrigin(origin);
   if (normalized && isAllowedOrigin(normalized)) {
     headers['Access-Control-Allow-Origin'] = normalized;
@@ -42,13 +43,14 @@ function corsHeaders(origin: string | null): Record<string, string> {
   return headers;
 }
 
-function jsonResponse(body: Record<string, unknown>, status: number, origin: string | null): Response {
+function jsonResponse(body: Record<string, unknown>, status: number, origin: string | null, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'Cache-Control': 'no-store',
       'Content-Type': 'application/json; charset=utf-8',
       ...corsHeaders(origin),
+      ...extraHeaders,
     },
   });
 }
@@ -76,11 +78,21 @@ function appRequestFromWebRequest(request: Request, body: unknown): AppRequest {
   return { method: request.method, path: toAppPath(url), headers, body };
 }
 
-function appResponseToWebResponse(appResponse: AppResponse, origin: string | null): Response {
+function appResponseToWebResponse(appResponse: AppResponse, origin: string | null, requestId: string, serverTiming: string): Response {
   const headers = new Headers(appResponse.headers);
   for (const [key, value] of Object.entries(corsHeaders(origin))) headers.set(key, value);
+  headers.set('X-Request-Id', requestId);
+  headers.set('Server-Timing', serverTiming);
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json; charset=utf-8');
   return new Response(JSON.stringify(appResponse.body), { status: appResponse.statusCode, headers });
+}
+
+function createRequestId(): string {
+  return crypto.randomUUID();
+}
+
+function durationSince(start: number): string {
+  return Math.max(0, performance.now() - start).toFixed(1);
 }
 
 export function createEdgeHandler(loadApp: AppLoader = getDefaultApp): (request: Request) => Promise<Response> {
@@ -94,19 +106,30 @@ export function createEdgeHandler(loadApp: AppLoader = getDefaultApp): (request:
           ...corsHeaders(origin),
           'Access-Control-Allow-Methods': ALLOWED_METHODS,
           'Access-Control-Allow-Headers': ALLOWED_HEADERS,
+          'Access-Control-Max-Age': PREFLIGHT_MAX_AGE_SECONDS,
         },
       });
     }
 
+    const requestId = createRequestId();
+    const appLoadStartedAt = performance.now();
+    let appLoadCompleted = false;
+    let handlerStartedAt = performance.now();
     let dispose: LoadedEdgeApp['dispose'];
     try {
       const loaded = await loadApp();
+      appLoadCompleted = true;
       dispose = loaded.dispose;
       const { app } = loaded;
+      handlerStartedAt = performance.now();
       const result = await app.handle(appRequestFromWebRequest(request, await requestBody(request)));
-      return appResponseToWebResponse(result, origin);
+      return appResponseToWebResponse(result, origin, requestId, `app-load;dur=${durationSince(appLoadStartedAt)}, handler;dur=${durationSince(handlerStartedAt)}`);
     } catch {
-      return jsonResponse({ ok: false, code: 'unavailable', message: 'API tạm thời chưa sẵn sàng; hãy kiểm tra kết nối rồi thử lại.' }, 503, origin);
+      const handlerDuration = appLoadCompleted ? durationSince(handlerStartedAt) : '0.0';
+      return jsonResponse({ ok: false, code: 'unavailable', message: 'API tạm thời chưa sẵn sàng; hãy kiểm tra kết nối rồi thử lại.' }, 503, origin, {
+        'X-Request-Id': requestId,
+        'Server-Timing': `app-load;dur=${durationSince(appLoadStartedAt)}, handler;dur=${handlerDuration}`,
+      });
     } finally {
       if (dispose) {
         try { await dispose(); } catch { /* Disposal must not replace the API response. */ }

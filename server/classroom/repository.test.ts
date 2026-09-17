@@ -75,6 +75,25 @@ describe('MemoryClassroomRepository', () => {
     ]);
   });
 
+  it('computes the public roster, online boundary, and unread counts in one aggregate query', async () => {
+    const mock = mockedDatabase({
+      onQuery: (query) => query.includes('left join hoc_vui_private.classroom_presence') ? [
+        { id: 'peer-a', username: 'lan', display_name: 'Lan', avatar_id: 'fox-leaf', online: true, unread_count: 2 },
+        { id: 'peer-b', username: 'bao', display_name: 'Bao', avatar_id: 'fox-night', online: false, unread_count: 0 },
+      ] : [],
+    });
+    const repository = new PostgresClassroomRepository(mock.db as never);
+
+    await expect(repository.listFriendSummaries('self', '2026-09-16T09:00:00.000Z')).resolves.toEqual([
+      { id: 'peer-a', username: 'lan', displayName: 'Lan', avatarId: 'fox-leaf', online: true, unreadCount: 2 },
+      { id: 'peer-b', username: 'bao', displayName: 'Bao', avatarId: 'fox-night', online: false, unreadCount: 0 },
+    ]);
+    expect(mock.queries).toHaveLength(1);
+    expect(mock.queries[0]).toContain('left join hoc_vui_private.classroom_presence');
+    expect(mock.queries[0]).toContain('left join ( select sender_id');
+    expect(mock.queries[0]).toContain('recipient_id');
+  });
+
   it('isolates mutable peer and message records returned to callers', async () => {
     const repository = new MemoryClassroomRepository([
       peer('self', 'Minh', true, 'fox-scout'),

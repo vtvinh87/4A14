@@ -1,9 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ClassroomRealtimeConfig, FriendSummary } from '../../shared/classroom-contracts';
-import { getClassroomRealtimeConfig, getFriends, sendPresence } from '../auth/apiClient';
+import type { ClassroomBootstrapResponse, ClassroomRealtimeConfig, FriendSummary } from '../../shared/classroom-contracts';
+import { getClassroomBootstrap, getClassroomRealtimeConfig, getFriends, sendPresence } from '../auth/apiClient';
 import { subscribeToClassroomRealtime, type ClassroomRealtimeSubscription } from './realtime';
 
 const POLL_INTERVAL_MS = 15_000;
+
+type RefreshOutcome = { source: 'bootstrap'; realtime: ClassroomRealtimeConfig | null } | { source: 'legacy' } | { source: 'failed' } | null;
+
+function isRealtimeConfig(value: unknown): value is ClassroomRealtimeConfig {
+  if (!value || typeof value !== 'object') return false;
+  const config = value as Record<string, unknown>;
+  return typeof config.supabaseUrl === 'string'
+    && config.supabaseUrl.length > 0
+    && typeof config.publishableKey === 'string'
+    && config.publishableKey.length > 0
+    && typeof config.topic === 'string'
+    && config.topic.length > 0;
+}
+
+function isClassroomBootstrap(value: unknown): value is ClassroomBootstrapResponse {
+  if (!value || typeof value !== 'object') return false;
+  const response = value as Record<string, unknown>;
+  return Array.isArray(response.friends)
+    && typeof response.unreadCount === 'number'
+    && typeof response.presenceUpdated === 'boolean'
+    && (response.realtime === null || isRealtimeConfig(response.realtime));
+}
 
 export type ClassroomFriendsState = {
   friends: FriendSummary[];
@@ -34,14 +56,36 @@ export function useClassroomFriends(enabled: boolean): ClassroomFriendsState {
     setError(null);
   }, []);
 
-  const refresh = useCallback(async () => {
-    if (!enabled || document.hidden) return;
+  const refreshInternal = useCallback(async (): Promise<RefreshOutcome> => {
+    if (!enabled || document.hidden) return null;
     const requestGeneration = generation.current;
     const requestId = ++requestSequence.current;
     setLoading(true);
+
+    const bootstrap = await getClassroomBootstrap();
+    if (bootstrap.ok && isClassroomBootstrap(bootstrap)) {
+      if (generation.current !== requestGeneration || requestSequence.current !== requestId) return null;
+      setFriends(bootstrap.friends);
+      setUnreadCount(bootstrap.unreadCount);
+      // A presence write is deliberately best-effort: a valid roster remains
+      // usable while the next visible refresh retries the heartbeat.
+      setError(null);
+      setLoading(false);
+      return { source: 'bootstrap', realtime: bootstrap.realtime };
+    }
+    // A 404/invalid response means the deployed API predates bootstrap. Keep
+    // the old sequence as a compatibility path; transient 503/network errors
+    // should not multiply requests while the service is already unavailable.
+    if (!bootstrap.ok && bootstrap.code !== 'invalid') {
+      if (generation.current !== requestGeneration || requestSequence.current !== requestId) return null;
+      setError(bootstrap.message);
+      setLoading(false);
+      return { source: 'failed' };
+    }
+
     const presence = await sendPresence();
     const roster = await getFriends();
-    if (generation.current !== requestGeneration || requestSequence.current !== requestId) return;
+    if (generation.current !== requestGeneration || requestSequence.current !== requestId) return null;
 
     if (roster.ok) {
       setFriends(roster.friends);
@@ -49,18 +93,12 @@ export function useClassroomFriends(enabled: boolean): ClassroomFriendsState {
     }
     setError(!presence.ok ? presence.message : !roster.ok ? roster.message : null);
     setLoading(false);
+    return { source: 'legacy' };
   }, [enabled]);
 
-  const isRealtimeConfig = (value: unknown): value is ClassroomRealtimeConfig => {
-    if (!value || typeof value !== 'object') return false;
-    const config = value as Record<string, unknown>;
-    return typeof config.supabaseUrl === 'string'
-      && config.supabaseUrl.length > 0
-      && typeof config.publishableKey === 'string'
-      && config.publishableKey.length > 0
-      && typeof config.topic === 'string'
-      && config.topic.length > 0;
-  };
+  const refresh = useCallback(async () => {
+    await refreshInternal();
+  }, [refreshInternal]);
 
   useEffect(() => {
     if (!enabled) {
@@ -70,28 +108,36 @@ export function useClassroomFriends(enabled: boolean): ClassroomFriendsState {
 
     generation.current += 1;
     const refreshWhenVisible = () => {
-      if (!document.hidden) void refresh();
+      if (!document.hidden) void refreshInternal();
     };
     let realtimeRequested = false;
+    let disposed = false;
     let subscription: ClassroomRealtimeSubscription | undefined;
-    const connectRealtimeWhenVisible = () => {
-      if (document.hidden || realtimeRequested) return;
+    const connectRealtime = (config: ClassroomRealtimeConfig | null) => {
+      if (disposed || !config) return;
+      try {
+        subscription = subscribeToClassroomRealtime(config, () => {
+          setMessageRevision((current) => current + 1);
+          refreshWhenVisible();
+        });
+      } catch {
+        // The existing roster/conversation polling remains the safe fallback.
+      }
+    };
+    const connectLegacyRealtime = () => {
       realtimeRequested = true;
       void getClassroomRealtimeConfig().then((result) => {
-        if (!result.ok || !isRealtimeConfig(result)) return;
-        try {
-          subscription = subscribeToClassroomRealtime(result, () => {
-            setMessageRevision((current) => current + 1);
-            refreshWhenVisible();
-          });
-        } catch {
-          // The existing roster/conversation polling remains the safe fallback.
-        }
+        if (result.ok && isRealtimeConfig(result)) connectRealtime(result);
       });
     };
     const refreshAndConnectWhenVisible = () => {
-      refreshWhenVisible();
-      connectRealtimeWhenVisible();
+      if (document.hidden) return;
+      void refreshInternal().then((outcome) => {
+        if (!outcome || realtimeRequested || disposed) return;
+        realtimeRequested = true;
+        if (outcome.source === 'bootstrap') connectRealtime(outcome.realtime);
+        else if (outcome.source === 'legacy') connectLegacyRealtime();
+      });
     };
     const interval = window.setInterval(() => void refreshWhenVisible(), POLL_INTERVAL_MS);
     document.addEventListener('visibilitychange', refreshAndConnectWhenVisible);
@@ -99,13 +145,14 @@ export function useClassroomFriends(enabled: boolean): ClassroomFriendsState {
     refreshAndConnectWhenVisible();
 
     return () => {
+      disposed = true;
       generation.current += 1;
       window.clearInterval(interval);
       subscription?.close();
       document.removeEventListener('visibilitychange', refreshAndConnectWhenVisible);
       window.removeEventListener('online', refreshAndConnectWhenVisible);
     };
-  }, [clear, enabled, refresh]);
+  }, [clear, enabled, refreshInternal]);
 
   return { friends, unreadCount, messageRevision, loading, error, refresh, clear };
 }

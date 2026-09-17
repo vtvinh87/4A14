@@ -2,6 +2,14 @@ import { FormEvent, useEffect, useState } from 'react';
 import type { ClientAccount } from '../auth/apiClient';
 import { createStudentAccount, listStudentAccounts, resetStudentPin, updateStudentAccount } from '../auth/apiClient';
 
+function mergeAccount(accounts: ClientAccount[], account: ClientAccount): ClientAccount[] {
+  const index = accounts.findIndex((candidate) => candidate.id === account.id);
+  if (index < 0) return [...accounts, account];
+  const next = accounts.slice();
+  next[index] = account;
+  return next;
+}
+
 export function AdminView({ onLogout }: { onLogout: () => void }) {
   const [students, setStudents] = useState<ClientAccount[]>([]);
   const [username, setUsername] = useState('');
@@ -28,8 +36,11 @@ export function AdminView({ onLogout }: { onLogout: () => void }) {
     const result = await action();
     setBusy(false);
     if (!result.ok) { setError(result.message); return false; }
+    if ('account' in result && result.account && typeof result.account === 'object') {
+      setStudents((current) => mergeAccount(current, result.account as ClientAccount));
+    }
     setMessage(successMessage);
-    await refresh();
+    void refresh();
     return true;
   };
 

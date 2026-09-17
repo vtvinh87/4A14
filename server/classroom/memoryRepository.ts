@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { FriendSummary } from '../../shared/classroom-contracts';
 import type { ClassroomMessageRecord, ClassroomPeerRecord, ClassroomRepository } from './types';
 
 function clone<T>(value: T): T {
@@ -18,6 +19,25 @@ export class MemoryClassroomRepository implements ClassroomRepository {
     return [...this.peers.values()]
       .filter((peer) => peer.role === 'student' && peer.active && peer.id !== actorId)
       .map(clone);
+  }
+
+  async listFriendSummaries(actorId: string, now: string): Promise<FriendSummary[]> {
+    const peers = await this.listActivePeers(actorId);
+    const [presence, unreadCounts] = await Promise.all([
+      this.listPresence(peers.map((peer) => peer.id)),
+      this.listUnreadCounts(actorId),
+    ]);
+    const nowMs = Date.parse(now);
+    return peers.map((peer) => ({
+      id: peer.id,
+      username: peer.username,
+      displayName: peer.displayName,
+      avatarId: peer.avatarId,
+      online: Date.parse(presence.get(peer.id) ?? '') >= nowMs - 120_000,
+      unreadCount: unreadCounts.get(peer.id) ?? 0,
+    })).sort((left, right) => Number(right.online) - Number(left.online)
+      || left.displayName.localeCompare(right.displayName)
+      || left.username.localeCompare(right.username));
   }
 
   async upsertPresence(accountId: string, lastSeen: string): Promise<void> {

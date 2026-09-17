@@ -33,7 +33,48 @@ describe('account entry views', () => {
       pin.dispatchEvent(new Event('input', { bubbles: true }));
     });
     act(() => mount.querySelector('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
-    expect(onLogin).toHaveBeenCalledWith('bao04', '012345');
+    expect(onLogin).toHaveBeenCalledWith('bao04', '012345', true);
+  });
+
+  it('allows a student to turn off remembering on a shared device', () => {
+    const onLogin = vi.fn();
+    act(() => root.render(createElement(LoginView, { onStudentLogin: onLogin, onAdminLogin: vi.fn() })));
+    const remember = mount.querySelector<HTMLInputElement>('input[name="remember-device"]');
+    expect(remember?.checked).toBe(true);
+    act(() => remember?.click());
+    expect(remember?.checked).toBe(false);
+
+    const inputs = mount.querySelectorAll('input');
+    act(() => {
+      const username = inputs[0] as HTMLInputElement;
+      const pin = inputs[1] as HTMLInputElement;
+      username.value = 'bao04';
+      pin.value = '012345';
+      username.dispatchEvent(new Event('input', { bubbles: true }));
+      pin.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    act(() => mount.querySelector('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    expect(onLogin).toHaveBeenCalledWith('bao04', '012345', false);
+  });
+
+  it('keeps the remember option out of admin login', () => {
+    const onAdminLogin = vi.fn();
+    act(() => root.render(createElement(LoginView, { onStudentLogin: vi.fn(), onAdminLogin })));
+    const modeButtons = mount.querySelectorAll<HTMLButtonElement>('.auth-mode-switch button');
+    act(() => modeButtons[1]?.click());
+    expect(mount.querySelector('input[name="remember-device"]')).toBeNull();
+
+    const inputs = mount.querySelectorAll('input');
+    act(() => {
+      const username = inputs[0] as HTMLInputElement;
+      const password = inputs[1] as HTMLInputElement;
+      username.value = 'admin';
+      password.value = '123456@';
+      username.dispatchEvent(new Event('input', { bubbles: true }));
+      password.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    act(() => mount.querySelector('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    expect(onAdminLogin).toHaveBeenCalledWith('admin', '123456@');
   });
 
   it('shows the concise Admin contact without the old login explanation', () => {

@@ -27,3 +27,4 @@ export type ClassroomRealtimeConfig = {
   publishableKey: string;
   topic: string;
 };
+export type ClassroomBootstrapResponse = FriendsResponse & { realtime: ClassroomRealtimeConfig | null; presenceUpdated: boolean };

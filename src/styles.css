@@ -5829,6 +5829,10 @@ button:focus-visible {
 .auth-field .pin-field-input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 11px; background: transparent; opacity: 0; outline: none; cursor: text; }
 .auth-field .pin-field-input:focus { border: 0; box-shadow: none; }
 .auth-submit { justify-content: center; width: 100%; min-height: 50px; margin-top: 4px; }
+.auth-remember-wrap { display: grid; gap: 4px; margin-top: 1px; }
+.auth-remember { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 0.76rem; font-weight: 900; cursor: pointer; }
+.auth-remember input { width: 17px; height: 17px; margin: 0; accent-color: #268e89; }
+.auth-remember-note { margin: 0; color: #557083; font-size: 0.68rem; font-weight: 700; line-height: 1.35; }
 .auth-cancel { justify-content: center; width: 100%; min-height: 44px; }
 .auth-error { margin: 0; padding: 9px 11px; border: 2px solid rgba(185, 91, 62, 0.34); border-radius: 11px; background: #fff0e8; color: #994a3a; font-size: 0.78rem; font-weight: 800; line-height: 1.4; }
 .auth-note { margin: 20px 0 0; color: #557083; font-size: 0.73rem; font-weight: 700; line-height: 1.45; text-align: center; }

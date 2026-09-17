@@ -1,4 +1,5 @@
 import type { AvatarId } from '../../shared/account-contracts.ts';
+import type { FriendSummary } from '../../shared/classroom-contracts.ts';
 
 export type ClassroomPeerRecord = {
   id: string;
@@ -20,6 +21,7 @@ export type ClassroomMessageRecord = {
 
 export type ClassroomRepository = {
   listActivePeers(actorId: string): Promise<ClassroomPeerRecord[]>;
+  listFriendSummaries(actorId: string, now: string): Promise<FriendSummary[]>;
   upsertPresence(accountId: string, lastSeen: string): Promise<void>;
   listPresence(accountIds: readonly string[]): Promise<ReadonlyMap<string, string>>;
   listUnreadCounts(recipientId: string): Promise<ReadonlyMap<string, number>>;

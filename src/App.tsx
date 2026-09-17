@@ -534,10 +534,10 @@ export function App() {
     };
   }, [activeView, authSession, progressOwnerId]);
 
-  const handleStudentLogin = async (username: string, pin: string) => {
+  const handleStudentLogin = async (username: string, pin: string, rememberDevice: boolean) => {
     setAuthBusy(true);
     setAuthError('');
-    const result = await loginStudent(username, pin);
+    const result = await loginStudent(username, pin, rememberDevice);
     setAuthBusy(false);
     if (!result.ok) { setAuthError(result.message); return; }
     loadedOwnerId.current = null;

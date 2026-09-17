@@ -73,8 +73,22 @@ describe('Supabase Edge API adapter', () => {
     expect(result.headers.get('Access-Control-Allow-Credentials')).toBe('true');
     expect(result.headers.get('Access-Control-Allow-Methods')).toBe('GET,POST,PATCH,PUT,DELETE,OPTIONS');
     expect(result.headers.get('Access-Control-Allow-Headers')).toBe('Authorization,Content-Type,X-Parent-Grant');
+    expect(result.headers.get('Access-Control-Max-Age')).toBe('300');
+    expect(result.headers.get('Access-Control-Expose-Headers')).toBe('X-Request-Id,Server-Timing');
     expect(result.headers.get('Vary')).toBe('Origin');
     expect(app.handle).not.toHaveBeenCalled();
+  });
+
+  it('returns safe request timing diagnostics for an allowed response', async () => {
+    const app = { handle: vi.fn(async () => response({ ok: true })) };
+    const handler = createEdgeHandler(async () => ({ app }));
+    const result = await handler(new Request('https://project.supabase.co/functions/v1/api/auth/me', {
+      headers: { Origin: 'https://hoc-vui.web.app' },
+    }));
+
+    expect(result.headers.get('X-Request-Id')).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    expect(result.headers.get('Server-Timing')).toMatch(/app-load;dur=\d+(\.\d+)?, handler;dur=\d+(\.\d+)?/);
+    expect(result.headers.get('Access-Control-Expose-Headers')).toBe('X-Request-Id,Server-Timing');
   });
 
   it('rejects an unlisted origin before route dispatch', async () => {

@@ -23,7 +23,7 @@ import { getEnv } from './runtime/env.ts';
 import { challengeRolloutFailure, getChallengeRolloutConfig, isChallengeRolloutEnabled } from './challenge/rollout.ts';
 
 const SESSION_COOKIE = 'hoc_vui_session';
-const LOCAL_SESSION_MAX_AGE = 7 * 24 * 60 * 60;
+const STUDENT_SESSION_MAX_AGE = 30 * 24 * 60 * 60;
 const ADMIN_SESSION_MAX_AGE = 8 * 60 * 60;
 
 export type AppRequest = {
@@ -133,7 +133,7 @@ function cookieFlags(): string {
 }
 
 function setSessionCookie(token: string, expiresAt: string, role: 'student' | 'admin'): string {
-  const maxAge = role === 'admin' ? ADMIN_SESSION_MAX_AGE : LOCAL_SESSION_MAX_AGE;
+  const maxAge = role === 'admin' ? ADMIN_SESSION_MAX_AGE : STUDENT_SESSION_MAX_AGE;
   const remaining = Math.max(0, Math.ceil((Date.parse(expiresAt) - Date.now()) / 1000));
   return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Max-Age=${Math.min(maxAge, remaining)}; ${cookieFlags()}`;
 }
@@ -290,7 +290,7 @@ export function createApp(dependencies: AppDependencies) {
 
     if (method === 'POST' && pathname === '/api/auth/student/login') {
       const body = bodyObject(request);
-      const result = await auth.loginStudent(String(body.username ?? ''), String(body.pin ?? ''));
+      const result = await auth.loginStudent(String(body.username ?? ''), String(body.pin ?? ''), body.rememberDevice === true);
       if (!result.ok) return failure(result);
       return withCookie(success({ accessToken: result.token, session: publicSession(result.session), ...(result.mustChange ? { mustChange: true } : {}) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
     }
@@ -319,7 +319,7 @@ export function createApp(dependencies: AppDependencies) {
       const token = requireToken(request);
       if (typeof token !== 'string') return failure(token, 401);
       const body = bodyObject(request);
-      const result = await auth.changePin(token, String(body.currentPin ?? ''), String(body.newPin ?? ''), 'student');
+      const result = await auth.changePin(token, String(body.currentPin ?? ''), String(body.newPin ?? ''), 'student', body.rememberDevice === true);
       if (!result.ok) return failure(result);
       return withCookie(success({ accessToken: result.token, session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
     }
@@ -330,6 +330,12 @@ export function createApp(dependencies: AppDependencies) {
       const result = await auth.changeAdminPassword(token, String(body.currentPassword ?? ''), String(body.newPassword ?? ''));
       if (!result.ok) return failure(result);
       return withCookie(success({ accessToken: result.token, session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'admin'));
+    }
+    if (method === 'POST' && pathname === '/api/me/classroom/bootstrap') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!dependencies.classroom) return failure({ ok: false, code: 'unavailable', message: 'Classroom chưa sẵn sàng trên máy chủ.' }, 503);
+      return success(await dependencies.classroom.bootstrap(student.studentId));
     }
     if (method === 'GET' && pathname === '/api/me/friends') {
       const student = await authorizeStudent(request);
@@ -736,7 +742,7 @@ export async function getDefaultApp(): Promise<{ app: ReturnType<typeof createAp
       const challengeAuthoring = createChallengeAuthoringService({
         repository: challengeAuthoringRepository,
         sourceCatalog: CHALLENGE_SOURCE_FACTS,
-        activeStudentDisplayNames: async () => (await authRepository.listStudents()).filter((account) => account.role === 'student' && account.active).map((account) => account.displayName),
+        activeStudentDisplayNames: async () => (await authRepository.listStudentSummaries()).filter((account) => account.active).map((account) => account.displayName),
         clock: () => new Date(),
         idFactory: randomUUID,
       });
@@ -746,7 +752,7 @@ export async function getDefaultApp(): Promise<{ app: ReturnType<typeof createAp
         authoring: challengeAuthoringRepository,
         play: challengePlayRepository,
         clock: () => new Date(),
-        activeStudentCount: async () => (await authRepository.listStudents()).filter((account) => account.role === 'student' && account.active).length,
+        activeStudentCount: async () => (await authRepository.listStudentSummaries()).filter((account) => account.active).length,
         idFactory: randomUUID,
       });
       const challengeSocial = createChallengeSocialService({ authoring: challengeAuthoringRepository, play: challengePlayRepository, clock: () => new Date() });
@@ -754,7 +760,7 @@ export async function getDefaultApp(): Promise<{ app: ReturnType<typeof createAp
         authoring: challengeAuthoringRepository,
         play: challengePlayRepository,
         now: () => new Date(),
-        activeStudentIds: async () => (await authRepository.listStudents()).filter((account) => account.role === 'student' && account.active).map((account) => account.id),
+        activeStudentIds: async () => (await authRepository.listStudentSummaries()).filter((account) => account.active).map((account) => account.id),
       });
       return { app: createApp({ auth, learning, classroom, challengeAuthoring, challengeReview, challengePlay, challengeSocial, challengeWeekly }), db };
     }).catch((error) => {

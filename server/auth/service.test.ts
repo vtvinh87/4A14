@@ -1,9 +1,67 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MemoryAuthRepository } from './memoryRepository';
 import { createAuthService } from './service';
 import { DEFAULT_ADMIN_PASSWORD, DEFAULT_STUDENT_PIN } from '../../src/auth/account';
 
 describe('server auth service', () => {
+  it('applies bounded student TTLs and preserves remembered full sessions across rotations', async () => {
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    let now = new Date('2026-09-17T05:00:00.000Z');
+    const repository = new MemoryAuthRepository();
+    const auth = createAuthService(repository, () => now);
+
+    const admin = await auth.loginAdmin('admin', DEFAULT_ADMIN_PASSWORD);
+    expect(admin.ok).toBe(true);
+    if (!admin.ok) return;
+    expect(Date.parse(admin.session.expiresAt) - Date.parse(admin.session.createdAt)).toBe(8 * 60 * 60 * 1000);
+
+    const created = await auth.createStudent(admin.token, 'ttl17', 'TTL');
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    const provisional = await auth.loginStudent('ttl17', DEFAULT_STUDENT_PIN, true);
+    expect(provisional.ok).toBe(true);
+    if (!provisional.ok) return;
+    expect(provisional.session.mode).toBe('change-only');
+    expect(Date.parse(provisional.session.expiresAt) - Date.parse(provisional.session.createdAt)).toBe(7 * DAY_MS);
+
+    const changedStudent = await auth.changePin(provisional.token, DEFAULT_STUDENT_PIN, '246810', 'student', true);
+    expect(changedStudent.ok).toBe(true);
+    if (!changedStudent.ok) return;
+    expect(Date.parse(changedStudent.session.expiresAt) - Date.parse(changedStudent.session.createdAt)).toBe(30 * DAY_MS);
+
+    const firstParent = await auth.unlockParent(changedStudent.token, DEFAULT_STUDENT_PIN);
+    expect(firstParent.ok).toBe(true);
+    if (!firstParent.ok) return;
+    expect(firstParent.session.mode).toBe('change-only');
+    expect(Date.parse(firstParent.session.expiresAt) - Date.parse(firstParent.session.createdAt)).toBe(7 * DAY_MS);
+
+    const changedParent = await auth.changePin(firstParent.token, DEFAULT_STUDENT_PIN, '864208', 'parent');
+    expect(changedParent.ok).toBe(true);
+    if (!changedParent.ok) return;
+
+    const rememberedLogin = await auth.loginStudent('ttl17', '246810', true);
+    expect(rememberedLogin.ok).toBe(true);
+    if (!rememberedLogin.ok) return;
+    expect(Date.parse(rememberedLogin.session.expiresAt) - Date.parse(rememberedLogin.session.createdAt)).toBe(30 * DAY_MS);
+
+    const parentReady = await auth.unlockParent(rememberedLogin.token, '864208');
+    expect(parentReady.ok).toBe(true);
+    if (!parentReady.ok) return;
+    expect(Date.parse(parentReady.session.expiresAt) - Date.parse(parentReady.session.createdAt)).toBe(30 * DAY_MS);
+
+    const parentRotated = await auth.changePin(parentReady.token, '864208', '864209', 'parent');
+    expect(parentRotated.ok).toBe(true);
+    if (!parentRotated.ok) return;
+    expect(Date.parse(parentRotated.session.expiresAt) - Date.parse(parentRotated.session.createdAt)).toBe(30 * DAY_MS);
+
+    now = new Date(now.getTime() + 1);
+    const normalLogin = await auth.loginStudent('ttl17', '246810', false);
+    expect(normalLogin.ok).toBe(true);
+    if (!normalLogin.ok) return;
+    expect(Date.parse(normalLogin.session.expiresAt) - Date.parse(normalLogin.session.createdAt)).toBe(7 * DAY_MS);
+  });
+
   it('creates a student with independent default credentials and requires first-use PIN change', async () => {
     const repository = new MemoryAuthRepository();
     const auth = createAuthService(repository);
@@ -48,6 +106,20 @@ describe('server auth service', () => {
     if (!student.ok) return;
     expect((await auth.listStudents(student.token)).ok).toBe(false);
     expect((await auth.createStudent(student.token, 'minh10', 'Minh')).ok).toBe(false);
+  });
+
+  it('uses public student summaries for Admin listing without loading credentials', async () => {
+    const repository = new MemoryAuthRepository();
+    const auth = createAuthService(repository);
+    const admin = await auth.loginAdmin('admin', DEFAULT_ADMIN_PASSWORD);
+    if (!admin.ok) throw new Error('admin login');
+    await auth.createStudent(admin.token, 'summary18', 'Summary');
+    const summaries = vi.spyOn(repository, 'listStudentSummaries');
+
+    const result = await auth.listStudents(admin.token);
+
+    expect(result).toMatchObject({ ok: true, accounts: [expect.objectContaining({ username: 'summary18' })] });
+    expect(summaries).toHaveBeenCalledOnce();
   });
 
   it('revokes a parent grant on logout and never accepts a client supplied student id', async () => {

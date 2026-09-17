@@ -1,7 +1,7 @@
 import type postgres from 'postgres';
 import { DEFAULT_AVATAR_ID, isAvatarId, type AvatarId } from '../../shared/account-contracts.ts';
 import { withTransaction, type DatabaseClient, type DatabaseTransaction } from '../db/client.ts';
-import type { AdminAuditRecord, AuthRepository, CredentialKind, CredentialRecord, ServerAccountRecord, ServerSessionRecord } from './types.ts';
+import type { AccountView, AdminAuditRecord, AuthRepository, CredentialKind, CredentialRecord, ServerAccountRecord, ServerSessionRecord } from './types.ts';
 
 type AccountRow = {
   id: string;
@@ -41,6 +41,34 @@ type SessionRow = {
   credential_version: number;
   parent_grant_until: Date | string | null;
   parent_grant_hash: string | null;
+};
+
+type SessionAccountRow = {
+  session_id: string;
+  session_token_hash: string;
+  session_account_id: string;
+  session_mode: 'full' | 'change-only';
+  session_change_kind: 'student' | 'parent' | null;
+  session_created_at: Date | string;
+  session_expires_at: Date | string;
+  session_revoked_at: Date | string | null;
+  session_credential_version: number;
+  session_parent_grant_until: Date | string | null;
+  session_parent_grant_hash: string | null;
+  account_id: string;
+  username: string;
+  display_name: string;
+  role: 'student' | 'admin';
+  active: boolean;
+  avatar_id: string;
+  birth_date: string | Date | null;
+  birthday_wishes_enabled: boolean;
+  created_at: Date | string;
+  updated_at: Date | string;
+  credential_version: number;
+  failed_attempts: number;
+  locked_until: Date | string | null;
+  credentials: CredentialRow[] | string | null;
 };
 
 type QueryClient = DatabaseClient | DatabaseTransaction;
@@ -90,6 +118,21 @@ function mapAccount(row: AccountRow, credentials: CredentialRow[]): ServerAccoun
   };
 }
 
+function mapAccountView(row: AccountRow): AccountView {
+  return { id: row.id, username: row.username, displayName: row.display_name, role: row.role, active: row.active, credentialVersion: row.credential_version };
+}
+
+function parseCredentials(value: SessionAccountRow['credentials']): CredentialRow[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== 'string') return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed as CredentialRow[] : [];
+  } catch {
+    return [];
+  }
+}
+
 async function loadAccount(db: QueryClient, where: postgres.PendingQuery<AccountRow[]>) {
   const rows = await where as unknown as AccountRow[];
   const row = rows[0];
@@ -136,6 +179,39 @@ function mapSession(row: SessionRow): ServerSessionRecord {
   };
 }
 
+function mapSessionWithAccount(row: SessionAccountRow): { account: ServerAccountRecord; session: ServerSessionRecord } {
+  return {
+    session: mapSession({
+      id: row.session_id,
+      token_hash: row.session_token_hash,
+      account_id: row.session_account_id,
+      mode: row.session_mode,
+      change_kind: row.session_change_kind,
+      created_at: row.session_created_at,
+      expires_at: row.session_expires_at,
+      revoked_at: row.session_revoked_at,
+      credential_version: row.session_credential_version,
+      parent_grant_until: row.session_parent_grant_until,
+      parent_grant_hash: row.session_parent_grant_hash,
+    }),
+    account: mapAccount({
+      id: row.account_id,
+      username: row.username,
+      display_name: row.display_name,
+      role: row.role,
+      active: row.active,
+      avatar_id: row.avatar_id,
+      birth_date: row.birth_date,
+      birthday_wishes_enabled: row.birthday_wishes_enabled,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      credential_version: row.credential_version,
+      failed_attempts: row.failed_attempts,
+      locked_until: row.locked_until,
+    }, parseCredentials(row.credentials)),
+  };
+}
+
 export class PostgresAuthRepository implements AuthRepository {
   constructor(private readonly db: DatabaseClient) {}
 
@@ -165,6 +241,16 @@ export class PostgresAuthRepository implements AuthRepository {
       order by lower(display_name), username
     ` as AccountRow[];
     return Promise.all(rows.map(async (row) => mapAccount(row, await loadCredentials(this.db, row.id))));
+  }
+
+  async listStudentSummaries(): Promise<AccountView[]> {
+    const rows = await this.db<AccountRow[]>`
+      select id, username, display_name, role, active, avatar_id, birth_date, birthday_wishes_enabled, created_at, updated_at, credential_version, failed_attempts, locked_until
+      from hoc_vui_private.accounts
+      where role = 'student'
+      order by lower(display_name), username
+    ` as AccountRow[];
+    return rows.map(mapAccountView);
   }
 
   async insertAccount(account: ServerAccountRecord): Promise<void> {
@@ -217,6 +303,45 @@ export class PostgresAuthRepository implements AuthRepository {
       limit 1
     ` as SessionRow[];
     return rows[0] ? mapSession(rows[0]) : null;
+  }
+
+  async findSessionWithAccount(tokenHash: string): Promise<{ account: ServerAccountRecord; session: ServerSessionRecord } | null> {
+    const rows = await this.db<SessionAccountRow[]>`
+      select
+        s.id as session_id,
+        s.token_hash as session_token_hash,
+        s.account_id as session_account_id,
+        s.mode as session_mode,
+        s.change_kind as session_change_kind,
+        s.created_at as session_created_at,
+        s.expires_at as session_expires_at,
+        s.revoked_at as session_revoked_at,
+        s.credential_version as session_credential_version,
+        s.parent_grant_until as session_parent_grant_until,
+        s.parent_grant_hash as session_parent_grant_hash,
+        a.id as account_id,
+        a.username,
+        a.display_name,
+        a.role,
+        a.active,
+        a.avatar_id,
+        a.birth_date,
+        a.birthday_wishes_enabled,
+        a.created_at,
+        a.updated_at,
+        a.credential_version,
+        a.failed_attempts,
+        a.locked_until,
+        coalesce(jsonb_agg(jsonb_build_object('owner_id', c.owner_id, 'kind', c.kind, 'hash', c.hash, 'salt', c.salt, 'algorithm', c.algorithm, 'must_change', c.must_change, 'version', c.version)) filter (where c.owner_id is not null), '[]'::jsonb) as credentials
+      from hoc_vui_private.auth_sessions s
+      join hoc_vui_private.accounts a on a.id = s.account_id
+      left join hoc_vui_private.credentials c on c.owner_id = a.id
+      where s.token_hash = ${tokenHash}
+      group by s.id, s.token_hash, s.account_id, s.mode, s.change_kind, s.created_at, s.expires_at, s.revoked_at, s.credential_version, s.parent_grant_until, s.parent_grant_hash,
+        a.id, a.username, a.display_name, a.role, a.active, a.avatar_id, a.birth_date, a.birthday_wishes_enabled, a.created_at, a.updated_at, a.credential_version, a.failed_attempts, a.locked_until
+      limit 1
+    ` as SessionAccountRow[];
+    return rows[0] ? mapSessionWithAccount(rows[0]) : null;
   }
 
   async updateSession(session: ServerSessionRecord): Promise<void> {

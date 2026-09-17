@@ -93,11 +93,39 @@ describe('Classroom Friends browser client', () => {
     expect(readRequest.method).toBe('POST');
   });
 
+  it('uses the bootstrap response for the initial roster and realtime subscription', async () => {
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => String(input) === '/api/me/classroom/bootstrap'
+      ? jsonResponse({ ok: true, friends: [lan], unreadCount: 2, presenceUpdated: true, realtime: { supabaseUrl: 'https://example.supabase.co', publishableKey: 'public-key', topic: 'classroom:student:opaque' } })
+      : jsonResponse({ ok: false, code: 'invalid', message: 'Không nên gọi fallback.' }, 404));
+    realtimeMocks.subscribeToClassroomRealtime.mockImplementation(() => ({ close: vi.fn() }));
+    const { useClassroomFriends } = await import('./useClassroomFriends');
+    let state: FriendsState | undefined;
+    const FriendsProbe = () => {
+      state = useClassroomFriends(true);
+      return null;
+    };
+    const mount = document.createElement('div');
+    const root = createRoot(mount);
+
+    try {
+      act(() => root.render(createElement(FriendsProbe)));
+      await settle();
+      expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/api/me/classroom/bootstrap']);
+      expect(state?.friends).toEqual([lan]);
+      expect(state?.unreadCount).toBe(2);
+      expect(realtimeMocks.subscribeToClassroomRealtime).toHaveBeenCalledOnce();
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
   it('polls friends and sends presence only while enabled and visible', async () => {
     vi.useFakeTimers();
     vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const path = String(input);
+      if (path === '/api/me/classroom/bootstrap') return jsonResponse({ ok: false, code: 'invalid', message: 'API cũ.' }, 404);
       return path === '/api/me/friends'
         ? jsonResponse({ ok: true, friends: [lan], unreadCount: 2 })
         : jsonResponse({ ok: true });
@@ -114,7 +142,7 @@ describe('Classroom Friends browser client', () => {
     try {
       act(() => root.render(createElement(FriendsProbe, { enabled: true })));
       await settle();
-      expect(fetchMock.mock.calls.map(([url]) => url).filter((url) => url !== '/api/me/realtime')).toEqual(['/api/me/presence', '/api/me/friends']);
+      expect(fetchMock.mock.calls.map(([url]) => url).filter((url) => url !== '/api/me/realtime' && url !== '/api/me/classroom/bootstrap')).toEqual(['/api/me/presence', '/api/me/friends']);
       expect(state?.friends).toEqual([lan]);
 
       await act(async () => {
@@ -133,7 +161,9 @@ describe('Classroom Friends browser client', () => {
     const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => String(input) === '/api/me/friends'
       ? jsonResponse({ ok: true, friends: [lan], unreadCount: 2 })
-      : jsonResponse({ ok: true }));
+      : String(input) === '/api/me/classroom/bootstrap'
+        ? jsonResponse({ ok: false, code: 'invalid', message: 'API cũ.' }, 404)
+        : jsonResponse({ ok: true }));
     const { useClassroomFriends } = await import('./useClassroomFriends');
     const FriendsProbe = ({ enabled }: { enabled: boolean }) => {
       useClassroomFriends(enabled);
@@ -156,7 +186,7 @@ describe('Classroom Friends browser client', () => {
         document.dispatchEvent(new Event('visibilitychange'));
         await settle();
       });
-      expect(fetchMock.mock.calls.map(([url]) => url).filter((url) => url !== '/api/me/realtime')).toEqual(['/api/me/presence', '/api/me/friends']);
+      expect(fetchMock.mock.calls.map(([url]) => url).filter((url) => url !== '/api/me/realtime' && url !== '/api/me/classroom/bootstrap')).toEqual(['/api/me/presence', '/api/me/friends']);
 
       await act(async () => {
         window.dispatchEvent(new Event('online'));
@@ -177,6 +207,7 @@ describe('Classroom Friends browser client', () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const path = String(input);
       if (path === '/api/me/realtime') return Promise.resolve(jsonResponse({ ok: false, code: 'unavailable', message: 'Realtime chưa sẵn sàng.' }, 503));
+      if (path === '/api/me/classroom/bootstrap') return Promise.resolve(jsonResponse({ ok: false, code: 'invalid', message: 'API cũ.' }, 404));
       return path === '/api/me/presence'
         ? presenceResponses[presenceIndex++]!.promise
         : friendsResponses[friendsIndex++]!.promise;
@@ -225,6 +256,7 @@ describe('Classroom Friends browser client', () => {
     let unavailable = false;
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const path = String(input);
+      if (path === '/api/me/classroom/bootstrap') return jsonResponse({ ok: false, code: 'invalid', message: 'API cũ.' }, 404);
       if (path === '/api/me/friends') {
         return unavailable
           ? jsonResponse({ ok: false, code: 'unavailable', message: 'Tạm thời bận.' }, 503)
@@ -278,6 +310,7 @@ describe('Classroom Friends browser client', () => {
     });
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const path = String(input);
+      if (path === '/api/me/classroom/bootstrap') return jsonResponse({ ok: false, code: 'invalid', message: 'API cũ.' }, 404);
       if (path === '/api/me/friends') return jsonResponse({ ok: true, friends: [lan], unreadCount: 2 });
       if (path === '/api/me/realtime') return jsonResponse({ ok: true, supabaseUrl: 'https://example.supabase.co', publishableKey: 'public-key', topic: 'classroom:student:opaque' });
       return jsonResponse({ ok: true });

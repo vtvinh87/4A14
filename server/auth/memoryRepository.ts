@@ -1,5 +1,5 @@
 import { DEFAULT_AVATAR_ID } from '../../shared/account-contracts';
-import type { AdminAuditRecord, AuthRepository, ServerAccountRecord, ServerSessionRecord } from './types';
+import type { AccountView, AdminAuditRecord, AuthRepository, ServerAccountRecord, ServerSessionRecord } from './types';
 
 function cloneAccount(account: ServerAccountRecord): ServerAccountRecord {
   return structuredClone({
@@ -8,6 +8,10 @@ function cloneAccount(account: ServerAccountRecord): ServerAccountRecord {
     birthDate: account.birthDate ?? null,
     birthdayWishesEnabled: account.birthdayWishesEnabled ?? false,
   });
+}
+
+function accountView(account: ServerAccountRecord): AccountView {
+  return { id: account.id, username: account.username, displayName: account.displayName, role: account.role, active: account.active, credentialVersion: account.credentialVersion };
 }
 
 export class MemoryAuthRepository implements AuthRepository {
@@ -29,6 +33,13 @@ export class MemoryAuthRepository implements AuthRepository {
     return [...this.accounts.values()].filter((account) => account.role === 'student').map(cloneAccount);
   }
 
+  async listStudentSummaries(): Promise<AccountView[]> {
+    return [...this.accounts.values()]
+      .filter((account) => account.role === 'student')
+      .sort((left, right) => left.displayName.localeCompare(right.displayName) || left.username.localeCompare(right.username))
+      .map(accountView);
+  }
+
   async insertAccount(account: ServerAccountRecord): Promise<void> {
     if ([...this.accounts.values()].some((item) => item.username === account.username)) throw new Error('username_conflict');
     this.accounts.set(account.id, cloneAccount(account));
@@ -45,6 +56,13 @@ export class MemoryAuthRepository implements AuthRepository {
   async findSession(tokenHash: string): Promise<ServerSessionRecord | null> {
     const session = this.sessions.get(tokenHash);
     return session ? structuredClone(session) : null;
+  }
+
+  async findSessionWithAccount(tokenHash: string): Promise<{ account: ServerAccountRecord; session: ServerSessionRecord } | null> {
+    const session = this.sessions.get(tokenHash);
+    if (!session) return null;
+    const account = this.accounts.get(session.accountId);
+    return account ? { session: structuredClone(session), account: cloneAccount(account) } : null;
   }
 
   async updateSession(session: ServerSessionRecord): Promise<void> {

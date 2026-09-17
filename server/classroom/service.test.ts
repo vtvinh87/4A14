@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CLASSROOM_MESSAGE_MAX_LENGTH } from '../../shared/classroom-contracts';
 import { MemoryClassroomRepository } from './memoryRepository';
 import { createClassroomService } from './service';
@@ -25,6 +25,43 @@ async function seedThirtyMessages(repository: MemoryClassroomRepository, senderI
 }
 
 describe('ClassroomService', () => {
+  it('bootstraps presence, roster, unread counts, and realtime config in one service call', async () => {
+    const now = new Date('2026-09-16T08:00:00.000Z');
+    const repository = fixtureRepository();
+    await repository.upsertPresence('peer-online', new Date(now.getTime() - 60_000).toISOString());
+    const realtime = {
+      configForStudent: vi.fn(async () => ({ supabaseUrl: 'https://example.supabase.co', publishableKey: 'public-key', topic: 'classroom:student:opaque' })),
+      notifyMessage: vi.fn(async () => undefined),
+    };
+    const service = createClassroomService(repository, () => now, realtime);
+
+    await expect(service.bootstrap('student-a')).resolves.toEqual({
+      friends: [
+        { id: 'peer-online', username: 'binh', displayName: 'Bình', avatarId: 'fox-leaf', online: true, unreadCount: 0 },
+        { id: 'peer-offline', username: 'chi', displayName: 'Chi', avatarId: 'fox-night', online: false, unreadCount: 0 },
+      ],
+      unreadCount: 0,
+      realtime: { supabaseUrl: 'https://example.supabase.co', publishableKey: 'public-key', topic: 'classroom:student:opaque' },
+      presenceUpdated: true,
+    });
+    expect(realtime.configForStudent).toHaveBeenCalledWith('student-a');
+    expect(repository.presence.get('student-a')).toBe(now.toISOString());
+  });
+
+  it('keeps the roster when best-effort presence or realtime is unavailable', async () => {
+    const now = new Date('2026-09-16T08:00:00.000Z');
+    const repository = fixtureRepository();
+    vi.spyOn(repository, 'upsertPresence').mockRejectedValueOnce(new Error('presence unavailable'));
+    const realtime = { configForStudent: vi.fn(async () => { throw new Error('realtime unavailable'); }), notifyMessage: vi.fn(async () => undefined) };
+    const service = createClassroomService(repository, () => now, realtime);
+
+    const result = await service.bootstrap('student-a');
+
+    expect(result.presenceUpdated).toBe(false);
+    expect(result.realtime).toBeNull();
+    expect(result.friends).toHaveLength(2);
+  });
+
   it('returns online friends first and computes unread badges without exact presence', async () => {
     const now = new Date('2026-09-16T08:00:00.000Z');
     const repository = fixtureRepository();
@@ -43,6 +80,20 @@ describe('ClassroomService', () => {
       ],
       unreadCount: 2,
     });
+  });
+
+  it('uses the repository-owned roster summary for the public friends response', async () => {
+    const repository = fixtureRepository();
+    const summaries = vi.spyOn(repository, 'listFriendSummaries').mockResolvedValue([
+      { id: 'peer-online', username: 'binh', displayName: 'Bình', avatarId: 'fox-leaf', online: true, unreadCount: 2 },
+    ]);
+    const service = createClassroomService(repository, () => new Date('2026-09-16T08:00:00.000Z'));
+
+    await expect(service.listFriends('student-a')).resolves.toEqual({
+      friends: [{ id: 'peer-online', username: 'binh', displayName: 'Bình', avatarId: 'fox-leaf', online: true, unreadCount: 2 }],
+      unreadCount: 2,
+    });
+    expect(summaries).toHaveBeenCalledWith('student-a', '2026-09-16T08:00:00.000Z');
   });
 
   it('normalizes a message body before storing it', async () => {

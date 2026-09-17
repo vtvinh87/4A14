@@ -80,10 +80,12 @@ export type AuthRepository = {
   findAccountByUsername(username: string): Promise<ServerAccountRecord | null>;
   findAccountById(id: string): Promise<ServerAccountRecord | null>;
   listStudents(): Promise<ServerAccountRecord[]>;
+  listStudentSummaries(): Promise<AccountView[]>;
   insertAccount(account: ServerAccountRecord): Promise<void>;
   updateAccount(account: ServerAccountRecord): Promise<void>;
   insertSession(session: ServerSessionRecord): Promise<void>;
   findSession(tokenHash: string): Promise<ServerSessionRecord | null>;
+  findSessionWithAccount(tokenHash: string): Promise<{ account: ServerAccountRecord; session: ServerSessionRecord } | null>;
   updateSession(session: ServerSessionRecord): Promise<void>;
   revokeSessions(accountId: string): Promise<void>;
   insertAdminAudit(audit: AdminAuditRecord): Promise<void>;

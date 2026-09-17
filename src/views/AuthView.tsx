@@ -3,7 +3,7 @@ import { DEFAULT_STUDENT_PIN, validatePin, validateUsername } from '../auth/acco
 import { PinField } from '../components/PinField';
 
 type LoginViewProps = {
-  onStudentLogin: (username: string, pin: string) => void | Promise<void>;
+  onStudentLogin: (username: string, pin: string, rememberDevice: boolean) => void | Promise<void>;
   onAdminLogin: (username: string, password: string) => void | Promise<void>;
   error?: string;
   busy?: boolean;
@@ -14,6 +14,7 @@ export function LoginView({ onStudentLogin, onAdminLogin, error, busy = false }:
   const [username, setUsername] = useState('');
   const [secret, setSecret] = useState('');
   const [localError, setLocalError] = useState('');
+  const [rememberDevice, setRememberDevice] = useState(true);
   const submit = (event: FormEvent) => {
     event.preventDefault();
     setLocalError('');
@@ -25,7 +26,7 @@ export function LoginView({ onStudentLogin, onAdminLogin, error, busy = false }:
       const pin = validatePin(submittedSecret);
       if (!user.ok) { setLocalError(user.message); return; }
       if (!pin.ok) { setLocalError(pin.message); return; }
-      void onStudentLogin(user.value, pin.value);
+      void onStudentLogin(user.value, pin.value, rememberDevice);
       return;
     }
     if (!submittedUsername.trim() || !submittedSecret) { setLocalError('Nhập tên và mật khẩu quản trị.'); return; }
@@ -44,6 +45,10 @@ export function LoginView({ onStudentLogin, onAdminLogin, error, busy = false }:
         <form className="auth-form" onSubmit={submit}>
           <label className="auth-field" htmlFor="auth-username"><span>{mode === 'student' ? 'Tên tài khoản' : 'Tên quản trị'}</span><input id="auth-username" name="username" type="text" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} autoFocus /></label>
           {mode === 'student' ? <PinField id="auth-pin" label="Mã PIN 6 số" value={secret} onChange={setSecret} autoComplete="current-password" /> : <label className="auth-field" htmlFor="auth-password"><span>Mật khẩu quản trị</span><input id="auth-password" name="password" type="password" autoComplete="current-password" value={secret} onChange={(event) => setSecret(event.target.value)} /></label>}
+          {mode === 'student' && <div className="auth-remember-wrap">
+            <label className="auth-remember" htmlFor="remember-device"><input id="remember-device" name="remember-device" type="checkbox" checked={rememberDevice} onChange={(event) => setRememberDevice(event.target.checked)} /><span>Ghi nhớ thiết bị này (tối đa 30 ngày)</span></label>
+            <p className="auth-remember-note">Nếu dùng máy dùng chung, hãy tắt tùy chọn này.</p>
+          </div>}
           {(error || localError) && <p className="auth-error" role="alert">{error || localError}</p>}
           <button className="primary-small-button auth-submit" type="submit" disabled={busy}>{busy ? 'Đang mở cổng…' : 'Vào hành trình →'}</button>
         </form>

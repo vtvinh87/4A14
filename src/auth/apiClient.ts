@@ -1,7 +1,7 @@
 import type { AccountApiFailure, AccountApiFailureCode, AccountView, ClientAuthSession, StudentProfilePatch, StudentProfileView } from '../../shared/account-contracts';
 import type { AccountProgressSnapshot, CurrentLearningRun, LearningEventAcknowledgement, LearningEventInput, LearningEventRecord, MigrationPreview } from '../../shared/learning-contracts';
 import type { DashboardRange, ParentDashboardData } from '../../shared/dashboard-contracts';
-import type { ClassroomMessage, ClassroomMessagesResponse, ClassroomRealtimeConfig, FriendsResponse } from '../../shared/classroom-contracts';
+import type { ClassroomBootstrapResponse, ClassroomMessage, ClassroomMessagesResponse, ClassroomRealtimeConfig, FriendsResponse } from '../../shared/classroom-contracts';
 import type { ChallengeAnswerResult, ChallengeFailure, ChallengePreferences, ChallengePreferencesPatch, ChallengeQuestionMine, ChallengeQuestionParent, ChallengeReactionRecord, ChallengeReactionType, ChallengeReportRecord, ChallengeRolloutConfig, ChallengeTodayResponse, ChallengeWeeklyResponse, CreateChallengeQuestionInput, ReportChallengeItemInput, ReviewChallengeQuestionInput, ReviseChallengeQuestionInput, SubmitChallengeAttemptInput } from '../../shared/challenge-contracts';
 
 export type ClientSession = ClientAuthSession & { mustChange: boolean };
@@ -17,27 +17,57 @@ export type ChallengeSettingsResponse = { settings: ChallengePreferences };
 export type ChallengeRolloutResponse = { config: ChallengeRolloutConfig };
 
 const SESSION_TOKEN_KEY = 'hoc_vui_session_token';
+const REMEMBERED_SESSION_TOKEN_KEY = 'hoc_vui_remembered_session_token';
 const PRODUCTION_EDGE_API_BASE_URL = 'https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api';
 
-function readSessionToken(): string | null {
+let sessionToken: string | null = null;
+let rememberedStudentSession = false;
+
+function readStorage(storage: Storage | undefined, key: string): string | null {
   try {
-    return typeof sessionStorage === 'undefined' ? null : sessionStorage.getItem(SESSION_TOKEN_KEY);
+    return storage?.getItem(key) ?? null;
   } catch {
     return null;
   }
 }
 
-function writeSessionToken(token: string | null): void {
+function removeStorage(storage: Storage | undefined, key: string): void {
   try {
-    if (typeof sessionStorage === 'undefined') return;
-    if (token) sessionStorage.setItem(SESSION_TOKEN_KEY, token);
-    else sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    storage?.removeItem(key);
   } catch {
     // Private browsing and restricted embedded contexts can deny storage access.
   }
 }
 
-let sessionToken: string | null = readSessionToken();
+function readSessionToken(): string | null {
+  return readStorage(typeof sessionStorage === 'undefined' ? undefined : sessionStorage, SESSION_TOKEN_KEY)
+    ?? readStorage(typeof localStorage === 'undefined' ? undefined : localStorage, REMEMBERED_SESSION_TOKEN_KEY);
+}
+
+function writeSessionToken(token: string | null, remember = rememberedStudentSession): void {
+  const sessionStore = typeof sessionStorage === 'undefined' ? undefined : sessionStorage;
+  const persistentStore = typeof localStorage === 'undefined' ? undefined : localStorage;
+  try {
+    if (sessionStore) {
+      if (token) sessionStore.setItem(SESSION_TOKEN_KEY, token);
+      else sessionStore.removeItem(SESSION_TOKEN_KEY);
+    }
+  } catch {
+    // Private browsing and restricted embedded contexts can deny storage access.
+  }
+  if (remember && token) {
+    try { persistentStore?.setItem(REMEMBERED_SESSION_TOKEN_KEY, token); } catch { /* use session storage when persistence is blocked */ }
+  } else {
+    removeStorage(persistentStore, REMEMBERED_SESSION_TOKEN_KEY);
+  }
+}
+
+function clearPersistentSessionToken(): void {
+  removeStorage(typeof localStorage === 'undefined' ? undefined : localStorage, REMEMBERED_SESSION_TOKEN_KEY);
+}
+
+sessionToken = readSessionToken();
+rememberedStudentSession = readStorage(typeof localStorage === 'undefined' ? undefined : localStorage, REMEMBERED_SESSION_TOKEN_KEY) !== null;
 
 // The parent grant is deliberately page-memory only. It is never written to
 // localStorage/sessionStorage and therefore disappears on a reload.
@@ -82,7 +112,7 @@ async function request<T extends Record<string, unknown>>(path: string, init: Re
     }
     if (isRecord(payload) && typeof payload.accessToken === 'string' && payload.accessToken) {
       sessionToken = payload.accessToken;
-      writeSessionToken(sessionToken);
+      writeSessionToken(sessionToken, rememberedStudentSession);
     }
     return payload as ApiResult<T>;
   } catch {
@@ -99,19 +129,25 @@ export async function getCurrentAuthSession(): Promise<ApiResult<{ session: Clie
   const result = await request<{ session: ClientSession }>('/api/auth/me');
   if (!result.ok && (result.code === 'expired' || result.code === 'forbidden')) {
     sessionToken = null;
-    writeSessionToken(null);
+    rememberedStudentSession = false;
+    writeSessionToken(null, false);
     return { ok: true, session: null };
   }
   return result.ok ? { ...result, session: { ...result.session, mustChange: result.session.mode === 'change-only' } } : result;
 }
 
-export async function loginStudent(username: string, pin: string): Promise<ApiResult<{ session: ClientSession; mustChange?: boolean; accessToken?: string }>> {
-  const result = await request<{ session: ClientSession; mustChange?: boolean; accessToken?: string }>('/api/auth/student/login', jsonBody({ username, pin }));
+export async function loginStudent(username: string, pin: string, rememberDevice = true): Promise<ApiResult<{ session: ClientSession; mustChange?: boolean; accessToken?: string }>> {
+  rememberedStudentSession = rememberDevice;
+  if (!rememberDevice) clearPersistentSessionToken();
+  const result = await request<{ session: ClientSession; mustChange?: boolean; accessToken?: string }>('/api/auth/student/login', jsonBody({ username, pin, rememberDevice }));
   if (!result.ok) return result;
+  if (result.session.mode === 'change-only') clearPersistentSessionToken();
   return { ...result, session: { ...result.session, mustChange: Boolean(result.mustChange ?? result.session.mode === 'change-only') } };
 }
 
 export async function loginAdmin(username: string, password: string): Promise<ApiResult<{ session: ClientSession; accessToken?: string }>> {
+  rememberedStudentSession = false;
+  clearPersistentSessionToken();
   const result = await request<{ session: ClientSession; accessToken?: string }>('/api/auth/admin/login', jsonBody({ username, password }));
   if (!result.ok) return result;
   return { ...result, session: { ...result.session, mustChange: false } };
@@ -135,7 +171,7 @@ export async function updateParentProfilePreferences(enabled: boolean): Promise<
 
 export async function changeStudentPin(currentPin: string, newPin: string): Promise<ApiResult<{ session: ClientSession; accessToken?: string }>> {
   parentGrantToken = null;
-  const result = await request<{ session: ClientSession; accessToken?: string }>('/api/auth/student/change-pin', jsonBody({ currentPin, newPin }));
+  const result = await request<{ session: ClientSession; accessToken?: string }>('/api/auth/student/change-pin', jsonBody({ currentPin, newPin, rememberDevice: rememberedStudentSession }));
   return result.ok ? { ...result, session: { ...result.session, mustChange: false } } : result;
 }
 
@@ -162,7 +198,8 @@ export async function logout(): Promise<ApiResult<Record<string, never>>> {
   const result = await request<Record<string, never>>('/api/auth/logout', jsonBody({}));
   parentGrantToken = null;
   sessionToken = null;
-  writeSessionToken(null);
+  rememberedStudentSession = false;
+  writeSessionToken(null, false);
   return result;
 }
 
@@ -279,6 +316,10 @@ export async function updateChallengeSettings(patch: ChallengePreferencesPatch):
 
 export async function getFriends(): Promise<ApiResult<FriendsResponse>> {
   return request('/api/me/friends');
+}
+
+export async function getClassroomBootstrap(): Promise<ApiResult<ClassroomBootstrapResponse>> {
+  return request('/api/me/classroom/bootstrap', jsonBody({}));
 }
 
 export async function getClassroomRealtimeConfig(): Promise<ApiResult<ClassroomRealtimeConfig>> {

@@ -53,6 +53,7 @@ describe('same-origin account API', () => {
     const studentCookie = cookieValue(changed);
     const classroom: ClassroomService = {
       listFriends: vi.fn(),
+      bootstrap: vi.fn(async () => ({ friends: [], unreadCount: 0, realtime: null, presenceUpdated: false })),
       heartbeat: vi.fn(),
       listMessages: vi.fn(),
       sendMessage: vi.fn(),
@@ -112,6 +113,11 @@ describe('same-origin account API', () => {
     expect(roster.statusCode).toBe(200);
     expect(roster.body.friends).toEqual([expect.objectContaining({ id: peerId, unreadCount: 1 })]);
     expect(JSON.stringify(roster.body)).not.toMatch(/admin|active|birthDate|token|credential|lastSeen/i);
+
+    const bootstrap = await request(app, { method: 'POST', path: '/api/me/classroom/bootstrap', cookie: studentCookie, body: { studentId: inactiveId } });
+    expect(bootstrap.statusCode).toBe(200);
+    expect(bootstrap.body).toMatchObject({ ok: true, presenceUpdated: true, realtime: { topic: 'classroom:student:opaque' } });
+    expect(JSON.stringify(bootstrap.body)).not.toContain(inactiveId);
 
     const realtime = await request(app, { method: 'GET', path: '/api/me/realtime', cookie: studentCookie });
     expect(realtime.statusCode).toBe(200);
@@ -175,6 +181,25 @@ describe('same-origin account API', () => {
     expect(changed.statusCode).toBe(200);
     expect(changed.body.accessToken).toEqual(expect.any(String));
     expectPublicSession(changed);
+  });
+
+  it('accepts only a boolean remember flag at the API boundary', async () => {
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const now = new Date('2026-09-17T05:00:00.000Z');
+    const repository = new MemoryAuthRepository();
+    const app = createApp({ auth: createAuthService(repository, () => now) });
+    const admin = await request(app, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'admin', password: '123456@' } });
+    const created = await request(app, { method: 'POST', path: '/api/admin/students', cookie: cookieValue(admin), body: { username: 'flag19', displayName: 'Flag' } });
+
+    const provisional = await request(app, { method: 'POST', path: '/api/auth/student/login', body: { username: 'flag19', pin: '123456', rememberDevice: true } });
+    const changed = await request(app, { method: 'POST', path: '/api/auth/student/change-pin', cookie: cookieValue(provisional), body: { currentPin: '123456', newPin: '246810', rememberDevice: true } });
+    expect(changed.statusCode).toBe(200);
+    expect(Date.parse((changed.body.session as { expiresAt: string }).expiresAt) - Date.parse((changed.body.session as { createdAt: string }).createdAt)).toBe(30 * DAY_MS);
+
+    const stringFlag = await request(app, { method: 'POST', path: '/api/auth/student/login', body: { username: 'flag19', pin: '246810', rememberDevice: 'true' } });
+    expect(stringFlag.statusCode).toBe(200);
+    expect(Date.parse((stringFlag.body.session as { expiresAt: string }).expiresAt) - Date.parse((stringFlag.body.session as { createdAt: string }).createdAt)).toBe(7 * DAY_MS);
+    expect(created.statusCode).toBe(200);
   });
 
   it('requires an independent parent PIN and revokes the grant on lock', async () => {

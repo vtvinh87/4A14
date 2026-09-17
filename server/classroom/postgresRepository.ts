@@ -1,9 +1,11 @@
 import type postgres from 'postgres';
 import { withTransaction, type DatabaseClient, type DatabaseTransaction } from '../db/client.ts';
+import type { FriendSummary } from '../../shared/classroom-contracts.ts';
 import type { ClassroomMessageRecord, ClassroomPeerRecord, ClassroomRepository } from './types.ts';
 
 type QueryClient = DatabaseClient | DatabaseTransaction;
 type PeerRow = { id: string; username: string; display_name: string; avatar_id: ClassroomPeerRecord['avatarId'] };
+type FriendSummaryRow = { id: string; username: string; display_name: string; avatar_id: FriendSummary['avatarId']; online: boolean; unread_count: number };
 type MessageRow = { id: string; sender_id: string; recipient_id: string; body: string; created_at: Date | string; read_at: Date | string | null };
 type CountRow = { message_count: number };
 
@@ -30,6 +32,29 @@ export class PostgresClassroomRepository implements ClassroomRepository {
       order by lower(display_name), username
     `;
     return rows.map(mapPeer);
+  }
+
+  async listFriendSummaries(actorId: string, now: string): Promise<FriendSummary[]> {
+    const rows = await this.db<FriendSummaryRow[]>`
+      select
+        a.id,
+        a.username,
+        a.display_name,
+        a.avatar_id,
+        (p.last_seen >= (${now}::timestamptz - interval '120 seconds')) as online,
+        coalesce(unread.unread_count, 0)::int as unread_count
+      from hoc_vui_private.accounts a
+      left join hoc_vui_private.classroom_presence p on p.account_id = a.id
+      left join (
+        select sender_id, count(*)::int as unread_count
+        from hoc_vui_private.classroom_messages
+        where recipient_id = ${actorId}::uuid and read_at is null
+        group by sender_id
+      ) unread on unread.sender_id = a.id
+      where a.role = 'student' and a.active = true and a.id <> ${actorId}::uuid
+      order by online desc, lower(a.display_name), a.username
+    ` as FriendSummaryRow[];
+    return rows.map((row) => ({ id: row.id, username: row.username, displayName: row.display_name, avatarId: row.avatar_id, online: Boolean(row.online), unreadCount: Number(row.unread_count) }));
   }
 
   async upsertPresence(accountId: string, lastSeen: string): Promise<void> {

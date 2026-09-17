@@ -1,4 +1,4 @@
-import { CLASSROOM_MESSAGE_MAX_LENGTH, type ClassroomMessage, type ClassroomMessagesResponse, type ClassroomRealtimeConfig, type FriendSummary, type FriendsResponse } from '../../shared/classroom-contracts.ts';
+import { CLASSROOM_MESSAGE_MAX_LENGTH, type ClassroomBootstrapResponse, type ClassroomMessage, type ClassroomMessagesResponse, type ClassroomRealtimeConfig, type FriendSummary, type FriendsResponse } from '../../shared/classroom-contracts.ts';
 import type { ClassroomMessageRecord, ClassroomRepository } from './types.ts';
 import type { ClassroomRealtimeBridge } from './realtime.ts';
 
@@ -7,6 +7,7 @@ export type ClassroomFailure = { ok: false; code: ClassroomFailureCode; message:
 
 export type ClassroomService = {
   listFriends(studentId: string): Promise<FriendsResponse>;
+  bootstrap(studentId: string): Promise<ClassroomBootstrapResponse>;
   heartbeat(studentId: string): Promise<void>;
   listMessages(studentId: string, peerId: string, limit: number): Promise<ClassroomMessagesResponse | ClassroomFailure>;
   sendMessage(studentId: string, peerId: string, body: string): Promise<{ message: ClassroomMessage } | ClassroomFailure>;
@@ -14,7 +15,6 @@ export type ClassroomService = {
   realtimeConfig(studentId: string): Promise<ClassroomRealtimeConfig | null>;
 };
 
-const ONLINE_WINDOW_MS = 120_000;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_MESSAGES = 30;
 
@@ -40,30 +40,40 @@ async function activePeerOrFailure(repository: ClassroomRepository, studentId: s
 }
 
 export function createClassroomService(repository: ClassroomRepository, clock: () => Date = () => new Date(), realtimeBridge?: ClassroomRealtimeBridge | null): ClassroomService {
+  async function listFriends(studentId: string): Promise<FriendsResponse> {
+    const friends: FriendSummary[] = await repository.listFriendSummaries(studentId, clock().toISOString());
+    return { friends, unreadCount: friends.reduce((total, friend) => total + friend.unreadCount, 0) };
+  }
+
+  async function heartbeat(studentId: string): Promise<void> {
+    await repository.upsertPresence(studentId, clock().toISOString());
+  }
+
+  async function realtimeConfig(studentId: string): Promise<ClassroomRealtimeConfig | null> {
+    return realtimeBridge ? realtimeBridge.configForStudent(studentId) : null;
+  }
+
   return {
-    async listFriends(studentId) {
-      const now = clock();
-      const peers = await repository.listActivePeers(studentId);
-      const [presence, unreadCounts] = await Promise.all([
-        repository.listPresence(peers.map((peer) => peer.id)),
-        repository.listUnreadCounts(studentId),
-      ]);
-      const friends: FriendSummary[] = peers.map((peer) => ({
-        id: peer.id,
-        username: peer.username,
-        displayName: peer.displayName,
-        avatarId: peer.avatarId,
-        online: Date.parse(presence.get(peer.id) ?? '') >= now.getTime() - ONLINE_WINDOW_MS,
-        unreadCount: unreadCounts.get(peer.id) ?? 0,
-      })).sort((left, right) => Number(right.online) - Number(left.online)
-        || left.displayName.localeCompare(right.displayName)
-        || left.username.localeCompare(right.username));
-      return { friends, unreadCount: friends.reduce((total, friend) => total + friend.unreadCount, 0) };
+    listFriends,
+
+    async bootstrap(studentId): Promise<ClassroomBootstrapResponse> {
+      let presenceUpdated = true;
+      try {
+        await heartbeat(studentId);
+      } catch {
+        presenceUpdated = false;
+      }
+      const friends = await listFriends(studentId);
+      let realtime: ClassroomRealtimeConfig | null = null;
+      try {
+        realtime = await realtimeConfig(studentId);
+      } catch {
+        realtime = null;
+      }
+      return { ...friends, realtime, presenceUpdated };
     },
 
-    async heartbeat(studentId) {
-      await repository.upsertPresence(studentId, clock().toISOString());
-    },
+    heartbeat,
 
     async listMessages(studentId, peerId, limit) {
       const peer = await activePeerOrFailure(repository, studentId, peerId);
@@ -102,8 +112,6 @@ export function createClassroomService(repository: ClassroomRepository, clock: (
       return { marked: await repository.markMessagesRead(studentId, peerId, clock().toISOString()) };
     },
 
-    async realtimeConfig(studentId) {
-      return realtimeBridge ? realtimeBridge.configForStudent(studentId) : null;
-    },
+    realtimeConfig,
   };
 }
