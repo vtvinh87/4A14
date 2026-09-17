@@ -2,11 +2,12 @@
 
 Tài liệu này mô tả rollout production cho Học Vui. Firebase chỉ phục vụ static frontend/PWA; Supabase Edge Function `api` là lớp API duy nhất nói chuyện với PostgreSQL private schema. Không dùng Firebase Functions, Firestore, Firebase Auth hoặc Supabase Data API cho `hoc_vui_private`.
 
-## Current rollout status — 2026-09-15
+## Current rollout status — 2026-09-17
 
-- Supabase project `4A14` (`tvlpabqkternfvsxqovi`): Edge Function `api` is `ACTIVE`, `verify_jwt=false`, exact-origin CORS preflight passes for both Firebase sites, and synthetic Admin login/logout smoke checks pass.
-- Firebase project `4A14` (`a14-82a69`): Hosting is deployed to both [https://a14-82a69.web.app](https://a14-82a69.web.app) and [https://4a14.web.app](https://4a14.web.app). Root, manifest, Service Worker and SPA deep-link checks return HTTP 200; the deployed bundle contains the public Edge URL and no database credential markers.
-- The credential smoke uses the existing bootstrap Admin account only; no student account or learner data is modified.
+- Supabase project `4A14` (`tvlpabqkternfvsxqovi`): Edge Function `api` is `ACTIVE`, `verify_jwt=false`, version `15`, and `HOC_VUI_PROGRESS_BOARD_ENABLED` is configured in Edge secrets. Exact-origin CORS preflight passes for both Firebase sites; unauthenticated progress requests correctly return HTTP 401.
+- Firebase project `4A14` (`a14-82a69`): Hosting is deployed to both [https://a14-82a69.web.app](https://a14-82a69.web.app) and [https://4a14.web.app](https://4a14.web.app). Root, manifest, Service Worker, SPA deep-link, progress SVG and decorative texture checks return HTTP 200; the Service Worker precaches both progress assets and the deployed bundle contains the public Edge URL without database credential markers.
+- Bản đồ tiến bộ is shipped in the `codex/bang-tien-bo` release with the local verified SVG, Hoàng Sa/Trường Sa feature groups, decorative texture, touch/landscape fixes and offline version hashes. The source attribution and permission basis remain recorded in [docs/design/progress-map-source-ledger.md](../design/progress-map-source-ledger.md).
+- The credential smoke uses the existing bootstrap Admin account only; no student account or learner data is modified. Authenticated child progress smoke is intentionally not run against production because the project has no synthetic student account and real child data must not be used for release testing.
 
 ## Configuration boundary
 
