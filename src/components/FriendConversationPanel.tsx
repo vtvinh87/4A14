@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ClassroomMessage, FriendSummary } from '../../shared/classroom-contracts';
 import { getFriendMessages, markFriendMessagesRead, sendFriendMessage } from '../auth/apiClient';
 
@@ -26,6 +26,7 @@ export function FriendConversationPanel({ friend, messageRevision = 0, onBack, o
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const isMountedRef = useRef(false);
+  const messagesRef = useRef<HTMLDivElement>(null);
   const currentFriendIdRef = useRef(friend.id);
   currentFriendIdRef.current = friend.id;
 
@@ -75,6 +76,12 @@ export function FriendConversationPanel({ friend, messageRevision = 0, onBack, o
     };
   }, [friend.id, messageRevision, onFriendsChanged]);
 
+  useLayoutEffect(() => {
+    const container = messagesRef.current;
+    if (!container || loading || messages.length === 0) return;
+    container.scrollTop = container.scrollHeight;
+  }, [friend.id, loading, messages]);
+
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const sendingFriendId = friend.id;
@@ -116,7 +123,7 @@ export function FriendConversationPanel({ friend, messageRevision = 0, onBack, o
       <button className="secondary-button" type="button" onClick={onBack}>← Danh sách bạn bè</button>
       <p className="visually-hidden" aria-live="polite">{error}</p>
       {loading ? <p>Đang tải tin nhắn...</p> : (
-        <div aria-label={`Tin nhắn với ${friend.displayName}`} data-friend-messages>
+        <div ref={messagesRef} aria-label={`Tin nhắn với ${friend.displayName}`} data-friend-messages>
           {messages.length === 0 ? <p>Hãy gửi lời chào đầu tiên nhé!</p> : messages.map((message) => (
             <p key={message.id} data-friend-message={message.id} data-message-from={message.senderId === friend.id ? 'friend' : 'self'}>
               {message.body}

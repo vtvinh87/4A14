@@ -98,6 +98,29 @@ describe('FriendListDialog', () => {
     expect(onFriendsChanged).toHaveBeenCalledOnce();
   });
 
+  it('scrolls an opened conversation to its latest message', async () => {
+    const originalScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight');
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', { configurable: true, get: () => 640 });
+    mockedGetFriendMessages.mockResolvedValueOnce({ ok: true, messages: [
+      { id: 'old-1', senderId: 'online', recipientId: 'me', body: 'Tin trước', createdAt: '2026-09-16T08:00:00.000Z', readAt: null },
+      { id: 'latest-1', senderId: 'me', recipientId: 'online', body: 'Tin cuối', createdAt: '2026-09-16T08:01:00.000Z', readAt: null },
+    ] });
+
+    try {
+      renderDialog({ friends: [friend('online', true)] });
+      await act(async () => {
+        mount.querySelector<HTMLButtonElement>('[data-friend-row="online"]')?.click();
+        await Promise.resolve();
+      });
+
+      const messages = mount.querySelector<HTMLElement>('[data-friend-messages]');
+      expect(messages?.scrollTop).toBe(640);
+    } finally {
+      if (originalScrollHeight) Object.defineProperty(HTMLElement.prototype, 'scrollHeight', originalScrollHeight);
+      else delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight;
+    }
+  });
+
   it('reloads the open conversation when the classroom message revision changes', async () => {
     const onFriendsChanged = vi.fn();
     renderDialog({ friends: [friend('online', true)], messageRevision: 0, onFriendsChanged });
