@@ -8,7 +8,7 @@
 
 **Tech Stack:** React/Vite, TypeScript, Vitest, Supabase Edge/Deno adapter, `postgres` transaction pooler, existing Memory repositories.
 
-> **Execution status (2026-09-17):** Tasks 1–10 have been implemented in the isolated branch `codex/performance-persistent-session` and verified with the full test suite plus typecheck, production build, Deno/Edge runtime checks, and Firebase hosting validation. The student remember-device option is on by default and is capped at 30 days. Commit `547c306` is pushed; Supabase Edge `api` version 11 and both Firebase Hosting sites are deployed and live-smoke-tested. No PR was created.
+> **Execution status (2026-09-17):** Tasks 1–10 have been implemented in the isolated branch `codex/performance-persistent-session` and verified with the full test suite plus typecheck, production build, Deno/Edge runtime checks, and Firebase hosting validation. The student remember-device option is on by default and is capped at 30 days. Commits `547c306` and `b051cc9` are pushed; Supabase Edge `api` version 12 and both Firebase Hosting sites are deployed and live-smoke-tested. No PR was created.
 
 ## Global Constraints
 
