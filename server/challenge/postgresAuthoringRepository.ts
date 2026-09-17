@@ -164,7 +164,7 @@ export class PostgresAuthoringRepository implements AuthoringRepository {
           correct_option_id, explanation, status, revision, created_local_date, created_at, updated_at, submitted_at
         ) values (
           ${input.id ?? null}::uuid, ${input.authorId}::uuid, ${input.sourceFactId}, ${input.sourceVersion}, ${input.lessonId},
-          ${input.lessonTitle}, ${input.prompt}, ${JSON.stringify(input.options)}::jsonb, ${input.correctOptionId}, ${input.explanation},
+          ${input.lessonTitle}, ${input.prompt}, ${tx.json(input.options as never)}::jsonb, ${input.correctOptionId}, ${input.explanation},
           'pending_parent_review', 1, ${input.createdLocalDate}::date, ${createdAt}, ${input.updatedAt ?? createdAt}, ${createdAt}
         )
         returning id, author_id, source_fact_id, source_version, lesson_id, lesson_title, prompt, options, correct_option_id, explanation,
@@ -223,12 +223,12 @@ export class PostgresAuthoringRepository implements AuthoringRepository {
         set source_fact_id = ${input.sourceFactId}, source_version = coalesce(${input.sourceVersion ?? null}, source_version),
             lesson_id = coalesce(${input.lessonId ?? null}, lesson_id), lesson_title = coalesce(${input.lessonTitle ?? null}, lesson_title),
             prompt = ${input.prompt},
-            options = ${JSON.stringify([
+            options = ${tx.json([
               { id: current.correct_option_id, text: input.correctAnswer },
               { id: 'wrong-1', text: input.distractors[0] },
               { id: 'wrong-2', text: input.distractors[1] },
               { id: 'wrong-3', text: input.distractors[2] },
-            ])}::jsonb,
+            ] as never)}::jsonb,
             explanation = ${input.explanation}, status = 'pending_parent_review', revision = revision + 1,
             updated_at = ${updatedAt}, submitted_at = ${updatedAt}, reviewed_at = null, review_reason = null
         where id = ${questionId}::uuid and author_id = ${authorId}::uuid and status = 'draft' and revision = ${revision}
