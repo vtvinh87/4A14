@@ -3,6 +3,7 @@ import type { AccountProgressSnapshot, CurrentLearningRun, LearningEventAcknowle
 import type { DashboardRange, ParentDashboardData } from '../../shared/dashboard-contracts';
 import type { ClassroomMessage, ClassroomMessagesResponse, ClassroomRealtimeConfig, FriendsResponse } from '../../shared/classroom-contracts';
 import type { ChallengeAnswerResult, ChallengeFailure, ChallengePreferences, ChallengePreferencesPatch, ChallengeQuestionMine, ChallengeQuestionParent, ChallengeReactionRecord, ChallengeReactionType, ChallengeReportRecord, ChallengeRolloutConfig, ChallengeTodayResponse, ChallengeWeeklyResponse, CreateChallengeQuestionInput, ReportChallengeItemInput, ReviewChallengeQuestionInput, ReviseChallengeQuestionInput, SubmitChallengeAttemptInput } from '../../shared/challenge-contracts';
+import type { ProgressBoardData, ProgressBoardRolloutConfig } from '../../shared/progress-board-contracts';
 
 export type ClientSession = ClientAuthSession & { mustChange: boolean };
 export type ClientAccount = AccountView;
@@ -15,6 +16,8 @@ export type ChallengeQuestionsMineResponse = { questions: ChallengeQuestionMine[
 export type PendingChallengeQuestionsResponse = { questions: ChallengeQuestionParent[] };
 export type ChallengeSettingsResponse = { settings: ChallengePreferences };
 export type ChallengeRolloutResponse = { config: ChallengeRolloutConfig };
+export type ProgressBoardResponse = { data: ProgressBoardData };
+export type ProgressBoardRolloutResponse = { config: ProgressBoardRolloutConfig };
 
 const SESSION_TOKEN_KEY = 'hoc_vui_session_token';
 const PRODUCTION_EDGE_API_BASE_URL = 'https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api';
@@ -204,6 +207,14 @@ export async function resetParentProgress(): Promise<ApiResult<{ snapshot: Accou
 
 export async function getAccountProgress(): Promise<ApiResult<{ snapshot: AccountProgressSnapshot; currentRun?: CurrentLearningRun }>> {
   return request('/api/me/progress');
+}
+
+export async function getProgressBoardRolloutConfig(): Promise<ApiResult<ProgressBoardRolloutResponse>> {
+  return request('/api/me/progress-board/config');
+}
+
+export async function getProgressBoard(): Promise<ApiResult<ProgressBoardResponse>> {
+  return request('/api/me/progress-board');
 }
 
 export async function sendLearningEvents(events: LearningEventInput[]): Promise<ApiResult<{ snapshot: AccountProgressSnapshot; acknowledgements: LearningEventAcknowledgement[] }>> {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FeatureComingSoonDialog } from './FeatureComingSoonDialog';
 
-export type JourneyFeatureId = 'leaderboard' | 'challenge' | 'friends';
+export type JourneyFeatureId = 'progress' | 'challenge' | 'friends';
 
 export type JourneyFeatureDefinition = Readonly<{
   id: JourneyFeatureId;
@@ -12,10 +12,10 @@ export type JourneyFeatureDefinition = Readonly<{
 
 export const JOURNEY_FEATURES: readonly JourneyFeatureDefinition[] = [
   {
-    id: 'leaderboard',
-    label: 'Bảng xếp hạng',
-    art: '/art/hud/leaderboard.png',
-    description: 'Cùng xem những thành tích nổi bật của các bạn trong lớp.',
+    id: 'progress',
+    label: 'Bảng tiến bộ',
+    art: '/art/dock/journey.png',
+    description: 'Xem lại hành trình của mình và chọn bước học tập tiếp theo.',
   },
   {
     id: 'challenge',
@@ -35,9 +35,11 @@ export type JourneyFeatureRailProps = {
   onOpenFriends: () => void;
   friendsUnreadCount: number;
   onOpenChallenge?: () => void;
+  onOpenProgress?: () => void;
+  progressBoardEnabled?: boolean;
 };
 
-export function JourneyFeatureRail({ onOpenFriends, friendsUnreadCount, onOpenChallenge }: JourneyFeatureRailProps) {
+export function JourneyFeatureRail({ onOpenFriends, friendsUnreadCount, onOpenChallenge, onOpenProgress, progressBoardEnabled = false }: JourneyFeatureRailProps) {
   const [activeFeature, setActiveFeature] = useState<JourneyFeatureDefinition | null>(null);
 
   return (
@@ -56,6 +58,7 @@ export function JourneyFeatureRail({ onOpenFriends, friendsUnreadCount, onOpenCh
               onClick={() => {
                 if (feature.id === 'friends') onOpenFriends();
                 else if (feature.id === 'challenge' && onOpenChallenge) onOpenChallenge();
+                else if (feature.id === 'progress' && progressBoardEnabled && onOpenProgress) onOpenProgress();
                 else setActiveFeature(feature);
               }}
             >

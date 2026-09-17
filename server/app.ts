@@ -21,6 +21,7 @@ import { CHALLENGE_SOURCE_FACTS } from '../shared/challenge-source.ts';
 import type { AddChallengeReactionInput, ChallengeFailure, ChallengePreferencesPatch, CreateChallengeQuestionInput, ReportChallengeItemInput, ResolveChallengeReportInput, ReviseChallengeQuestionInput, SubmitChallengeAttemptInput } from '../shared/challenge-contracts.ts';
 import { getEnv } from './runtime/env.ts';
 import { challengeRolloutFailure, getChallengeRolloutConfig, isChallengeRolloutEnabled } from './challenge/rollout.ts';
+import { getProgressBoardRolloutConfig, isProgressBoardRolloutEnabled, progressBoardRolloutFailure } from './progress/rollout.ts';
 
 const SESSION_COOKIE = 'hoc_vui_session';
 const LOCAL_SESSION_MAX_AGE = 7 * 24 * 60 * 60;
@@ -665,6 +666,19 @@ export function createApp(dependencies: AppDependencies) {
       if (!dependencies.learning) return failure({ ok: false, code: 'unavailable', message: 'Kho tiến độ local chưa sẵn sàng.' }, 503);
       const progress = await dependencies.learning.getProgress(session.account.id);
       return success({ snapshot: progress.snapshot, ...(progress.currentRun ? { currentRun: progress.currentRun } : {}) });
+    }
+    if (method === 'GET' && pathname === '/api/me/progress-board/config') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      return success({ config: getProgressBoardRolloutConfig() });
+    }
+    if (method === 'GET' && pathname === '/api/me/progress-board') {
+      const student = await authorizeStudent(request);
+      if (!student.ok) return student.response;
+      if (!isProgressBoardRolloutEnabled()) return failure(progressBoardRolloutFailure(), 503);
+      if (!dependencies.learning) return failure({ ok: false, code: 'unavailable', message: 'Kho tiến bộ local chưa sẵn sàng.' }, 503);
+      const data = await dependencies.learning.getProgressBoard(student.studentId);
+      return success({ data });
     }
     if (method === 'POST' && pathname === '/api/me/events') {
       const token = requireToken(request);

@@ -3,6 +3,9 @@
   functions = "netlify/functions"
   command = "npm run build"
 
+[build.environment]
+  HOC_VUI_PROGRESS_BOARD_ENABLED = "true"
+
 [dev]
   command = "npm run dev -- --host 127.0.0.1 --port 4173"
   targetPort = 4173

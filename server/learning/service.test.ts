@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { getLessonPackage } from '../../src/content/packages';
 import type { LearningEventInput } from '../../shared/learning-contracts';
+import { PROGRESS_BOARD_CONTENT_INDEX } from '../analytics/progressBoardContent';
+import { createEmptySnapshot } from './engine';
+import type { LearningRepository } from './types';
 import { MemoryLearningRepository } from './memoryRepository';
 import { createLearningService } from './service';
 
@@ -88,5 +91,40 @@ describe('server learning replay', () => {
     expect((await service.getProgress(studentId)).snapshot.revision).toBe(0);
     expect(repository.runs.size).toBe(0);
     expect(await service.listEvents(studentId)).toHaveLength(0);
+  });
+
+  it('returns a cloned progress-board source scoped to one student', async () => {
+    const repository = new MemoryLearningRepository();
+    const service = createLearningService(repository);
+    const otherStudentId = '22222222-2222-4222-8222-222222222222';
+    expect((await service.appendEvents(studentId, [event(1, 'run_started'), event(2, 'discovery_done')])).ok).toBe(true);
+    expect((await service.appendEvents(otherStudentId, [event(1, 'run_started', {
+      eventId: '88888888-8888-4888-8888-888888888888',
+      runId: '99999999-9999-4999-8999-999999999999',
+    })])).ok).toBe(true);
+
+    const source = await repository.getProgressBoardSource(studentId);
+    expect(source.snapshot.studentId).toBe(studentId);
+    expect(source.events).toHaveLength(2);
+    expect(source.events.every((item) => item.studentId === studentId)).toBe(true);
+    source.snapshot.progress.completedMissions.push('mutated');
+    source.events.pop();
+
+    const reread = await repository.getProgressBoardSource(studentId);
+    expect(reread.snapshot.progress.completedMissions).not.toContain('mutated');
+    expect(reread.events).toHaveLength(2);
+  });
+
+  it('builds the personal board through one repository read boundary', async () => {
+    const source = { snapshot: createEmptySnapshot(studentId, '2026-09-17T09:00:00.000Z'), events: [] };
+    const getProgressBoardSource = vi.fn().mockResolvedValue(source);
+    const repository = { getProgressBoardSource } as unknown as LearningRepository;
+    const service = createLearningService(repository, () => new Date('2026-09-17T10:00:00.000Z'), PROGRESS_BOARD_CONTENT_INDEX);
+
+    const data = await service.getProgressBoard(studentId);
+
+    expect(getProgressBoardSource).toHaveBeenCalledOnce();
+    expect(getProgressBoardSource).toHaveBeenCalledWith(studentId);
+    expect(data).toMatchObject({ generation: '0', generatedAt: '2026-09-17T10:00:00.000Z', stale: false });
   });
 });

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEFAULT_STUDENT_PIN } from './auth/account';
 import { ChangePinView, LoginView, ParentPinChangeDialog, ParentPinDialog } from './views/AuthView';
 import { AdminView } from './views/AdminView';
-import { changeParentPin, changeStudentPin, getAccountProgress, getChallengeRolloutConfig, getCurrentAuthSession, getParentDashboard, getParentExport, getParentProfile, getStudentProfile, importParentProgress, lockParent, loginAdmin, loginStudent, logout, previewParentImport, resetParentProgress, sendLearningEvents, unlockParent, updateParentProfilePreferences, updateStudentProfile, type ClientSession } from './auth/apiClient';
+import { changeParentPin, changeStudentPin, getAccountProgress, getChallengeRolloutConfig, getCurrentAuthSession, getParentDashboard, getParentExport, getParentProfile, getProgressBoardRolloutConfig, getStudentProfile, importParentProgress, lockParent, loginAdmin, loginStudent, logout, previewParentImport, resetParentProgress, sendLearningEvents, unlockParent, updateParentProfilePreferences, updateStudentProfile, type ClientSession } from './auth/apiClient';
 import { BottomDock } from './components/BottomDock';
 import { SettingsDialog } from './components/SettingsDialog';
 import { TopHud } from './components/TopHud';
@@ -27,9 +27,12 @@ import type { Progress } from './content/types';
 import type { LearningEventInput } from '../shared/learning-contracts';
 import type { DashboardRange, ParentDashboardData } from '../shared/dashboard-contracts';
 import type { ChallengeRolloutConfig } from '../shared/challenge-contracts';
+import type { ProgressBoardRolloutConfig } from '../shared/progress-board-contracts';
 import { createAccountProgressSnapshot, loadAccountProgressSnapshot, saveAccountProgressSnapshot } from './progress/accountProgress';
 import { createAccountBackup, previewUnownedLegacyProgress, type LocalMigrationPreview } from './progress/accountMigration';
 import { acknowledgeLearningEvents, enqueueLearningEvent, listQueuedLearningEvents } from './progress/eventQueue';
+import { clearProgressBoardCache } from './progress/progressBoardCache';
+import { useProgressBoard } from './progress/useProgressBoard';
 import { getInitialOfflineStatus, registerOfflineWorker, type OfflineStatus } from './pwa/offline';
 import { CollectionView } from './views/CollectionView';
 import { JourneyView } from './views/JourneyView';
@@ -47,6 +50,7 @@ import { FriendListDialog } from './components/FriendListDialog';
 import { useParentChallengeReview } from './challenge/useParentChallengeReview';
 import { ChallengeDialog } from './components/ChallengeDialog';
 import { CHALLENGE_SOURCE_FACTS } from '../shared/challenge-source';
+import { ProgressBoardDialog } from './components/progress/ProgressBoardDialog';
 
 export const NAVIGATION_STATE_KEY = 'hoc-vui-navigation-v1';
 
@@ -180,6 +184,9 @@ export function App() {
   const [friendsDialogOpen, setFriendsDialogOpen] = useState(false);
   const [challengeDialogOpen, setChallengeDialogOpen] = useState(false);
   const [challengeRollout, setChallengeRollout] = useState<ChallengeRolloutConfig | null>(null);
+  const [progressBoardDialogOpen, setProgressBoardDialogOpen] = useState(false);
+  const [progressBoardRollout, setProgressBoardRollout] = useState<ProgressBoardRolloutConfig | null>(null);
+  const [progressBoardInvalidationToken, setProgressBoardInvalidationToken] = useState(0);
   const [birthdayCelebration, setBirthdayCelebration] = useState<StudentProfileView | null>(null);
   const [toast, setToast] = useState('');
   const [offlineStatus, setOfflineStatus] = useState<OfflineStatus>(() => getInitialOfflineStatus(import.meta.env.PROD));
@@ -194,6 +201,7 @@ export function App() {
   const accountRole = authSession?.account.role;
   const accountMode = authSession?.mode;
   const classroomFriendsEnabled = Boolean(authSession?.account.role === 'student' && authSession.mode === 'full');
+  const progressBoardFeatureEnabled = Boolean(authSession?.account.role === 'student' && authSession.mode === 'full' && progressBoardRollout?.enabled);
   const classroomFriends = useClassroomFriends(classroomFriendsEnabled);
   const parentChallengeReviewEnabled = Boolean(
     authSession?.account.role === 'student'
@@ -212,6 +220,7 @@ export function App() {
   const activeOwner = useRef<string | null>(null);
   const syncInFlight = useRef(false);
   const lastInteractionAt = useRef<number>(Date.now());
+  const progressBoard = useProgressBoard({ enabled: progressBoardDialogOpen && progressBoardFeatureEnabled, accountId: progressOwnerId, generation: serverSnapshot.current?.generation ?? 0, invalidationToken: progressBoardInvalidationToken });
 
   const replaceAuthSession = (nextSession: ClientSession | null | ((currentSession: ClientSession | null) => ClientSession | null)) => {
     sessionEpochRef.current += 1;
@@ -234,11 +243,11 @@ export function App() {
   }, [audio, effectiveReducedMotion, settings.sound]);
 
   useEffect(() => {
-    const modalOpen = settingsOpen || profileDialogOpen || friendsDialogOpen || challengeDialogOpen || Boolean(birthdayCelebration) || parentGateOpen || parentPinChangeDialogOpen;
+    const modalOpen = settingsOpen || profileDialogOpen || friendsDialogOpen || challengeDialogOpen || progressBoardDialogOpen || Boolean(birthdayCelebration) || parentGateOpen || parentPinChangeDialogOpen;
     const previousOverflow = document.body.style.overflow;
     if (modalOpen) document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = previousOverflow; };
-  }, [birthdayCelebration, challengeDialogOpen, friendsDialogOpen, parentGateOpen, parentPinChangeDialogOpen, profileDialogOpen, settingsOpen]);
+  }, [birthdayCelebration, challengeDialogOpen, friendsDialogOpen, parentGateOpen, parentPinChangeDialogOpen, profileDialogOpen, progressBoardDialogOpen, settingsOpen]);
 
   useEffect(() => {
     document.documentElement.scrollTop = 0;
@@ -337,6 +346,29 @@ export function App() {
   }, [authSession?.account.id, authSession?.account.role, authSession?.mode]);
 
   useEffect(() => {
+    const accountId = authSession?.account.role === 'student' && authSession.mode === 'full' ? authSession.account.id : null;
+    if (!accountId) {
+      setProgressBoardRollout(null);
+      setProgressBoardDialogOpen(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setProgressBoardRollout(null);
+    void getProgressBoardRolloutConfig().then((result) => {
+      if (cancelled || authAccountIdRef.current !== accountId) return;
+      if (!result.ok || typeof result.config?.enabled !== 'boolean') {
+        setProgressBoardRollout({ enabled: false });
+        setProgressBoardDialogOpen(false);
+        return;
+      }
+      setProgressBoardRollout(result.config);
+      if (!result.config.enabled) setProgressBoardDialogOpen(false);
+    });
+    return () => { cancelled = true; };
+  }, [authSession?.account.id, authSession?.account.role, authSession?.mode]);
+
+  useEffect(() => {
     if (!profileOwnerId) {
       setStudentProfile(null);
       setBirthdayCelebration(null);
@@ -410,6 +442,10 @@ export function App() {
         const cached = loadAccountProgressSnapshot(ownerId);
         const local = loadProgress(ownerId);
         const fallback = cached?.progress ?? local.progress;
+        // Keep the last server-known generation alongside the offline progress
+        // so the progress-board cache cannot be looked up under generation 0
+        // after a temporary account-progress outage.
+        serverSnapshot.current = cached;
         setProgress(fallback);
         setSettings(fallback.settings);
         setStorageRecovery(Boolean(local.error && !cached));
@@ -493,7 +529,9 @@ export function App() {
         if (result.code === 'stale' || result.code === 'conflict') showToast('Tiến độ trên máy chủ đã thay đổi; mình giữ hàng đợi để đồng bộ lại an toàn.');
         return;
       }
-      await acknowledgeLearningEvents(ownerId, result.acknowledgements.map((ack) => ack.eventId));
+      const acknowledged = await acknowledgeLearningEvents(ownerId, result.acknowledgements.map((ack) => ack.eventId));
+      if (!acknowledged || activeOwner.current !== ownerId) return;
+      if (result.acknowledgements.length > 0) setProgressBoardInvalidationToken((current) => current + 1);
       serverSnapshot.current = result.snapshot;
       const remaining = await listQueuedLearningEvents(ownerId);
       if (!remaining.length) {
@@ -733,6 +771,7 @@ export function App() {
 
   const handleParentLock = () => {
     void lockParent();
+    setProgressBoardDialogOpen(false);
     setChallengeDialogOpen(false);
     setParentDashboard(null);
     setParentProfile(null);
@@ -743,7 +782,9 @@ export function App() {
   };
 
   const handleLogout = () => {
+    const ownerToClear = progressOwnerId ?? activeOwner.current;
     void logout().catch(() => undefined);
+    if (ownerToClear) clearProgressBoardCache(ownerToClear);
     loadedOwnerId.current = null;
     activeOwner.current = null;
     activeRun.current = null;
@@ -754,6 +795,7 @@ export function App() {
     setProfileDialogOpen(false);
     setFriendsDialogOpen(false);
     setChallengeDialogOpen(false);
+    setProgressBoardDialogOpen(false);
     setParentDashboard(null);
     setParentProfile(null);
     setParentProfileBusy(false);
@@ -863,6 +905,9 @@ export function App() {
       if (!confirmed) return;
       const result = await importParentProgress(raw, preview.fingerprint, preview.currentRevision);
       if (!result.ok) { showToast(result.message); return; }
+      clearProgressBoardCache(progressOwnerId);
+      setProgressBoardDialogOpen(false);
+      setProgressBoardInvalidationToken((current) => current + 1);
       serverSnapshot.current = result.snapshot;
       activeRun.current = null;
       saveAccountProgressSnapshot(result.snapshot);
@@ -894,6 +939,9 @@ export function App() {
     if (!downloadBackup(before.backup, `hoc-vui-${authSession?.account.username ?? 'con'}-truoc-khi-reset.json`, 'Đã xuất bản sao lưu trước khi đặt lại.')) return;
     const result = await resetParentProgress();
     if (!result.ok) { showToast(result.message); return; }
+    clearProgressBoardCache(progressOwnerId);
+    setProgressBoardDialogOpen(false);
+    setProgressBoardInvalidationToken((current) => current + 1);
     serverSnapshot.current = result.snapshot;
     activeRun.current = null;
     saveAccountProgressSnapshot(result.snapshot);
@@ -912,6 +960,11 @@ export function App() {
     audio.play('tap');
   };
 
+  const openProgressLesson = (lessonId: string) => {
+    setProgressBoardDialogOpen(false);
+    if (isMvpLessonId(lessonId)) openLesson(lessonId);
+  };
+
   const visibleStudentProfile = authSession?.account.role === 'student'
     ? studentProfile ?? createFallbackStudentProfile(authSession)
     : null;
@@ -919,7 +972,7 @@ export function App() {
   const renderView = () => {
     switch (activeView) {
       case 'journey':
-        return <JourneyView petMood={petMood} reducedMotion={effectiveReducedMotion} onPetTap={() => setMood('greet')} onOpenLessons={() => navigate('lessons')} onOpenFriends={() => setFriendsDialogOpen(true)} onOpenChallenge={challengeRollout?.enabled ? () => setChallengeDialogOpen(true) : undefined} friendsUnreadCount={classroomFriends.unreadCount} />;
+        return <JourneyView petMood={petMood} reducedMotion={effectiveReducedMotion} onPetTap={() => setMood('greet')} onOpenLessons={() => navigate('lessons')} onOpenFriends={() => setFriendsDialogOpen(true)} onOpenChallenge={challengeRollout?.enabled ? () => setChallengeDialogOpen(true) : undefined} onOpenProgress={() => setProgressBoardDialogOpen(true)} progressBoardEnabled={progressBoardFeatureEnabled} friendsUnreadCount={classroomFriends.unreadCount} />;
       case 'lessons':
         return <LessonsView progress={progress} onOpenLesson={openLesson} onBack={() => navigate('journey')} />;
       case 'lesson':
@@ -965,6 +1018,7 @@ export function App() {
       {profileDialogOpen && visibleStudentProfile && <ProfileDialog profile={visibleStudentProfile} onSave={handleProfileSave} onChangePin={handleProfilePinChange} onClose={() => setProfileDialogOpen(false)} onLogout={handleLogout} />}
       {friendsDialogOpen && <FriendListDialog friends={classroomFriends.friends} loading={classroomFriends.loading} error={classroomFriends.error ?? ''} messageRevision={classroomFriends.messageRevision} onRefresh={classroomFriends.refresh} onFriendsChanged={classroomFriends.refresh} onClose={() => setFriendsDialogOpen(false)} />}
       {challengeDialogOpen && challengeRollout?.enabled && authSession.account.role === 'student' && authSession.mode === 'full' && <ChallengeDialog sourceFacts={CHALLENGE_SOURCE_FACTS} studentId={authSession.account.id} canCreate onClose={() => setChallengeDialogOpen(false)} />}
+      {progressBoardDialogOpen && progressBoardFeatureEnabled && <ProgressBoardDialog status={progressBoard.status} data={progressBoard.data} error={progressBoard.error} reducedMotion={effectiveReducedMotion} onRefresh={progressBoard.refresh} onClose={() => setProgressBoardDialogOpen(false)} onOpenLesson={openProgressLesson} lockBodyScroll={false} />}
       {birthdayCelebration && <BirthdayCelebration displayName={birthdayCelebration.displayName} avatarId={birthdayCelebration.avatarId} reducedMotion={effectiveReducedMotion} soundEnabled={settings.sound} onPlaySound={() => audio.play('success')} onClose={() => setBirthdayCelebration(null)} />}
       {parentGateOpen && <ParentPinDialog childName={authSession.account.displayName} onSubmit={handleParentUnlock} onCancel={() => setParentGateOpen(false)} error={parentGateError} busy={authBusy} />}
       {parentPinChangeDialogOpen && <ParentPinChangeDialog childName={authSession.account.displayName} onSubmit={handleParentPinChange} onCancel={() => { setParentPinChangeDialogOpen(false); setAuthError(''); }} error={authError} busy={authBusy} />}

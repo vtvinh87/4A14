@@ -6,8 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ParentDashboardData } from '../shared/dashboard-contracts';
 import type { StudentProfileView } from '../shared/account-contracts';
 import type { FriendSummary } from '../shared/classroom-contracts';
+import type { ProgressBoardData } from '../shared/progress-board-contracts';
 import type { ClientSession } from './auth/apiClient';
-import { createAccountProgressSnapshot } from './progress/accountProgress';
+import { createAccountProgressSnapshot, saveAccountProgressSnapshot } from './progress/accountProgress';
 import { createDefaultProgress } from './progress/storage';
 import { getCalendarDateInTimeZone } from './profile/birthday';
 import { App } from './App';
@@ -30,6 +31,8 @@ const apiMocks = vi.hoisted(() => ({
   updateChallengeSettings: vi.fn(),
   withdrawChallengeQuestion: vi.fn(),
   getChallengeRolloutConfig: vi.fn(),
+  getProgressBoardRolloutConfig: vi.fn(),
+  getProgressBoard: vi.fn(),
 }));
 
 const classroomMocks = vi.hoisted(() => ({
@@ -79,6 +82,22 @@ const classroomFriend: FriendSummary = {
   avatarId: 'fox-leaf',
   online: true,
   unreadCount: 3,
+};
+
+const progressBoardData: ProgressBoardData = {
+  schemaVersion: 1,
+  ruleVersion: 'progress-board-v1',
+  contentVersion: 'lesson-content-v1',
+  generation: '0',
+  generatedAt: '2026-09-17T10:00:00.000Z',
+  lastSyncedAt: '2026-09-17T09:00:00.000Z',
+  stale: false,
+  summary: { exploredLessonCount: 1, completedLessonCount: 0, independentObjectiveCount: 0, nextLessonId: 'lesson-01' },
+  topics: [{ topic: 'Mái nhà Việt Nam', lessons: [{
+    lessonId: 'lesson-01', title: 'Địa phương em', topic: 'Mái nhà Việt Nam', completed: false, state: 'explored', completedMissionCount: 1, missionCount: 5,
+    objectives: [{ objectiveId: 'objective-01', label: 'Nhận biết địa phương', state: 'explored', practicedActivityCount: 1, independentActivityCount: 0, nextAction: 'practice' }], nextAction: 'practice',
+  }] }],
+  nextLessonId: 'lesson-01',
 };
 
 function createDashboard(): { snapshot: ReturnType<typeof createAccountProgressSnapshot>; dashboard: ParentDashboardData } {
@@ -149,6 +168,8 @@ describe('App cross-feature account flow', () => {
     apiMocks.updateChallengeSettings.mockResolvedValue({ ok: true, settings: { studentId: 'student-a', canCreate: true, canParticipate: true, updatedAt: '2026-09-14T05:00:00.000Z' } });
     apiMocks.withdrawChallengeQuestion.mockResolvedValue({ ok: true });
     apiMocks.getChallengeRolloutConfig.mockResolvedValue({ ok: true, config: { enabled: true, mode: 'pilot', scope: 'single-class' } });
+    apiMocks.getProgressBoardRolloutConfig.mockResolvedValue({ ok: true, config: { enabled: false } });
+    apiMocks.getProgressBoard.mockResolvedValue({ ok: true, data: progressBoardData });
     classroomMocks.useClassroomFriends.mockReturnValue({
       friends: [classroomFriend],
       unreadCount: classroomFriend.unreadCount,
@@ -258,6 +279,57 @@ describe('App cross-feature account flow', () => {
 
     expect(mount.querySelector('[data-friend-list-dialog]')).toBeNull();
     expect(document.body.style.overflow).toBe('');
+  });
+
+  it('keeps the progress board data endpoint gated when rollout is disabled', async () => {
+    act(() => root.render(createElement(App)));
+    await settle();
+    act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng lời chúc sinh nhật"]')?.click());
+
+    act(() => mount.querySelector<HTMLButtonElement>('[data-journey-feature="progress"]')?.click());
+    expect(mount.querySelector('[data-coming-soon-dialog="progress"]')).not.toBeNull();
+    expect(mount.textContent).toContain('Bảng tiến bộ đang được phát triển');
+    expect(apiMocks.getProgressBoard).not.toHaveBeenCalled();
+  });
+
+  it('opens the personal progress board after rollout is enabled and preserves the Journey view', async () => {
+    apiMocks.getProgressBoardRolloutConfig.mockResolvedValue({ ok: true, config: { enabled: true } });
+    act(() => root.render(createElement(App)));
+    await settle();
+    act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng lời chúc sinh nhật"]')?.click());
+
+    act(() => mount.querySelector<HTMLButtonElement>('[data-journey-feature="progress"]')?.click());
+    await settle();
+    expect(mount.querySelector('[data-progress-board-dialog]')).not.toBeNull();
+    expect(mount.textContent).toContain('Bảng tiến bộ');
+    expect(mount.querySelector('#journey-title')).not.toBeNull();
+    expect(apiMocks.getProgressBoard).toHaveBeenCalledOnce();
+    expect(apiMocks.getProgressBoardRolloutConfig).toHaveBeenCalledTimes(2);
+    expect(document.body.style.overflow).toBe('hidden');
+
+    act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng Bảng tiến bộ"]')?.click());
+    expect(mount.querySelector('[data-progress-board-dialog]')).toBeNull();
+    expect(mount.querySelector('#journey-title')).not.toBeNull();
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('keeps the cached generation when the initial account progress request is unavailable', async () => {
+    const { snapshot } = createDashboard();
+    const cachedSnapshot = { ...snapshot, generation: 4 };
+    expect(saveAccountProgressSnapshot(cachedSnapshot)).toBe(true);
+    apiMocks.getAccountProgress.mockResolvedValue({ ok: false, code: 'unavailable', message: 'offline' });
+    apiMocks.getProgressBoardRolloutConfig.mockResolvedValue({ ok: true, config: { enabled: true } });
+    apiMocks.getProgressBoard.mockResolvedValue({ ok: true, data: { ...progressBoardData, generation: '4' } });
+
+    act(() => root.render(createElement(App)));
+    await settle();
+    act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng lời chúc sinh nhật"]')?.click());
+    act(() => mount.querySelector<HTMLButtonElement>('[data-journey-feature="progress"]')?.click());
+    await settle();
+
+    expect(mount.querySelector('[data-progress-board-dialog]')).not.toBeNull();
+    expect(mount.querySelector('[data-progress-board-state="unavailable"]')).toBeNull();
+    expect(apiMocks.getProgressBoard).toHaveBeenCalledOnce();
   });
 
   it('waits for a rollout acknowledgement and closes the challenge when the server kill switch turns off', async () => {

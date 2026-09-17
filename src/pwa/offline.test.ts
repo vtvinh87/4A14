@@ -89,6 +89,23 @@ describe('offline readiness', () => {
       expect(artVersions).toMatch(new RegExp(`/art/hud/${asset}\\.png:[a-f0-9]{64}`));
     }
   });
+
+  it('precaches the progress map and its decorative skin with version hashes', () => {
+    const artAllowlist = viteConfigSource.match(/const LOCAL_ART_URLS = \[(.*?)\];/s)?.[1] ?? '';
+    const artVersions = viteConfigSource.match(/const LOCAL_ART_VERSIONS = \[(.*?)\];/s)?.[1] ?? '';
+    const progressAssets = [
+      ['/art/progress/vietnam-progress-map.svg', 'c441ae8fa800ed569a3654942e111f4c4ccc2c857acb384190d99d382f3eb534'],
+      ['/art/progress/adventure-paper-texture.png', '50d5496a0b474e2101523ef8705f0b5cd8d1960eb9cebf6443af67072cb05d88'],
+    ] as const;
+
+    for (const [url, hash] of progressAssets) {
+      expect(artAllowlist).toContain(`'${url}'`);
+      expect(artVersions).toContain(`${url}:${hash}`);
+      const bytes = readFileSync(resolve(process.cwd(), 'public', url.slice(1)));
+      expect(createHash('sha256').update(bytes).digest('hex')).toBe(hash);
+    }
+  });
+
   it('keeps the upcoming Journey PNG bytes aligned with their offline version hashes', () => {
     const artVersions = viteConfigSource.match(/const LOCAL_ART_VERSIONS = \[(.*?)\];/s)?.[1] ?? '';
     const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);

@@ -66,6 +66,6 @@ npm run validate:fox
 - Pet dùng GLB procedural local thật: mesh nhiều part có skin joints/weights và các clip `idle`, `greet`, `think`, `celebrate`, `rest`; runtime Three.js `0.186.0` được lazy-load local. Nếu WebGL hoặc asset lỗi, app giữ fallback PNG đã duyệt.
 - `scripts/generate-fox-glb.mjs` là generator deterministic không dùng stock/copyright-unclear asset; `scripts/validate-fox-glb.mjs` kiểm tra GLB header, skin attributes, 17 bones và 5 clips.
 - Nền cảnh vẫn là artwork đã duyệt; chỉ Cáo Nhỏ là render 3D realtime khi runtime khả dụng.
-- Netlify Dev/local port 8888 vẫn là đường lui; chưa thực hiện production deploy Firebase Hosting/Supabase Edge, restore, import/reset hoặc đưa dữ liệu học sinh thật lên cloud.
+- Firebase Hosting phục vụ frontend/PWA production và Supabase Edge Function `api` phục vụ API; Bản đồ tiến bộ dùng asset bản đồ/texture local, không tạo migration hay đưa dữ liệu học sinh thật vào cloud. Netlify Dev/local port 8888 vẫn là đường lui để test tích hợp; trạng thái rollout và quy trình rollback nằm trong [docs/deployment/firebase-supabase-edge.md](docs/deployment/firebase-supabase-edge.md).
 
 Các file `._*` là metadata AppleDouble của volume ExFAT và được Vitest loại khỏi test discovery; không dùng làm source app.

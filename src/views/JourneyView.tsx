@@ -14,9 +14,11 @@ type JourneyViewProps = {
   onOpenFriends?: () => void;
   friendsUnreadCount?: number;
   onOpenChallenge?: () => void;
+  onOpenProgress?: () => void;
+  progressBoardEnabled?: boolean;
 };
 
-export function JourneyView({ petMood, reducedMotion, onPetTap, onOpenLessons, onOpenFriends, friendsUnreadCount, onOpenChallenge }: JourneyViewProps) {
+export function JourneyView({ petMood, reducedMotion, onPetTap, onOpenLessons, onOpenFriends, friendsUnreadCount, onOpenChallenge, onOpenProgress, progressBoardEnabled }: JourneyViewProps) {
   const [homeDialogue, setHomeDialogue] = useState(() => pickPetHomeDialogue(DEFAULT_PET_ID));
   const homeDialogueIndexRef = useRef(homeDialogue.index);
   const chooseHomeDialogue = useCallback(() => {
@@ -46,7 +48,7 @@ export function JourneyView({ petMood, reducedMotion, onPetTap, onOpenLessons, o
         </div>
       </div>
 
-      <JourneyFeatureRail onOpenFriends={onOpenFriends ?? (() => undefined)} friendsUnreadCount={friendsUnreadCount ?? 0} onOpenChallenge={onOpenChallenge} />
+      <JourneyFeatureRail onOpenFriends={onOpenFriends ?? (() => undefined)} friendsUnreadCount={friendsUnreadCount ?? 0} onOpenChallenge={onOpenChallenge} onOpenProgress={onOpenProgress} progressBoardEnabled={progressBoardEnabled} />
     </section>
   );
 }

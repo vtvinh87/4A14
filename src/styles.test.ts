@@ -94,3 +94,42 @@ describe('Challenge responsive layout', () => {
     expect(styles).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*?transition-duration: 0\.001ms !important;/);
   });
 });
+
+describe('Progress board responsive layout', () => {
+  it('uses a full viewport overlay and a bounded scrollable dialog', () => {
+    expect(styles).toMatch(/\.progress-board-dialog-backdrop \{[\s\S]*?position: fixed;[\s\S]*?inset: 0;[\s\S]*?overflow-y: auto;/);
+    expect(styles).toMatch(/\.progress-board-dialog \{[\s\S]*?width: min\(1120px, calc\(100vw - 24px\)\);[\s\S]*?max-height: calc\(100dvh - 24px\);[\s\S]*?overflow-y: auto;/);
+    expect(styles).toContain('.progress-lesson-card[data-reduced-motion="true"]');
+    expect(styles).toContain('.progress-board-dialog-backdrop');
+  });
+
+  it('keeps map drawer actions large enough for touch input at every breakpoint', () => {
+    expect(styles).toMatch(/\.progress-map-drawer-cta \{[\s\S]*?min-height: 44px;/);
+    expect(styles).toMatch(/\.progress-map-drawer-expand,[\s\S]*?\.progress-map-drawer-back \{[\s\S]*?min-height: 44px;/);
+    expect(styles).not.toMatch(/\.progress-map-drawer-cta \{[\s\S]*?min-height: 40px;/);
+  });
+
+  it('keeps the portrait map canvas compact without hiding the southern start gate', () => {
+    expect(styles).toContain('min-height: clamp(520px, calc(100vw + 120px), 590px);');
+  });
+
+  it('lifts the start gate above the drawer in low-height landscape layouts', () => {
+    expect(styles).toContain('--map-node-offset: translate(-12px, -8px);');
+  });
+
+  it('gives the map scene priority, keeps controls reachable, and adapts the drawer', () => {
+    expect(styles).toMatch(/\.progress-map-scene \{[\s\S]*?position: relative;/);
+    expect(styles).toContain('.progress-map-node:focus-visible');
+    expect(styles).toContain('padding-bottom: max(12px, env(safe-area-inset-bottom));');
+    expect(styles).toMatch(/@media \(max-width: 700px\)[\s\S]*?\.progress-map-drawer/);
+    expect(styles).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.progress-map-node/);
+  });
+
+  it('keeps nearby map callouts legible without changing geographic anchor points', () => {
+    expect(styles).toContain('data-progress-map-node-position="Đồng bằng Bắc Bộ"');
+    expect(styles).toContain('translate(clamp(66px, 5vw, 84px), clamp(32px, 3.2vw, 48px))');
+    expect(styles).toContain('data-progress-map-archipelago="hoang-sa"');
+    expect(styles).toContain('transform: translate(45px, -50%);');
+    expect(styles).toContain('margin: -24px 12px 12px;');
+  });
+});

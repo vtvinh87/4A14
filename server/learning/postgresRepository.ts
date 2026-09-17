@@ -193,6 +193,17 @@ export class PostgresLearningRepository implements LearningRepository {
     return rows.map(mapEvent);
   }
 
+  async getProgressBoardSource(studentId: string) {
+    return withTransaction(this.db, async (tx) => {
+      const snapshot = await selectSnapshot(tx, studentId);
+      const rows = await tx.unsafe<EventRow[]>(
+        'select event_id, run_id, student_id, sequence, event_type, lesson_id, lesson_version, device_id, activity_id, response, client_time, received_at, generation, hint_used, correct, visible, interactive from hoc_vui_private.learning_events where student_id = $1::uuid order by received_at asc, sequence asc, event_id asc',
+        [studentId],
+      ) as EventRow[];
+      return { snapshot, events: rows.map(mapEvent) };
+    });
+  }
+
   async resetProgress(studentId: string, now: string): Promise<LearningSnapshotRecord> {
     return withTransaction(this.db, async (tx) => {
       const previous = await selectSnapshot(tx, studentId, true);

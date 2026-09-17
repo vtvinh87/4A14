@@ -56,6 +56,12 @@ export class MemoryLearningRepository implements LearningRepository {
     }).sort((a, b) => Date.parse(a.receivedAt) - Date.parse(b.receivedAt)).map((event) => structuredClone(event));
   }
 
+  async getProgressBoardSource(studentId: string) {
+    const snapshot = await this.getSnapshot(studentId);
+    const events = await this.listEvents(studentId);
+    return { snapshot, events };
+  }
+
   async resetProgress(studentId: string, now: string): Promise<LearningSnapshotRecord> {
     const previous = this.snapshots.get(studentId) ?? createEmptySnapshot(studentId, now);
     const snapshot: LearningSnapshotRecord = { ...createEmptySnapshot(studentId, now), revision: previous.revision + 1, generation: previous.generation + 1 };

@@ -63,16 +63,16 @@ describe('JourneyView launch surface', () => {
       expect(mount.textContent).not.toContain('Danh mục bài học');
       expect(mount.querySelector('.primary-cta')).not.toBeNull();
       expect(mount.querySelector('[data-journey-feature-rail]')).not.toBeNull();
-      expect(mount.querySelector('[data-journey-feature="leaderboard"] img')?.getAttribute('src')).toBe('/art/hud/leaderboard.png');
+      expect(mount.querySelector('[data-journey-feature="progress"] img')?.getAttribute('src')).toBe('/art/dock/journey.png');
       expect(mount.querySelector('[data-journey-feature="challenge"] img')?.getAttribute('src')).toBe('/art/hud/challenge.png');
-      expect(mount.querySelector('[data-journey-feature="leaderboard"]')?.getAttribute('aria-label')).toBe('Bảng xếp hạng');
+      expect(mount.querySelector('[data-journey-feature="progress"]')?.getAttribute('aria-label')).toBe('Bảng tiến bộ');
       expect(mount.querySelector('[data-journey-feature="challenge"]')?.getAttribute('aria-label')).toBe('Thách đố');
-      expect(mount.querySelector('[data-journey-feature="leaderboard"] .journey-feature-label')?.getAttribute('aria-hidden')).toBe('true');
+      expect(mount.querySelector('[data-journey-feature="progress"] .journey-feature-label')?.getAttribute('aria-hidden')).toBe('true');
       expect(mount.querySelector('[data-journey-feature="challenge"] .journey-feature-label')?.getAttribute('aria-hidden')).toBe('true');
 
-      act(() => mount.querySelector<HTMLButtonElement>('[data-journey-feature="leaderboard"]')?.click());
+      act(() => mount.querySelector<HTMLButtonElement>('[data-journey-feature="progress"]')?.click());
       expect(mount.querySelector('[data-coming-soon-dialog]')).not.toBeNull();
-      expect(mount.textContent).toContain('Bảng xếp hạng đang được phát triển');
+      expect(mount.textContent).toContain('Bảng tiến bộ đang được phát triển');
 
       act(() => mount.querySelector<HTMLButtonElement>('.feature-dialog-close')?.click());
       expect(mount.querySelector('[data-coming-soon-dialog]')).toBeNull();
@@ -82,6 +82,29 @@ describe('JourneyView launch surface', () => {
 
       act(() => mount.querySelector<HTMLButtonElement>('.primary-cta')?.click());
       expect(onOpenLessons).toHaveBeenCalledOnce();
+    } finally {
+      act(() => root.unmount());
+    }
+  });
+
+  it('opens the progress board callback when rollout is enabled', () => {
+    const mount = document.createElement('div');
+    const root = createRoot(mount);
+    const onOpenProgress = vi.fn();
+
+    try {
+      act(() => root.render(createElement(JourneyView, {
+        petMood: 'idle',
+        reducedMotion: false,
+        onPetTap: vi.fn(),
+        onOpenLessons: vi.fn(),
+        onOpenProgress,
+        progressBoardEnabled: true,
+      })));
+
+      act(() => mount.querySelector<HTMLButtonElement>('[data-journey-feature="progress"]')?.click());
+      expect(onOpenProgress).toHaveBeenCalledOnce();
+      expect(mount.querySelector('[data-coming-soon-dialog]')).toBeNull();
     } finally {
       act(() => root.unmount());
     }
@@ -130,7 +153,7 @@ describe('JourneyView launch surface', () => {
         onOpenLessons: vi.fn(),
       })));
 
-      const featureButton = mount.querySelector<HTMLButtonElement>('[data-journey-feature="leaderboard"]');
+      const featureButton = mount.querySelector<HTMLButtonElement>('[data-journey-feature="progress"]');
       expect(featureButton).not.toBeNull();
       act(() => featureButton?.focus());
       act(() => featureButton?.click());

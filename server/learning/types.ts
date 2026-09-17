@@ -45,6 +45,11 @@ export type LearningEventRecord = LearningEventInput & {
   interactive: boolean;
 };
 
+export type LearningBoardSource = {
+  snapshot: LearningSnapshotRecord;
+  events: LearningEventRecord[];
+};
+
 export type LearningStore = {
   snapshot: LearningSnapshotRecord;
   run: LearningRunRecord | null;
@@ -59,6 +64,7 @@ export type LearningRepository = {
   getSnapshot(studentId: string): Promise<LearningSnapshotRecord>;
   getLatestRun(studentId: string): Promise<LearningRunRecord | null>;
   listEvents(studentId: string, from?: string, to?: string): Promise<LearningEventRecord[]>;
+  getProgressBoardSource(studentId: string): Promise<LearningBoardSource>;
   resetProgress(studentId: string, now: string): Promise<LearningSnapshotRecord>;
   findMigrationReceipt(studentId: string, fingerprint: string): Promise<MigrationReceiptRecord | null>;
   importSnapshot(studentId: string, progress: Progress, legacyImported: boolean, expectedRevision: number, receipt: MigrationReceiptRecord, now: string): Promise<LearningSnapshotRecord>;

@@ -4,13 +4,16 @@ import { LearningBatchError, type LearningRepository } from './types.ts';
 import { processLearningEvent } from './engine.ts';
 import { createProgressBackup, migrationPreview, parseProgressBackup } from './migration.ts';
 import { buildDashboardData } from '../analytics/metrics.ts';
+import { buildProgressBoardData } from '../analytics/progressBoard.ts';
+import { PROGRESS_BOARD_CONTENT_INDEX } from '../analytics/progressBoardContent.ts';
+import type { ProgressBoardContentIndex } from '../../shared/progress-board-contracts.ts';
 import type { DashboardRange } from '../../shared/dashboard-contracts.ts';
 
 function errorResult(error: LearningBatchError): LearningFailure {
   return { ok: false, code: error.code, message: error.message };
 }
 
-export function createLearningService(repository: LearningRepository, clock: () => Date = () => new Date()) {
+export function createLearningService(repository: LearningRepository, clock: () => Date = () => new Date(), contentIndex: ProgressBoardContentIndex = PROGRESS_BOARD_CONTENT_INDEX) {
   return {
     async getProgress(studentId: string) {
       const snapshot = await repository.getSnapshot(studentId);
@@ -29,6 +32,10 @@ export function createLearningService(repository: LearningRepository, clock: () 
         if (error instanceof LearningBatchError) return errorResult(error);
         throw error;
       }
+    },
+    async getProgressBoard(studentId: string, generatedAt = clock().toISOString()) {
+      const source = await repository.getProgressBoardSource(studentId);
+      return buildProgressBoardData(source.snapshot, source.events, contentIndex, generatedAt);
     },
     async exportBackup(studentId: string) {
       const snapshot = await repository.getSnapshot(studentId);
