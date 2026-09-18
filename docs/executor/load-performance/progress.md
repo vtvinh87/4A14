@@ -1,6 +1,6 @@
 # Load performance — execution ledger
 
-Status: `READY_FOR_REVIEW` — local code verified; DB/performance validation pending; production not deployed
+Status: `READY_FOR_REVIEW` — local code verified; DB/performance validation pending; commit pushed; production not deployed
 Plan: `/Volumes/Pictures/Projects/Hoc_Vui/docs/superpowers/plans/2026-09-18-load-performance-luna.md`
 Actual checkout: `/Volumes/Pictures/Projects/Hoc_Vui`
 HEAD at start: `00ac8fb0e5681fbc9c4a177b4425484c4ce95bfc`
@@ -8,7 +8,7 @@ Plan reference HEAD: `98690ab3b5b527862821658cd8afcfa8287ebcbe` (not checked out
 Pre-existing dirty file: `deno.lock` (`776554a46c7706ff0e6e7175b79d205ecdb0b11daadf6730bad2e7575e4869e3`), preserved
 Accepted roster baseline: seven manifest hashes matched before L0; six lifecycle files remain byte-identical. `src/App.test.ts` changed only in L1 to update the planned progress-board config-call assertion; accepted manifest JSON itself is unchanged.
 Old worktree: `/Users/macbook/.codex/worktrees/4fc1/Hoc_Vui` — not read or integrated.
-External actions: none; no commit, push, PR, merge, deploy, migration, cloud mutation, or Brain_Vault write.
+External actions: commit/push completed for the user-authorized code shipment; no PR, merge, deploy, migration, cloud mutation, or Brain_Vault write.
 
 | Gói | Trạng thái | Evidence |
 |---|---|---|
@@ -253,7 +253,7 @@ Evidence levels:
 - `LOCAL_CODE_VERIFIED`: L0–L6 code, unit/contract tests, full suite, typechecks, build, Edge and Firebase static validation passed.
 - `DB_VALIDATION_PENDING`: no explicit verified local PostgreSQL target was supplied; all DB integration tests were skipped, so live SQL syntax/count/transaction behavior is unconfirmed.
 - `STAGING_PERF_VERIFIED`: `NOT_RUN` — no approved synthetic authenticated server/session and no staging target.
-- `PRODUCTION_NOT_DEPLOYED`: confirmed; no deploy, migration, cloud mutation, account creation, external write, commit, push, PR or merge performed.
+- `PRODUCTION_NOT_DEPLOYED`: confirmed; no deploy, migration, cloud mutation, account creation, PR or merge performed at the verification checkpoint. The later user-authorized commit/push is recorded below.
 
 Required artifacts: `baseline.md`, this ledger, `verification.md`, `latency-results.json`, and `handoff.md`. No production performance acceptance claim is made; warm p95, first-open/cold p95, HTTP latency, click-to-fresh-data and browser walkthrough remain unverified.
 
@@ -275,6 +275,15 @@ TDD and verification evidence:
 Changed files in this correction: `server/learning/postgresRepository.ts`, `server/learning/progressBoardSource.test.ts`, and this ledger. Source hashes after correction: `server/learning/postgresRepository.ts` `38d2244f61b758d03a8109a0c11fbf386c2c921e4373e9afd07b89c57f85af4e`; `server/learning/progressBoardSource.test.ts` `eea58b00908ab88232985dba5dfd737b2449bb6502a5ffaffe48e9b3207daec7`.
 
 No live SQL count/duration, protected HTTP latency, click-to-fresh-data, warm p95, first-open/cold p95, authenticated browser walkthrough, or approved deployment target was established. These remain release-validation gaps; anonymous 401, skeleton time and unit/mock timing are not substitutes.
+
+## User-authorized ship checkpoint
+
+- Scoped commit created: `9eff971` (`perf: optimize authenticated read loading`), 46 files, 2,238 insertions and 122 deletions; `git commit` -> exit 0.
+- `git push origin codex/bang-tien-bo` -> exit 0; remote advanced `00ac8fb..9eff971`.
+- `deno.lock` remains pre-existing and unstaged; the accepted roster manifest remains unchanged.
+- Deploy: `NOT_RUN`. The plan's separate release gate is not satisfied: no explicitly verified local PostgreSQL target, no protected HTTP samples, no approved synthetic authenticated account/dataset, no click-to-fresh-data/browser walkthrough, and no current project/hosting target confirmation. Therefore no SQL/latency/performance acceptance claim or deploy action is made.
+
+Next concrete step: after reviewer approval, verify the exact Firebase/Supabase targets and approved synthetic environment, run DB/HTTP/browser release evidence, then deploy backend/frontend with the documented rollback artifact; otherwise remain `READY_FOR_REVIEW`.
 
 ## Continuation rule
 
