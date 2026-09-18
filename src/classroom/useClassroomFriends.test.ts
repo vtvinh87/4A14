@@ -13,6 +13,7 @@ type FriendsState = {
   error: string | null;
   refresh: () => Promise<void>;
   clear: () => void;
+  markFriendRead: (friendId: string) => void;
 };
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
@@ -54,6 +55,7 @@ describe('Classroom Friends browser client', () => {
 
   beforeEach(() => {
     vi.resetModules();
+    realtimeMocks.subscribeToClassroomRealtime.mockReset();
     sessionStorage.clear();
     fetchMock = vi.fn(async () => jsonResponse({ ok: true }));
     vi.stubGlobal('fetch', fetchMock);
@@ -93,219 +95,187 @@ describe('Classroom Friends browser client', () => {
     expect(readRequest.method).toBe('POST');
   });
 
-  it('polls friends and sends presence only while enabled and visible', async () => {
-    vi.useFakeTimers();
-    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
-    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
-      const path = String(input);
-      return path === '/api/me/friends'
-        ? jsonResponse({ ok: true, friends: [lan], unreadCount: 2 })
-        : jsonResponse({ ok: true });
-    });
+  async function mountFriends(enabled = true, open = true, accountId = 'student-a') {
     const { useClassroomFriends } = await import('./useClassroomFriends');
-    let state: FriendsState | undefined;
-    const FriendsProbe = ({ enabled }: { enabled: boolean }) => {
-      state = useClassroomFriends(enabled);
-      return createElement('output', null, state.unreadCount);
+    let state: FriendsState;
+    const Probe = (props: { enabled: boolean; open: boolean; accountId: string }) => {
+      state = useClassroomFriends(props.enabled, props.open, props.accountId);
+      return createElement('output', null, state.loading ? 'loading' : state.friends.map((friend) => friend.displayName).join(','));
     };
     const mount = document.createElement('div');
     const root = createRoot(mount);
-
-    try {
-      act(() => root.render(createElement(FriendsProbe, { enabled: true })));
+    const render = async (nextEnabled: boolean, nextOpen: boolean, nextAccountId = accountId) => {
+      act(() => root.render(createElement(Probe, { enabled: nextEnabled, open: nextOpen, accountId: nextAccountId })));
       await settle();
-      expect(fetchMock.mock.calls.map(([url]) => url).filter((url) => url !== '/api/me/realtime')).toEqual(['/api/me/presence', '/api/me/friends']);
-      expect(state?.friends).toEqual([lan]);
+    };
+    await render(enabled, open);
+    return { get state() { return state!; }, render, unmount: () => act(() => root.unmount()) };
+  }
 
-      await act(async () => {
-        vi.advanceTimersByTime(15_000);
-        await settle();
-      });
-      expect(fetchMock.mock.calls.filter(([url]) => url === '/api/me/presence')).toHaveLength(2);
-      expect(fetchMock.mock.calls.filter(([url]) => url === '/api/me/friends')).toHaveLength(2);
-    } finally {
-      act(() => root.unmount());
-    }
-  });
-
-  it('does not refresh while hidden and refreshes once when visibility or network returns', async () => {
-    vi.useFakeTimers();
-    const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+  function mockRoster() {
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => String(input) === '/api/me/friends'
       ? jsonResponse({ ok: true, friends: [lan], unreadCount: 2 })
       : jsonResponse({ ok: true }));
-    const { useClassroomFriends } = await import('./useClassroomFriends');
-    const FriendsProbe = ({ enabled }: { enabled: boolean }) => {
-      useClassroomFriends(enabled);
-      return null;
-    };
-    const mount = document.createElement('div');
-    const root = createRoot(mount);
+  }
 
+  const rosterCalls = () => fetchMock.mock.calls.filter(([url]) => url === '/api/me/friends');
+
+  it('loads only on opening and fetches fresh data on every close/reopen', async () => {
+    mockRoster();
+    const probe = await mountFriends(true, false);
     try {
-      act(() => root.render(createElement(FriendsProbe, { enabled: true })));
-      await settle();
-      await act(async () => {
-        vi.advanceTimersByTime(15_000);
-        await settle();
-      });
-      expect(fetchMock).not.toHaveBeenCalled();
+      expect(rosterCalls()).toHaveLength(0);
+      await probe.render(true, true);
+      expect(rosterCalls()).toHaveLength(1);
+      expect(probe.state.friends).toEqual([lan]);
+      await probe.render(true, false);
+      await probe.render(true, true);
+      expect(rosterCalls()).toHaveLength(2);
+    } finally { probe.unmount(); }
+  });
 
-      hidden.mockReturnValue(false);
+  it('keeps the visible list stable across timer, visibility and online events while presence stays active', async () => {
+    vi.useFakeTimers();
+    mockRoster();
+    const probe = await mountFriends();
+    try {
+      await act(async () => { vi.advanceTimersByTime(45_000); await settle(); });
       await act(async () => {
         document.dispatchEvent(new Event('visibilitychange'));
-        await settle();
-      });
-      expect(fetchMock.mock.calls.map(([url]) => url).filter((url) => url !== '/api/me/realtime')).toEqual(['/api/me/presence', '/api/me/friends']);
-
-      await act(async () => {
         window.dispatchEvent(new Event('online'));
         await settle();
       });
-      expect(fetchMock.mock.calls.filter(([url]) => url === '/api/me/friends')).toHaveLength(2);
-    } finally {
-      act(() => root.unmount());
-    }
+      expect(rosterCalls()).toHaveLength(1);
+      expect(probe.state.loading).toBe(false);
+      expect(probe.state.friends).toEqual([lan]);
+      expect(fetchMock.mock.calls.filter(([url]) => url === '/api/me/presence').length).toBeGreaterThan(1);
+    } finally { probe.unmount(); }
   });
 
-  it('commits the newest roster when overlapping refreshes resolve out of order', async () => {
-    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
-    const presenceResponses = [deferred<Response>(), deferred<Response>()];
-    const friendsResponses = [deferred<Response>(), deferred<Response>()];
-    let presenceIndex = 0;
-    let friendsIndex = 0;
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
-      const path = String(input);
-      if (path === '/api/me/realtime') return Promise.resolve(jsonResponse({ ok: false, code: 'unavailable', message: 'Realtime chưa sẵn sàng.' }, 503));
-      return path === '/api/me/presence'
-        ? presenceResponses[presenceIndex++]!.promise
-        : friendsResponses[friendsIndex++]!.promise;
-    });
-    const { useClassroomFriends } = await import('./useClassroomFriends');
-    let state: FriendsState | undefined;
-    const FriendsProbe = ({ enabled }: { enabled: boolean }) => {
-      state = useClassroomFriends(enabled);
-      return null;
-    };
-    const mount = document.createElement('div');
-    const root = createRoot(mount);
-
+  it('displays the roster without waiting for presence and ignores presence failure', async () => {
+    mockRoster();
+    const presence = deferred<Response>();
+    fetchMock.mockImplementation((input: RequestInfo | URL) => String(input) === '/api/me/presence'
+      ? presence.promise
+      : Promise.resolve(String(input) === '/api/me/friends'
+        ? jsonResponse({ ok: true, friends: [lan], unreadCount: 2 }) : jsonResponse({ ok: true })));
+    const probe = await mountFriends();
     try {
-      act(() => root.render(createElement(FriendsProbe, { enabled: true })));
+      expect(probe.state.friends).toEqual([lan]);
+      expect(probe.state.loading).toBe(false);
+      presence.resolve(jsonResponse({ ok: false, message: 'Presence busy' }, 503));
       await settle();
-
-      await act(async () => {
-        window.dispatchEvent(new Event('online'));
-        await settle();
-      });
-      expect(fetchMock.mock.calls.filter(([url]) => url === '/api/me/presence')).toHaveLength(2);
-
-      // The second heartbeat belongs to the newer refresh and is released first.
-      presenceResponses[1]!.resolve(jsonResponse({ ok: true }));
-      await settle();
-      friendsResponses[0]!.resolve(jsonResponse({ ok: true, friends: [{ ...lan, id: 'new-peer', unreadCount: 7 }], unreadCount: 7 }));
-      await settle();
-
-      // The older refresh then finishes last and must not overwrite the newer roster.
-      presenceResponses[0]!.resolve(jsonResponse({ ok: true }));
-      await settle();
-      friendsResponses[1]!.resolve(jsonResponse({ ok: true, friends: [lan], unreadCount: 2 }));
-      await settle();
-
-      expect(state?.friends).toEqual([{ ...lan, id: 'new-peer', unreadCount: 7 }]);
-      expect(state?.unreadCount).toBe(7);
-    } finally {
-      act(() => root.unmount());
-    }
+      expect(probe.state.error).toBeNull();
+    } finally { probe.unmount(); }
   });
 
-  it('preserves prior roster on temporary failure and clears state when disabled', async () => {
-    vi.useFakeTimers();
-    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
-    let unavailable = false;
-    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
-      const path = String(input);
-      if (path === '/api/me/friends') {
-        return unavailable
-          ? jsonResponse({ ok: false, code: 'unavailable', message: 'Tạm thời bận.' }, 503)
-          : jsonResponse({ ok: true, friends: [lan], unreadCount: 2 });
-      }
-      return jsonResponse({ ok: true });
-    });
-    const { useClassroomFriends } = await import('./useClassroomFriends');
-    let state: FriendsState | undefined;
-    const FriendsProbe = ({ enabled }: { enabled: boolean }) => {
-      state = useClassroomFriends(enabled);
-      return null;
-    };
-    const mount = document.createElement('div');
-    const root = createRoot(mount);
-
-    try {
-      act(() => root.render(createElement(FriendsProbe, { enabled: true })));
-      await settle();
-      unavailable = true;
-      await act(async () => {
-        vi.advanceTimersByTime(15_000);
-        await settle();
-      });
-      expect(state?.friends).toEqual([lan]);
-      expect(state?.unreadCount).toBe(2);
-      expect(state?.error).toBe('Tạm thời bận.');
-
-      act(() => root.render(createElement(FriendsProbe, { enabled: false })));
-      expect(state?.friends).toEqual([]);
-      expect(state?.unreadCount).toBe(0);
-      expect(state?.loading).toBe(false);
-      expect(state?.error).toBeNull();
-      const callsBefore = fetchMock.mock.calls.length;
-      await act(async () => {
-        vi.advanceTimersByTime(15_000);
-        await settle();
-      });
-      expect(fetchMock).toHaveBeenCalledTimes(callsBefore);
-    } finally {
-      act(() => root.unmount());
-    }
-  });
-
-  it('refreshes the roster and increments the conversation revision when a realtime event arrives', async () => {
-    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
-    let onMessage: ((messageId: string) => void) | undefined;
+  it('keeps realtime message revisions without reloading the roster', async () => {
+    mockRoster();
+    let onMessage: (() => void) | undefined;
+    const close = vi.fn();
     realtimeMocks.subscribeToClassroomRealtime.mockImplementation((_config, handler) => {
       onMessage = handler;
-      return { close: vi.fn() };
+      return { close };
     });
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
-      const path = String(input);
-      if (path === '/api/me/friends') return jsonResponse({ ok: true, friends: [lan], unreadCount: 2 });
-      if (path === '/api/me/realtime') return jsonResponse({ ok: true, supabaseUrl: 'https://example.supabase.co', publishableKey: 'public-key', topic: 'classroom:student:opaque' });
-      return jsonResponse({ ok: true });
+      if (String(input) === '/api/me/realtime') return jsonResponse({ ok: true, supabaseUrl: 'https://example.supabase.co', publishableKey: 'public-key', topic: 'classroom:student:opaque' });
+      return String(input) === '/api/me/friends' ? jsonResponse({ ok: true, friends: [lan], unreadCount: 2 }) : jsonResponse({ ok: true });
     });
-    const { useClassroomFriends } = await import('./useClassroomFriends');
-    let state: FriendsState | undefined;
-    const FriendsProbe = () => {
-      state = useClassroomFriends(true);
-      return null;
-    };
-    const mount = document.createElement('div');
-    const root = createRoot(mount);
-
+    const probe = await mountFriends();
     try {
-      act(() => root.render(createElement(FriendsProbe)));
+      expect(onMessage).toBeTypeOf('function');
+      await act(async () => { onMessage?.(); await settle(); });
+      expect(probe.state.messageRevision).toBe(1);
+      expect(rosterCalls()).toHaveLength(1);
+      await probe.render(true, false);
+      expect(close).not.toHaveBeenCalled();
+      await probe.render(false, false);
+      expect(close).toHaveBeenCalledOnce();
+      await act(async () => { onMessage?.(); await settle(); });
+      expect(probe.state.messageRevision).toBe(0);
+    } finally { probe.unmount(); }
+  });
+
+  it('does not establish a realtime subscription after cleanup when config returns late', async () => {
+    mockRoster();
+    const config = deferred<Response>();
+    fetchMock.mockImplementation((input: RequestInfo | URL) => String(input) === '/api/me/realtime'
+      ? config.promise : Promise.resolve(jsonResponse({ ok: true, friends: [lan], unreadCount: 2 })));
+    const probe = await mountFriends();
+    probe.unmount();
+    config.resolve(jsonResponse({ ok: true, supabaseUrl: 'https://example.supabase.co', publishableKey: 'public-key', topic: 'classroom:student:opaque' }));
+    await settle();
+    expect(realtimeMocks.subscribeToClassroomRealtime).not.toHaveBeenCalled();
+  });
+
+  it('ignores stale roster responses across close/reopen and same-role account switches', async () => {
+    mockRoster();
+    const responses = [deferred<Response>(), deferred<Response>(), deferred<Response>()];
+    let request = 0;
+    fetchMock.mockImplementation((input: RequestInfo | URL) => String(input) === '/api/me/friends'
+      ? responses[request++]!.promise : Promise.resolve(jsonResponse({ ok: true })));
+    const probe = await mountFriends();
+    try {
+      await probe.render(true, false);
+      responses[0].resolve(jsonResponse({ ok: true, friends: [lan], unreadCount: 2 }));
       await settle();
-      expect(realtimeMocks.subscribeToClassroomRealtime).toHaveBeenCalledOnce();
-      expect(state?.messageRevision).toBe(0);
+      expect(probe.state.friends).toEqual([]);
+      await probe.render(true, true);
+      await probe.render(true, true, 'student-b');
+      responses[2].resolve(jsonResponse({ ok: true, friends: [{ ...lan, displayName: 'New friend' }], unreadCount: 2 }));
+      await settle();
+      responses[1].resolve(jsonResponse({ ok: true, friends: [lan], unreadCount: 2 }));
+      await settle();
+      expect(probe.state.friends[0].displayName).toBe('New friend');
+    } finally { probe.unmount(); }
+  });
 
-      await act(async () => {
-        onMessage?.('message-123');
-        await settle();
-      });
+  it('keeps the newest explicit retry when overlapping requests complete out of order', async () => {
+    mockRoster();
+    const responses = [deferred<Response>(), deferred<Response>()];
+    let request = 0;
+    fetchMock.mockImplementation((input: RequestInfo | URL) => String(input) === '/api/me/friends'
+      ? responses[request++]!.promise : Promise.resolve(jsonResponse({ ok: true })));
+    const probe = await mountFriends();
+    try {
+      act(() => { void probe.state.refresh(); });
+      responses[1].resolve(jsonResponse({ ok: true, friends: [{ ...lan, displayName: 'Newest' }], unreadCount: 2 }));
+      await settle();
+      responses[0].resolve(jsonResponse({ ok: true, friends: [lan], unreadCount: 2 }));
+      await settle();
+      expect(probe.state.friends[0].displayName).toBe('Newest');
+    } finally { probe.unmount(); }
+  });
 
-      expect(state?.messageRevision).toBe(1);
-      expect(fetchMock.mock.calls.filter(([url]) => url === '/api/me/friends')).toHaveLength(2);
-    } finally {
-      act(() => root.unmount());
-    }
+  it('supports explicit retry and clears state on logout', async () => {
+    mockRoster();
+    const probe = await mountFriends();
+    try {
+      fetchMock.mockResolvedValue(jsonResponse({ ok: false, code: 'unavailable', message: 'Tạm thời bận.' }, 503));
+      await act(async () => { await probe.state.refresh(); });
+      expect(probe.state.friends).toEqual([lan]);
+      expect(probe.state.error).toBe('Tạm thời bận.');
+      mockRoster();
+      await act(async () => { await probe.state.refresh(); });
+      expect(probe.state.error).toBeNull();
+      await probe.render(false, false);
+      expect(probe.state.friends).toEqual([]);
+      expect(probe.state.unreadCount).toBe(0);
+      expect(probe.state.loading).toBe(false);
+    } finally { probe.unmount(); }
+  });
+
+  it('updates read badges locally without fetching or changing callback identity', async () => {
+    mockRoster();
+    const probe = await mountFriends();
+    try {
+      const markRead = probe.state.markFriendRead;
+      act(() => probe.state.markFriendRead(lan.id));
+      expect(probe.state.friends[0].unreadCount).toBe(0);
+      expect(probe.state.unreadCount).toBe(0);
+      expect(probe.state.markFriendRead).toBe(markRead);
+      expect(rosterCalls()).toHaveLength(1);
+    } finally { probe.unmount(); }
   });
 });

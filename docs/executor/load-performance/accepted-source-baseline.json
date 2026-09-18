@@ -1,0 +1,14 @@
+{
+  "purpose": "Preserve accepted classmates lifecycle fix; hashes are pre-implementation reference, not a requirement that unrelated files remain byte-identical forever.",
+  "source": "/Volumes/Pictures/Projects/Hoc_Vui",
+  "head": "98690ab3b5b527862821658cd8afcfa8287ebcbe",
+  "files": {
+    "src/App.tsx": "f3aad8c651e6a971040a5415e20e3af4f6d67bbbb0204157c3fd86bf54c33b88",
+    "src/App.test.ts": "bccd4d7792528d3df24b686d86fa872930f4e51b43ed9958c44a8c55cce12e6d",
+    "src/classroom/useClassroomFriends.ts": "e0e13bcde4844e9173b1b01df61fbd99d3595bd159fb813158a2d02fd6c0279b",
+    "src/classroom/useClassroomFriends.test.ts": "2ffc59c6dc5a67d70c552e7c082be9b4ae9b75741a992362634d5df0d0153348",
+    "src/components/FriendListDialog.tsx": "69ae22eb07e9b0310d954bcd9a38f0697f710a0325d56f5f9af78b792a95f7dc",
+    "src/components/FriendListDialog.test.tsx": "49e4189ea41d5cd0d96f574fd2358fd1ab7583df56c05dd8d08e77a312a6c248",
+    "src/components/FriendConversationPanel.tsx": "8a043ebfd7562ed688a72646651ca4373e0859ad4d561dbab37da97de62a8ad9"
+  }
+}

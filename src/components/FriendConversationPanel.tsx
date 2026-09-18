@@ -7,7 +7,7 @@ type FriendConversationPanelProps = {
   messageRevision?: number;
   onBack: () => void;
   onClose: () => void;
-  onFriendsChanged: () => Promise<void> | void;
+  onFriendsChanged: (friendId: string) => Promise<void> | void;
 };
 
 const MESSAGE_MAX_LENGTH = 500;
@@ -65,7 +65,7 @@ export function FriendConversationPanel({ friend, messageRevision = 0, onBack, o
         setError(readResult.message);
         return;
       }
-      await onFriendsChanged();
+      await onFriendsChanged(friend.id);
     };
 
     void loadConversation(true);
@@ -107,8 +107,6 @@ export function FriendConversationPanel({ friend, messageRevision = 0, onBack, o
     setMessages((current) => mergeMessages(current, [result.message]));
     setDraft('');
     setSending(false);
-    if (!isMountedRef.current || currentFriendIdRef.current !== sendingFriendId) return;
-    await onFriendsChanged();
   };
 
   return (

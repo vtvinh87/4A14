@@ -202,7 +202,7 @@ export function App() {
   const accountMode = authSession?.mode;
   const classroomFriendsEnabled = Boolean(authSession?.account.role === 'student' && authSession.mode === 'full');
   const progressBoardFeatureEnabled = Boolean(authSession?.account.role === 'student' && authSession.mode === 'full' && progressBoardRollout?.enabled);
-  const classroomFriends = useClassroomFriends(classroomFriendsEnabled);
+  const classroomFriends = useClassroomFriends(classroomFriendsEnabled, friendsDialogOpen, profileOwnerId ?? undefined);
   const parentChallengeReviewEnabled = Boolean(
     authSession?.account.role === 'student'
       && authSession.mode === 'full'
@@ -1016,7 +1016,7 @@ export function App() {
       </div>
       {settingsOpen && <SettingsDialog settings={settings} saveStatus={storageRecovery ? 'recovery' : storageWriteWarning ? 'warning' : 'saved'} onChange={updateSettings} onClose={() => setSettingsOpen(false)} onLogout={handleLogout} />}
       {profileDialogOpen && visibleStudentProfile && <ProfileDialog profile={visibleStudentProfile} onSave={handleProfileSave} onChangePin={handleProfilePinChange} onClose={() => setProfileDialogOpen(false)} onLogout={handleLogout} />}
-      {friendsDialogOpen && <FriendListDialog friends={classroomFriends.friends} loading={classroomFriends.loading} error={classroomFriends.error ?? ''} messageRevision={classroomFriends.messageRevision} onRefresh={classroomFriends.refresh} onFriendsChanged={classroomFriends.refresh} onClose={() => setFriendsDialogOpen(false)} />}
+      {friendsDialogOpen && <FriendListDialog friends={classroomFriends.friends} loading={classroomFriends.loading} error={classroomFriends.error ?? ''} messageRevision={classroomFriends.messageRevision} onRefresh={classroomFriends.refresh} onFriendsChanged={classroomFriends.markFriendRead} onClose={() => setFriendsDialogOpen(false)} />}
       {challengeDialogOpen && challengeRollout?.enabled && authSession.account.role === 'student' && authSession.mode === 'full' && <ChallengeDialog sourceFacts={CHALLENGE_SOURCE_FACTS} studentId={authSession.account.id} canCreate onClose={() => setChallengeDialogOpen(false)} />}
       {progressBoardDialogOpen && progressBoardFeatureEnabled && <ProgressBoardDialog status={progressBoard.status} data={progressBoard.data} error={progressBoard.error} reducedMotion={effectiveReducedMotion} onRefresh={progressBoard.refresh} onClose={() => setProgressBoardDialogOpen(false)} onOpenLesson={openProgressLesson} lockBodyScroll={false} />}
       {birthdayCelebration && <BirthdayCelebration displayName={birthdayCelebration.displayName} avatarId={birthdayCelebration.avatarId} reducedMotion={effectiveReducedMotion} soundEnabled={settings.sound} onPlaySound={() => audio.play('success')} onClose={() => setBirthdayCelebration(null)} />}

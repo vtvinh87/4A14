@@ -178,6 +178,7 @@ describe('App cross-feature account flow', () => {
       error: null,
       refresh: vi.fn(async () => undefined),
       clear: vi.fn(),
+      markFriendRead: vi.fn(),
     });
     mount = document.createElement('div');
     document.body.appendChild(mount);
@@ -264,6 +265,7 @@ describe('App cross-feature account flow', () => {
     await settle();
     act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng lời chúc sinh nhật"]')?.click());
 
+    expect(classroomMocks.useClassroomFriends).toHaveBeenLastCalledWith(true, false, session.account.id);
     const friendsButton = mount.querySelector<HTMLButtonElement>('[data-journey-feature="friends"]');
     expect(friendsButton).not.toBeNull();
     expect(friendsButton?.querySelector('[data-friends-unread-badge]')?.textContent).toBe('3');
@@ -271,6 +273,11 @@ describe('App cross-feature account flow', () => {
 
     expect(mount.querySelector('[data-friend-list-dialog]')).not.toBeNull();
     expect(mount.textContent).toContain('Bạn Lan');
+    expect(classroomMocks.useClassroomFriends).toHaveBeenLastCalledWith(true, true, session.account.id);
+    act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng danh sách bạn bè"]')?.click());
+    expect(classroomMocks.useClassroomFriends).toHaveBeenLastCalledWith(true, false, session.account.id);
+    act(() => friendsButton?.click());
+    expect(classroomMocks.useClassroomFriends).toHaveBeenLastCalledWith(true, true, session.account.id);
     expect(document.body.style.overflow).toBe('hidden');
 
     clickText(mount, '[aria-label="Mở menu tài khoản"]', '');

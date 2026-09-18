@@ -96,6 +96,7 @@ describe('FriendListDialog', () => {
     expect(mockedMarkFriendMessagesRead).toHaveBeenCalledWith('two');
     expect(mockedMarkFriendMessagesRead).not.toHaveBeenCalledWith('one');
     expect(onFriendsChanged).toHaveBeenCalledOnce();
+    expect(onFriendsChanged).toHaveBeenCalledWith('two');
   });
 
   it('scrolls an opened conversation to its latest message', async () => {

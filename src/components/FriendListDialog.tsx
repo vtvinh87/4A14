@@ -9,7 +9,7 @@ export type FriendListDialogProps = {
   error: string;
   messageRevision?: number;
   onRefresh: () => Promise<void> | void;
-  onFriendsChanged: () => Promise<void> | void;
+  onFriendsChanged: (friendId: string) => Promise<void> | void;
   onClose: () => void;
 };
 
