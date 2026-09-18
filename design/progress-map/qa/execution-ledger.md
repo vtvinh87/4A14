@@ -45,6 +45,7 @@
 | 2026-09-18 | Fresh post-adjustment verification | 0 | `npm test`: 126 files, 551 passed, 4 skipped; client/server typecheck, build, offline hash test, map validation and diff-check pass |
 | 2026-09-18 | TDD + real-app corner clipping correction | 0 | RED/GREEN style contract added; `.progress-map-canvas` and `.progress-map-base` now inherit the scene radius and clip the illustrated map; CUA computed styles match at 390x843 and the inspected app screenshot shows rounded map corners |
 | 2026-09-18 | Required modal screenshot matrix | 0 | Inline CUA captures inspected at all six exact CSS viewports; no horizontal overflow; 844x390 copy scroll verified; PNG persistence remains unavailable |
+| 2026-09-18 | Commit, push and Firebase Hosting release | 0 | Commit `f829d78` pushed to `origin/codex/bang-tien-bo`; Firebase project `a14-82a69` deployed both `legacy` and `app` hosting targets; both public roots and the illustrated map asset returned HTTP 200 |
 
 ## Recovery rule
 
@@ -60,7 +61,7 @@ Keep the implementation checkpoint intact; run fresh full verification after the
 - Design status: `APPROVED_BY_USER` on 2026-09-18.
 - Design spec: `docs/superpowers/specs/2026-09-18-progress-map-landmark-detail-modal-design.md`.
 - Execution mode: inline execution in the root task; no executor descendants spawned.
-- Implementation status: `IMPLEMENTED_LOCALLY`; corner clipping correction is locally verified; commit, push and Firebase Hosting deploy are authorized in the current follow-up and remain pending fresh release gates.
+- Implementation status: `RELEASED`; corner clipping correction is locally verified; commit `f829d78` is pushed to `origin/codex/bang-tien-bo` and Firebase Hosting targets `legacy` and `app` are deployed under project `a14-82a69`.
 - Task 1 — supporting art: `DONE`; five new ImageGen masters/runtime WebP files accepted and visually inspected; 19 accepted support assets, RGBA verified, runtime total `2,036,768` bytes (<2 MiB), manifest/contact sheet/generation log updated.
 - Task 2 — typed detail/mapping: `DONE`; eight source-backed entries, all dedicated `landmark-*` mappings, Kim Liên wording explicitly separates Hoàng Trù and Làng Sen `1901–1906`.
 - Task 3–5 — modal/trigger/board lifecycle: `DONE`; modal role/ARIA, parent-owned Escape ordering, modal-only Tab cycle, backdrop isolation and focus return covered by tests and fixture smoke.
