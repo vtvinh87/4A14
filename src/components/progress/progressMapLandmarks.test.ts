@@ -15,6 +15,10 @@ describe('progress map landmarks', () => {
       expect(landmark.anchor.longitude).toBeLessThanOrEqual(PROGRESS_MAP_VIEWPORT.maxLongitude);
       expect(landmark.hitArea.widthPercent).toBeGreaterThan(0);
       expect(landmark.hitArea.heightPercent).toBeGreaterThan(0);
+      expect(landmark.artworkAnchor.left).toBeGreaterThanOrEqual(0);
+      expect(landmark.artworkAnchor.left).toBeLessThanOrEqual(100);
+      expect(landmark.artworkAnchor.top).toBeGreaterThanOrEqual(0);
+      expect(landmark.artworkAnchor.top).toBeLessThanOrEqual(100);
     }
   });
 });

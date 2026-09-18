@@ -3,6 +3,11 @@ export type ProgressMapPoint = {
   longitude: number;
 };
 
+export type ProgressMapNormalizedPoint = {
+  left: number;
+  top: number;
+};
+
 export type ProgressMapViewport = {
   minLatitude: number;
   maxLatitude: number;

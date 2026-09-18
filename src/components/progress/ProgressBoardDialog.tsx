@@ -3,8 +3,12 @@ import type { ProgressBoardData, ProgressBoardLesson } from '../../../shared/pro
 import { getFocusableElements, getNextFocusIndex } from '../SettingsDialog';
 import type { ProgressBoardStatus } from '../../progress/useProgressBoard';
 import type { ProgressClassUnlockSummary } from './ClassUnlockCard';
-import { ProgressMapDrawer } from './ProgressMapDrawer';
+import { ProgressMapLandmarkImageModal } from './ProgressMapLandmarkImageModal';
+import { ProgressMapInfoPanel } from './ProgressMapInfoPanel';
 import { ProgressMapScene } from './ProgressMapScene';
+import { getProgressMapLandmarkPresentation, getProgressMapAsset, type MapSelection } from './progressMapPresentation';
+import { getProgressMapLandmarkDetail } from './progressMapLandmarkDetails';
+import type { ProgressMapLandmarkId } from './progressMapLandmarks';
 import { summarizeProgressMapTopic } from './progressMapSelectors';
 
 export type ProgressBoardDialogProps = {
@@ -35,11 +39,23 @@ export function ProgressBoardDialog({ status, data, error, reducedMotion, classU
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const previousOverflowRef = useRef('');
   const onCloseRef = useRef(onClose);
-  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(data?.nextLessonId ?? null);
-  const [selectedTopicName, setSelectedTopicName] = useState<string | null>(null);
+  const selectionRef = useRef<MapSelection>({ kind: 'welcome' });
+  const drawerExpandedRef = useRef(false);
+  const detailsOpenRef = useRef(false);
+  const landmarkImageOpenRef = useRef(false);
+  const landmarkImageTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const landmarkModalRef = useRef<HTMLElement>(null);
+  const landmarkModalCloseRef = useRef<HTMLButtonElement>(null);
+  const [selection, setSelection] = useState<MapSelection>({ kind: 'welcome' });
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [drawerExpanded, setDrawerExpanded] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [landmarkImageOpen, setLandmarkImageOpen] = useState(false);
   onCloseRef.current = onClose;
+  selectionRef.current = selection;
+  drawerExpandedRef.current = drawerExpanded;
+  detailsOpenRef.current = detailsOpen;
+  landmarkImageOpenRef.current = landmarkImageOpen;
 
   const lessons = allLessons(data);
 
@@ -53,12 +69,29 @@ export function ProgressBoardDialog({ status, data, error, reducedMotion, classU
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
+        if (landmarkImageOpenRef.current) {
+          setLandmarkImageOpen(false);
+          landmarkImageOpenRef.current = false;
+          return;
+        }
+        if (detailsOpenRef.current) {
+          setDetailsOpen(false);
+          return;
+        }
+        if (selectionRef.current.kind === 'landmark') {
+          setSelection({ kind: 'welcome' });
+          return;
+        }
+        if (drawerExpandedRef.current) {
+          setDrawerExpanded(false);
+          return;
+        }
         onCloseRef.current();
         return;
       }
       if (event.key !== 'Tab') return;
 
-      const dialog = dialogRef.current;
+      const dialog = landmarkImageOpenRef.current ? landmarkModalRef.current : dialogRef.current;
       if (!dialog) return;
       const focusable = getFocusableElements(dialog);
       if (!focusable.length) {
@@ -87,30 +120,83 @@ export function ProgressBoardDialog({ status, data, error, reducedMotion, classU
   }, [lockBodyScroll]);
 
   useEffect(() => {
-    setSelectedLessonId((current) => {
-      if (current && lessons.some((lesson) => lesson.lessonId === current)) return current;
-      return data?.nextLessonId ?? null;
-    });
-    setSelectedTopicName((current) => current && data?.topics.some((topic) => topic.topic === current) ? current : null);
-    setDetailsOpen(false);
-  }, [data]);
+    if (landmarkImageOpen) {
+      landmarkModalCloseRef.current?.focus();
+      return;
+    }
 
-  const nextLesson = data?.nextLessonId ? lessons.find((lesson) => lesson.lessonId === data.nextLessonId) ?? null : null;
-  const selectedLesson = selectedTopicName
-    ? lessons.find((lesson) => lesson.lessonId === selectedLessonId && lesson.topic === selectedTopicName)
-      ?? (nextLesson?.topic === selectedTopicName ? nextLesson : null)
-    : lessons.find((lesson) => lesson.lessonId === selectedLessonId) ?? nextLesson ?? null;
-  const selectedTopic = (selectedTopicName ? data?.topics.find((topic) => topic.topic === selectedTopicName) : undefined)
-    ?? (selectedTopicName ? { topic: selectedTopicName, lessons: [] as ProgressBoardLesson[] } : undefined)
-    ?? data?.topics.find((topic) => selectedLesson && topic.lessons.some((lesson) => lesson.lessonId === selectedLesson.lessonId))
-    ?? data?.topics[0]
-    ?? EMPTY_PROGRESS_TOPIC;
-  const selectedTopicSnapshot = summarizeProgressMapTopic(selectedTopic, data?.nextLessonId ?? null);
+    const trigger = landmarkImageTriggerRef.current;
+    if (trigger?.isConnected) trigger.focus();
+    landmarkImageTriggerRef.current = null;
+  }, [landmarkImageOpen]);
+
+  useEffect(() => {
+    if (!data) return;
+    if (selection.kind === 'topic') {
+      const topic = data.topics.find((candidate) => candidate.topic === selection.topicName);
+      if (!topic) {
+        setSelectedLessonId(null);
+        setDetailsOpen(false);
+        return;
+      }
+      const topicSnapshot = summarizeProgressMapTopic(topic, data.nextLessonId);
+      setSelectedLessonId((current) => current && topic.lessons.some((lesson) => lesson.lessonId === current)
+        ? current
+        : topicSnapshot.nextLessonId);
+      setDetailsOpen(false);
+      return;
+    }
+    if (selection.kind === 'welcome') setSelectedLessonId(null);
+  }, [data, selection]);
+
+  const selectedTopic = selection.kind === 'topic'
+    ? data?.topics.find((topic) => topic.topic === selection.topicName) ?? { topic: selection.topicName, lessons: [] as ProgressBoardLesson[] }
+    : EMPTY_PROGRESS_TOPIC;
+  const selectedLesson = selection.kind === 'topic'
+    ? selectedTopic.lessons.find((lesson) => lesson.lessonId === selectedLessonId) ?? null
+    : null;
   const openLesson = (lessonId: string) => onOpenLesson?.(lessonId);
-  const selectLesson = (lessonId: string) => {
-    setSelectedLessonId(lessonId);
-    setSelectedTopicName(data?.topics.find((topic) => topic.lessons.some((lesson) => lesson.lessonId === lessonId))?.topic ?? null);
+  const resetLandmarkImage = () => {
+    landmarkImageOpenRef.current = false;
+    setLandmarkImageOpen(false);
+    landmarkImageTriggerRef.current = null;
+  };
+  const openLandmarkImage = (landmarkId: ProgressMapLandmarkId, trigger: HTMLButtonElement) => {
+    if (selection.kind !== 'landmark' || selection.landmarkId !== landmarkId) return;
+    landmarkImageTriggerRef.current = trigger;
+    landmarkImageOpenRef.current = true;
+    setLandmarkImageOpen(true);
+  };
+  const closeLandmarkImage = () => {
+    landmarkImageOpenRef.current = false;
+    setLandmarkImageOpen(false);
+  };
+  const selectTopic = (topicName: string) => {
+    const topic = data?.topics.find((candidate) => candidate.topic === topicName) ?? { topic: topicName, lessons: [] as ProgressBoardLesson[] };
+    const topicSnapshot = summarizeProgressMapTopic(topic, data?.nextLessonId ?? null);
+    setSelection({ kind: 'topic', topicName });
+    setSelectedLessonId(topicSnapshot.nextLessonId);
+    setDrawerExpanded(false);
     setDetailsOpen(false);
+    resetLandmarkImage();
+  };
+  const selectLandmark = (landmarkId: Extract<MapSelection, { kind: 'landmark' }>['landmarkId']) => {
+    setSelection({ kind: 'landmark', landmarkId });
+    setDrawerExpanded(false);
+    setDetailsOpen(false);
+    resetLandmarkImage();
+  };
+  const selectLesson = (lessonId: string) => {
+    if (selection.kind !== 'topic') return;
+    setSelectedLessonId(lessonId);
+    setDetailsOpen(false);
+  };
+  const handleBackToMap = () => {
+    setSelection({ kind: 'welcome' });
+    setSelectedLessonId(null);
+    setDrawerExpanded(false);
+    setDetailsOpen(false);
+    resetLandmarkImage();
   };
   const toggleDrawer = () => {
     setDrawerExpanded((expanded) => {
@@ -121,6 +207,8 @@ export function ProgressBoardDialog({ status, data, error, reducedMotion, classU
   const handleBackdropMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) onCloseRef.current();
   };
+  const compassAsset = getProgressMapAsset('compass-start');
+  const bookAsset = getProgressMapAsset('book-progress');
 
   return (
     <div className="dialog-backdrop progress-board-dialog-backdrop" data-progress-board-backdrop role="presentation" onMouseDown={handleBackdropMouseDown}>
@@ -136,13 +224,18 @@ export function ProgressBoardDialog({ status, data, error, reducedMotion, classU
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="progress-board-dialog-heading">
-          <div className="progress-board-dialog-art" aria-hidden="true">
-            <img src="/art/dock/journey.png" alt="" />
-          </div>
+          <button className="progress-map-compass" data-progress-map-compass type="button" onClick={() => selectTopic('Địa phương em')} aria-label="Mở Địa phương em">
+            <img src={compassAsset.src} width={compassAsset.width} height={compassAsset.height} alt="" />
+          </button>
           <div className="progress-board-dialog-title-copy">
             <p className="eyebrow">CHUYẾN ĐI CỦA MÌNH</p>
             <h2 id="progress-board-dialog-title">Chuyến đi của tớ</h2>
-            {data && <span className="progress-board-dialog-badge" data-progress-board-badge>{data.summary.exploredLessonCount}/{lessons.length} chặng</span>}
+            {data && (
+              <span className="progress-board-dialog-badge" data-progress-board-badge>
+                <img src={bookAsset.src} width={bookAsset.width} height={bookAsset.height} alt="" />
+                <span>{data.summary.exploredLessonCount}/{lessons.length} chặng</span>
+              </span>
+            )}
           </div>
           <button ref={closeRef} className="dialog-close" type="button" onClick={onClose} aria-label="Đóng Bảng tiến bộ">×</button>
         </div>
@@ -151,7 +244,7 @@ export function ProgressBoardDialog({ status, data, error, reducedMotion, classU
 
         {status === 'loading' && (
           <div className="progress-board-state progress-board-loading" data-progress-board-state="loading" role="status">
-            <span className="progress-board-loading-orb" aria-hidden="true">✦</span>
+            <span className="progress-board-loading-orb" aria-hidden="true" />
             <strong>Đang mở bản đồ tiến bộ...</strong>
             <p>Mình lấy những bước học tập mới nhất.</p>
           </div>
@@ -194,34 +287,36 @@ export function ProgressBoardDialog({ status, data, error, reducedMotion, classU
               <ProgressMapScene
                 topics={data.topics}
                 nextLessonId={data.nextLessonId}
-                selectedLessonId={selectedLesson?.lessonId ?? null}
-                selectedTopicName={selectedTopicName}
+                selection={selection}
                 reducedMotion={reducedMotion}
-                classUnlock={classUnlock}
-                onSelectLesson={selectLesson}
-                onSelectTopic={(topicName) => {
-                  setSelectedTopicName(topicName);
-                  setSelectedLessonId(null);
-                  setDetailsOpen(false);
-                }}
-                onOpenLesson={openLesson}
+                onSelectTopic={selectTopic}
+                onSelectLandmark={selectLandmark}
               />
-              <ProgressMapDrawer
-                topic={selectedTopic}
-                topicSnapshot={selectedTopicSnapshot}
-                selectedLesson={selectedLesson}
+              <ProgressMapInfoPanel
+                selection={selection}
+                data={data}
+                selectedLessonId={selectedLesson?.lessonId ?? null}
                 expanded={drawerExpanded}
                 detailsOpen={detailsOpen}
                 reducedMotion={reducedMotion}
                 classUnlock={classUnlock}
                 onToggleExpanded={toggleDrawer}
                 onToggleDetails={() => setDetailsOpen((value) => !value)}
-                onSelectLesson={(lessonId) => {
-                  selectLesson(lessonId);
-                }}
+                onSelectLesson={selectLesson}
                 onOpenLesson={openLesson}
+                onOpenLandmarkImage={openLandmarkImage}
+                onBack={handleBackToMap}
               />
             </div>
+            {selection.kind === 'landmark' && landmarkImageOpen && (
+              <ProgressMapLandmarkImageModal
+                landmark={getProgressMapLandmarkPresentation(selection.landmarkId)}
+                detail={getProgressMapLandmarkDetail(selection.landmarkId)}
+                modalRef={landmarkModalRef}
+                closeButtonRef={landmarkModalCloseRef}
+                onClose={closeLandmarkImage}
+              />
+            )}
           </>
         )}
       </section>

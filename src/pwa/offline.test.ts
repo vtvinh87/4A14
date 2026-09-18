@@ -104,6 +104,24 @@ describe('offline readiness', () => {
     expect(artAllowlist).not.toContain("'/art/progress/adventure-paper-texture.png'");
   });
 
+  it('precaches the complete supporting-art pack with matching runtime hashes', () => {
+    const artAllowlist = viteConfigSource.match(/const LOCAL_ART_URLS = \[(.*?)\];/s)?.[1] ?? '';
+    const artVersions = viteConfigSource.match(/const LOCAL_ART_VERSIONS = \[(.*?)\];/s)?.[1] ?? '';
+    const supportAssets = ['fox-welcome', 'fox-guide', 'region-local', 'region-north', 'region-delta', 'region-central', 'region-highlands', 'region-south', 'landmark-lung-cu', 'landmark-khue-van-cac', 'landmark-hoa-lu', 'landmark-kim-lien', 'landmark-hue', 'landmark-hoi-an', 'landmark-tay-nguyen-rong-house', 'landmark-mekong-floating-market', 'panel-foliage', 'compass-start', 'book-progress'];
+
+    expect(artAllowlist).toContain("['fox-welcome', 'fox-guide', 'region-local', 'region-north', 'region-delta', 'region-central', 'region-highlands', 'region-south', 'landmark-lung-cu', 'landmark-khue-van-cac', 'landmark-hoa-lu', 'landmark-kim-lien', 'landmark-hue', 'landmark-hoi-an', 'landmark-tay-nguyen-rong-house', 'landmark-mekong-floating-market', 'panel-foliage', 'compass-start', 'book-progress']");
+    for (const asset of supportAssets) {
+      const url = `/art/progress/support/${asset}.webp`;
+      const expectedHash = artVersions.match(new RegExp(url.replace(/\./g, '\\.') + ':([a-f0-9]{64})'))?.[1];
+      const bytes = readFileSync(resolve(process.cwd(), 'public', url.slice(1)));
+      expect(expectedHash).toMatch(/^[a-f0-9]{64}$/);
+      expect(createHash('sha256').update(bytes).digest('hex')).toBe(expectedHash);
+      expect(artAllowlist).toContain('`/art/progress/support/${id}.webp`');
+    }
+    expect(artAllowlist).not.toContain('contact-sheet');
+    expect(artAllowlist).not.toContain('/design/');
+  });
+
   it('keeps the upcoming Journey PNG bytes aligned with their offline version hashes', () => {
     const artVersions = viteConfigSource.match(/const LOCAL_ART_VERSIONS = \[(.*?)\];/s)?.[1] ?? '';
     const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);

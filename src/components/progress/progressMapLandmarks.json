@@ -4,6 +4,7 @@
     "name": "Cột cờ Lũng Cú",
     "description": "Cùng tớ ngắm lá cờ trên nóc nhà cực Bắc nhé!",
     "anchor": { "latitude": 23.358, "longitude": 105.315 },
+    "artworkAnchor": { "left": 27, "top": 7 },
     "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
   },
   {
@@ -11,6 +12,7 @@
     "name": "Khuê Văn Các",
     "description": "Cùng tớ ghé Khuê Văn Các, biểu tượng thân quen của Văn Miếu nhé!",
     "anchor": { "latitude": 21.028, "longitude": 105.836 },
+    "artworkAnchor": { "left": 32, "top": 17 },
     "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
   },
   {
@@ -18,6 +20,7 @@
     "name": "Cố đô Hoa Lư",
     "description": "Tớ kể cậu nghe chuyện kinh đô xưa giữa những núi đá vôi nhé!",
     "anchor": { "latitude": 20.276, "longitude": 105.907 },
+    "artworkAnchor": { "left": 35, "top": 24 },
     "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
   },
   {
@@ -25,6 +28,7 @@
     "name": "Làng Sen Kim Liên",
     "description": "Cùng tớ ghé làng Sen, nơi có hàng tre và hương sen thân thương.",
     "anchor": { "latitude": 18.823, "longitude": 105.577 },
+    "artworkAnchor": { "left": 36, "top": 31 },
     "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
   },
   {
@@ -32,6 +36,7 @@
     "name": "Cố đô Huế",
     "description": "Huế có thành quách, mái ngói và nét dịu dàng bên dòng Hương.",
     "anchor": { "latitude": 16.463, "longitude": 107.590 },
+    "artworkAnchor": { "left": 49, "top": 40 },
     "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
   },
   {
@@ -39,6 +44,7 @@
     "name": "Phố cổ Hội An",
     "description": "Cùng tớ ngắm Hội An rực rỡ đèn lồng bên những mái nhà cổ nhé!",
     "anchor": { "latitude": 15.880, "longitude": 108.338 },
+    "artworkAnchor": { "left": 47, "top": 47 },
     "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
   },
   {
@@ -46,6 +52,7 @@
     "name": "Nhà rông Tây Nguyên",
     "description": "Nhà rông và tiếng cồng chiêng kể tớ nghe chuyện văn hóa Tây Nguyên.",
     "anchor": { "latitude": 14.342, "longitude": 108.009 },
+    "artworkAnchor": { "left": 49, "top": 57 },
     "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
   },
   {
@@ -53,6 +60,7 @@
     "name": "Chợ nổi miền Tây",
     "description": "Cùng tớ khám phá chợ nổi với thuyền, trái cây và sông nước nhé!",
     "anchor": { "latitude": 10.002, "longitude": 105.748 },
+    "artworkAnchor": { "left": 22, "top": 77 },
     "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
   }
 ]

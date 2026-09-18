@@ -4,6 +4,7 @@ import { PROGRESS_ACTION_LABELS, PROGRESS_STATE_LABELS } from './ProgressLessonC
 import { ProgressLessonDetail } from './ProgressLessonDetail';
 import { ProgressLessonStrip } from './ProgressLessonStrip';
 import type { ProgressMapTopicSnapshot } from './progressMapSelectors';
+import { getProgressMapAsset } from './progressMapPresentation';
 
 export type ProgressMapDrawerProps = {
   topic: ProgressBoardTopic;
@@ -26,7 +27,7 @@ function getActionLesson(topic: ProgressBoardTopic, snapshot: ProgressMapTopicSn
 }
 
 function getStatusCopy(snapshot: ProgressMapTopicSnapshot): string {
-  if (snapshot.lessonCount === 0) return 'Chặng này đang chờ mình khám phá.';
+  if (snapshot.lessonCount === 0) return 'Vùng này chưa có bài để mở.';
   if (snapshot.exploredLessonCount === snapshot.lessonCount) return 'Mình đã ghé qua tất cả chặng ở đây.';
   return snapshot.exploredLessonCount + '/' + snapshot.lessonCount + ' chặng đã ghé qua';
 }
@@ -35,13 +36,16 @@ export function ProgressMapDrawer({ topic, topicSnapshot, selectedLesson, expand
   const actionLesson = getActionLesson(topic, topicSnapshot, selectedLesson);
   const actionLabel = actionLesson
     ? PROGRESS_ACTION_LABELS[actionLesson.nextAction]
-    : topicSnapshot.state === 'independent' ? 'Đã hoàn thành' : 'Khám phá';
+    : topicSnapshot.state === 'independent' ? 'Đã hoàn thành' : 'Chưa có bài';
   const stateLabel = PROGRESS_STATE_LABELS[topicSnapshot.state];
+  const bookAsset = getProgressMapAsset('book-progress');
 
   return (
     <aside className={'progress-map-drawer' + (expanded ? ' is-expanded' : '')} data-progress-map-drawer data-reduced-motion={reducedMotion ? 'true' : 'false'} aria-label={'Thông tin chặng ' + topic.topic}>
       <div className="progress-map-drawer-main">
-        <span className="progress-map-drawer-emblem" aria-hidden="true">{topicSnapshot.state === 'independent' ? '✓' : '✦'}</span>
+        <span className="progress-map-drawer-emblem" aria-hidden="true">
+          <img src={bookAsset.src} width={bookAsset.width} height={bookAsset.height} alt="" />
+        </span>
         <div className="progress-map-drawer-copy">
           <p className="progress-map-drawer-kicker">{stateLabel}</p>
           <h2>{topic.topic}</h2>

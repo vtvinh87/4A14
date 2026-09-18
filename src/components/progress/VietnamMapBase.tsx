@@ -8,6 +8,8 @@ export function VietnamMapBase({ reducedMotion }: VietnamMapBaseProps) {
       <img
         data-progress-map-base
         src="/art/progress/vietnam-progress-map-illustrated.png"
+        width="1840"
+        height="1940"
         alt="Bản đồ minh họa Việt Nam có Hoàng Sa và Trường Sa."
         decoding="async"
       />

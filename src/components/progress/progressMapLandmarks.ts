@@ -1,5 +1,5 @@
 import rawLandmarks from './progressMapLandmarks.json';
-import type { ProgressMapPoint } from './progressMapProjection';
+import type { ProgressMapNormalizedPoint, ProgressMapPoint } from './progressMapProjection';
 
 export type ProgressMapLandmarkId =
   | 'lung-cu'
@@ -16,6 +16,7 @@ export type ProgressMapLandmark = {
   name: string;
   description: string;
   anchor: ProgressMapPoint;
+  artworkAnchor: ProgressMapNormalizedPoint;
   hitArea: { widthPercent: number; heightPercent: number };
 };
 

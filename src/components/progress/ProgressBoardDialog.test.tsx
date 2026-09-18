@@ -2,6 +2,7 @@ import { act, createElement, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProgressBoardData, ProgressBoardLesson } from '../../../shared/progress-board-contracts';
+import { TOPICS } from '../../content/catalog';
 import { ClassUnlockCard } from './ClassUnlockCard';
 import { ProgressBoardDialog, type ProgressBoardDialogProps } from './ProgressBoardDialog';
 
@@ -10,7 +11,7 @@ import { ProgressBoardDialog, type ProgressBoardDialogProps } from './ProgressBo
 const lesson: ProgressBoardLesson = {
   lessonId: 'lesson-01',
   title: 'Địa phương em',
-  topic: 'Mái nhà Việt Nam',
+  topic: TOPICS[0],
   completed: false,
   state: 'explored',
   completedMissionCount: 1,
@@ -115,7 +116,7 @@ describe('ProgressBoardDialog', () => {
     render({ status: 'empty', data: { ...data, summary: { ...data.summary, exploredLessonCount: 0 }, topics: [] } });
     expect(mount.textContent).toContain('Mình bắt đầu từ bài học đầu tiên');
     render({ status: 'success', data });
-    expect(mount.textContent).toContain('Mái nhà Việt Nam');
+    expect(mount.textContent).toContain('Cậu muốn ghé miền nào?');
     expect(mount.querySelector('[data-progress-board-badge]')?.textContent).toBe('1/1 chặng');
     render({ status: 'stale', data: { ...data, stale: true }, error: 'Dữ liệu có thể chưa mới.' });
     expect(mount.textContent).toContain('có thể chưa mới');
@@ -146,7 +147,8 @@ describe('ProgressBoardDialog', () => {
     act(() => root.render(createElement(ProgressBoardDialog, { ...baseProps })));
 
     expect(mount.querySelector('[data-progress-map]')).not.toBeNull();
-    expect(mount.querySelector('[data-progress-map-drawer]')).not.toBeNull();
+    expect(mount.querySelector('[data-progress-map-info-panel="welcome"]')).not.toBeNull();
+    expect(mount.querySelector('[data-progress-map-drawer]')).toBeNull();
     expect(mount.querySelector('#progress-board-dialog-title')?.textContent).toBe('Chuyến đi của tớ');
     expect(mount.querySelector('[data-progress-summary]')).toBeNull();
     expect(mount.querySelector('[data-progress-topic-map]')).toBeNull();
@@ -155,6 +157,7 @@ describe('ProgressBoardDialog', () => {
   it('clears the lesson strip and detail when the drawer is collapsed', () => {
     act(() => root.render(createElement(ProgressBoardDialog, { ...baseProps })));
 
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-compass]')?.click());
     act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-drawer-expand]')?.click());
     act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-drawer-details]')?.click());
     expect(mount.querySelector('[data-progress-lesson-detail]')).not.toBeNull();
@@ -162,5 +165,123 @@ describe('ProgressBoardDialog', () => {
     act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-drawer-expand]')?.click());
     expect(mount.querySelector('[data-progress-lesson-strip]')).toBeNull();
     expect(mount.querySelector('[data-progress-lesson-detail]')).toBeNull();
+  });
+
+  it('selects the local compass topic and keeps an empty region action disabled', () => {
+    act(() => root.render(createElement(ProgressBoardDialog, { ...baseProps })));
+
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-compass]')?.click());
+    expect(mount.querySelector('[data-progress-map-info-panel="topic"]')).not.toBeNull();
+    expect(mount.querySelector('[data-progress-map-drawer]')).not.toBeNull();
+    expect(mount.querySelector('[data-progress-map-drawer-cta]')?.hasAttribute('disabled')).toBe(false);
+
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-node="Tây Nguyên"]')?.click());
+    expect(mount.querySelector('[data-progress-map-drawer]')?.textContent).toContain('Vùng này chưa có bài để mở.');
+    expect(mount.querySelector<HTMLButtonElement>('[data-progress-map-drawer-cta]')?.disabled).toBe(true);
+  });
+
+  it('opens a shared landmark panel and Escape closes layers before the dialog', () => {
+    const onClose = vi.fn();
+    act(() => root.render(createElement(ProgressBoardDialog, { ...baseProps, onClose })));
+
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-landmark="hue"]')?.click());
+    expect(mount.querySelector('[data-progress-map-info-panel="landmark"]')).not.toBeNull();
+    expect(mount.querySelector('[data-progress-map-landmark-title="hue"]')?.textContent).toBe('Cố đô Huế');
+
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(mount.querySelector('[data-progress-map-info-panel="welcome"]')).not.toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('opens landmark image details without changing selection and returns focus on Escape', () => {
+    const onClose = vi.fn();
+    act(() => root.render(createElement(ProgressBoardDialog, { ...baseProps, onClose })));
+
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-landmark="kim-lien"]')?.click());
+    const trigger = mount.querySelector<HTMLButtonElement>('[data-progress-map-landmark-image-trigger]')!;
+    act(() => trigger.click());
+
+    expect(mount.querySelector('[data-progress-map-landmark-modal]')).not.toBeNull();
+    expect(mount.querySelector('[data-progress-map-info-panel="landmark"]')).not.toBeNull();
+    expect(mount.querySelector('[data-progress-map-landmark-title="kim-lien"]')?.textContent).toBe('Làng Sen Kim Liên');
+    expect(document.activeElement).toBe(mount.querySelector('[data-progress-map-landmark-modal-close]'));
+
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(mount.querySelector('[data-progress-map-landmark-modal]')).toBeNull();
+    expect(mount.querySelector('[data-progress-map-info-panel="landmark"]')).not.toBeNull();
+    expect(document.activeElement).toBe(trigger);
+    expect(onClose).not.toHaveBeenCalled();
+
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(mount.querySelector('[data-progress-map-info-panel="welcome"]')).not.toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('traps Tab inside landmark details and keeps the board backdrop isolated', () => {
+    const onClose = vi.fn();
+    act(() => root.render(createElement(ProgressBoardDialog, { ...baseProps, onClose })));
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-landmark="hue"]')?.click());
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-landmark-image-trigger]')?.click());
+
+    const modal = mount.querySelector<HTMLElement>('[data-progress-map-landmark-modal]')!;
+    const close = mount.querySelector<HTMLButtonElement>('[data-progress-map-landmark-modal-close]')!;
+    const source = modal.querySelector<HTMLAnchorElement>('a[href]')!;
+
+    source.focus();
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })));
+    expect(document.activeElement).toBe(close);
+
+    close.focus();
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true })));
+    expect(document.activeElement).toBe(source);
+
+    act(() => mount.querySelector<HTMLElement>('[data-progress-map-landmark-modal-backdrop]')?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })));
+    expect(mount.querySelector('[data-progress-map-landmark-modal]')).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps the selected topic lesson as the CTA when refreshed data points elsewhere', () => {
+    const centralLesson = { ...lesson, lessonId: 'lesson-18', topic: TOPICS[3] };
+    const northLesson = { ...lesson, lessonId: 'lesson-04', topic: TOPICS[1] };
+    const refreshedData: ProgressBoardData = {
+      ...data,
+      summary: { ...data.summary, nextLessonId: northLesson.lessonId },
+      topics: [{ topic: TOPICS[1], lessons: [northLesson] }, { topic: TOPICS[3], lessons: [centralLesson] }],
+      nextLessonId: northLesson.lessonId,
+    };
+    const onOpenLesson = vi.fn();
+    const render = (nextData: ProgressBoardData) => act(() => root.render(createElement(ProgressBoardDialog, { ...baseProps, data: nextData, onOpenLesson })));
+
+    render({ ...data, topics: [{ topic: TOPICS[3], lessons: [centralLesson] }], nextLessonId: centralLesson.lessonId, summary: { ...data.summary, nextLessonId: centralLesson.lessonId } });
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-node="Duyên hải miền Trung"]')?.click());
+    render(refreshedData);
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-drawer-cta]')?.click());
+
+    expect(onOpenLesson).toHaveBeenCalledWith(centralLesson.lessonId);
+    expect(onOpenLesson).not.toHaveBeenCalledWith(northLesson.lessonId);
+  });
+
+  it('closes lesson detail, then drawer, then dialog with sequential Escape presses', () => {
+    const onClose = vi.fn();
+    act(() => root.render(createElement(ProgressBoardDialog, { ...baseProps, onClose })));
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-compass]')?.click());
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-drawer-expand]')?.click());
+    act(() => mount.querySelector<HTMLButtonElement>('[data-progress-map-drawer-details]')?.click());
+    expect(mount.querySelector('[data-progress-lesson-detail]')).not.toBeNull();
+
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(mount.querySelector('[data-progress-lesson-detail]')).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(mount.querySelector('[data-progress-lesson-strip]')).toBeNull();
+    expect(mount.querySelector<HTMLButtonElement>('[data-progress-map-drawer-expand]')?.getAttribute('aria-expanded')).toBe('false');
+    expect(onClose).not.toHaveBeenCalled();
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });
