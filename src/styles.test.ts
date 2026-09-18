@@ -125,11 +125,13 @@ describe('Progress board responsive layout', () => {
     expect(styles).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.progress-map-node/);
   });
 
-  it('keeps nearby map callouts legible without changing geographic anchor points', () => {
+  it('keeps nearby map callouts legible without restoring the removed route layer', () => {
     expect(styles).toContain('data-progress-map-node-position="Đồng bằng Bắc Bộ"');
     expect(styles).toContain('translate(clamp(66px, 5vw, 84px), clamp(32px, 3.2vw, 48px))');
-    expect(styles).toContain('data-progress-map-archipelago="hoang-sa"');
-    expect(styles).toContain('transform: translate(45px, -50%);');
+    expect(styles).toContain('.progress-map-landmark-hit-area:focus-visible');
+    expect(styles).toContain('.progress-map-landmark-card');
+    expect(styles).not.toContain('.progress-map-archipelago-label');
+    expect(styles).not.toContain('.progress-map-route');
     expect(styles).toContain('margin: -24px 12px 12px;');
   });
 });

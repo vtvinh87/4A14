@@ -6660,7 +6660,7 @@ button:focus-visible {
   border: 3px solid rgba(94, 72, 47, 0.38);
   border-radius: 25px;
   background-color: rgba(247, 241, 218, 0.94);
-  background-image: linear-gradient(145deg, rgba(255, 252, 236, 0.72), rgba(202, 238, 226, 0.5)), url('/art/progress/adventure-paper-texture.png');
+  background-image: linear-gradient(145deg, rgba(255, 252, 236, 0.82), rgba(202, 238, 226, 0.58));
   background-position: center;
   background-size: cover;
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.72), 0 14px 30px rgba(8, 57, 77, 0.14);
@@ -6674,8 +6674,7 @@ button:focus-visible {
 }
 
 .progress-map-base-shell,
-.progress-map-route,
-.progress-map-archipelago-labels,
+.progress-map-landmark-layer,
 .progress-map-node-layer {
   position: absolute;
   inset: 0;
@@ -6702,54 +6701,99 @@ button:focus-visible {
   filter: drop-shadow(0 5px 0 rgba(94, 72, 47, 0.08));
 }
 
-.progress-map-route {
-  z-index: 2;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+.progress-map-landmark-layer {
+  z-index: 5;
   pointer-events: none;
 }
 
-.progress-map-route polyline {
-  fill: none;
-  stroke: #dc9d31;
-  stroke-width: 1.15;
-  stroke-dasharray: 2.2 2.2;
-  stroke-linecap: round;
-  opacity: 0.78;
-  vector-effect: non-scaling-stroke;
-}
-
-.progress-map-archipelago-labels {
-  z-index: 3;
-  pointer-events: none;
-}
-
-.progress-map-archipelago-label {
+.progress-map-landmark-hit-area {
   position: absolute;
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 3px 7px;
-  border: 2px solid rgba(30, 101, 111, 0.4);
-  border-radius: 999px;
-  background: rgba(255, 251, 232, 0.92);
-  box-shadow: 0 3px 0 rgba(92, 72, 47, 0.11);
-  color: #1d6470;
-  font-size: 0.64rem;
-  font-weight: 900;
-  line-height: 1;
-  white-space: nowrap;
+  width: max(44px, var(--landmark-hit-width));
+  height: max(44px, var(--landmark-hit-height));
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: auto;
   transform: translate(-50%, -50%);
 }
 
-.progress-map-archipelago-label[data-progress-map-archipelago="hoang-sa"] {
-  transform: translate(45px, -50%);
+.progress-map-landmark-hit-area:focus-visible {
+  outline: 4px solid rgba(255, 193, 50, 0.98);
+  outline-offset: 4px;
 }
 
 .progress-map-node-layer {
   z-index: 4;
   pointer-events: none;
+}
+
+.progress-map-landmark-card {
+  position: absolute;
+  z-index: 7;
+  top: 12px;
+  right: 12px;
+  width: min(250px, calc(100% - 24px));
+  padding: 12px 52px 12px 14px;
+  border: 3px solid rgba(50, 112, 117, 0.38);
+  border-radius: 17px 11px 16px 10px;
+  background: rgba(255, 252, 238, 0.98);
+  box-shadow: 0 6px 0 rgba(94, 72, 47, 0.16), 0 12px 22px rgba(8, 57, 77, 0.16);
+  color: var(--ink);
+  animation: progress-map-landmark-card-in 160ms ease-out both;
+}
+
+.progress-map-landmark-card-kicker {
+  display: block;
+  margin-bottom: 3px;
+  color: #4f8588;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.progress-map-landmark-card h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.progress-map-landmark-card p {
+  margin: 5px 0 0;
+  color: #52747d;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.progress-map-landmark-card > button {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  display: grid;
+  min-width: 44px;
+  min-height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(226, 235, 224, 0.92);
+  color: #315e79;
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.progress-map-landmark-card > button:hover {
+  background: rgba(210, 227, 216, 0.98);
+}
+
+@keyframes progress-map-landmark-card-in {
+  from { opacity: 0; transform: translateY(-5px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .progress-map-node-position {
@@ -7150,6 +7194,16 @@ button:focus-visible {
     font-size: 0.55rem;
   }
 
+  .progress-map-landmark-card {
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    width: auto;
+    margin: 8px 8px 32px;
+  }
+
   .progress-map-node {
     min-width: 126px;
     min-height: 56px;
@@ -7201,7 +7255,7 @@ button:focus-visible {
   .progress-map-node,
   .progress-strip-lesson,
   .progress-map-drawer,
-  .progress-map-route polyline {
+  .progress-map-landmark-card {
     animation: none !important;
     transition-duration: 0.001ms !important;
   }
@@ -7212,7 +7266,8 @@ button:focus-visible {
 
 .progress-map-node[data-reduced-motion="true"],
 .progress-strip-lesson[data-reduced-motion="true"],
-.progress-map-drawer[data-reduced-motion="true"] {
+.progress-map-drawer[data-reduced-motion="true"],
+.progress-map-landmark-card[data-reduced-motion="true"] {
   animation: none;
   transition: none;
 }

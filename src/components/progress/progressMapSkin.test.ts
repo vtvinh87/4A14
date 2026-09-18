@@ -2,13 +2,14 @@ import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const texturePath = resolve(process.cwd(), 'public/art/progress/adventure-paper-texture.png');
+const illustratedMapPath = resolve(process.cwd(), 'public/art/progress/vietnam-progress-map-illustrated.png');
 const styles = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
 
-describe('Progress map decorative skin', () => {
-  it('keeps the paper texture local and lightweight', () => {
-    expect(statSync(texturePath).size).toBeLessThanOrEqual(200 * 1024);
-    expect(styles).toContain("url('/art/progress/adventure-paper-texture.png')");
-    expect(styles).not.toMatch(/url\(['\"]https?:/);
+describe('Progress map illustrated runtime asset', () => {
+  it('keeps the flattened map local and the retired texture out of active CSS', () => {
+    expect(statSync(illustratedMapPath).size).toBeLessThanOrEqual(2 * 1024 * 1024);
+    expect(styles).toContain('background-image: linear-gradient(145deg');
+    expect(styles).not.toContain('adventure-paper-texture.png');
+    expect(styles).not.toMatch(/url\(['"]https?:/);
   });
 });

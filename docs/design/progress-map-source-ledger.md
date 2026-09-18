@@ -1,13 +1,29 @@
 # Bản đồ tiến bộ — source ledger
 
-## Current asset
+## Reference geometry asset
 
-- Runtime asset: public/art/progress/vietnam-progress-map.svg
+- Reference asset: public/art/progress/vietnam-progress-map.svg
 - Asset SHA-256: c441ae8fa800ed569a3654942e111f4c4ccc2c857acb384190d99d382f3eb534
 - Asset size: 66,821 bytes
 - Output format: SVG, viewBox 0 0 920 970
 - Features: mainland, Hoàng Sa, Trường Sa as separate data-geo-feature groups
-- Runtime policy: local-only; no remote href, script, map tile, or external image
+- Runtime policy: reference/QA only; not rendered or included in the active offline art allowlist
+
+## Illustrated runtime asset
+
+- Runtime asset: public/art/progress/vietnam-progress-map-illustrated.png
+- Output format: flattened PNG, 1840 × 1940
+- Asset size: 1,785,893 bytes
+- Asset SHA-256: 93bb877ea95e3cf02d8070f1b978f4772b471e430de3b1fb64a3e6e95eb785ba
+- Source brief: design/progress-map/ai/vietnam-map-generation-prompt.md
+- AI source: design/progress-map/ai/vietnam-map-ai-source.png
+- AI source dimensions: 1221 × 1288
+- AI source SHA-256: 3689a4aa40942299bdcc157f6a0bd039fa5f90adae50a403d397baa5c3f593a2
+- Generation date: 2026-09-18
+- Generation provenance: built-in ImageGen, using a rasterized copy of the reference SVG as a supporting geography/layout reference; the source is not treated as authoritative geometry.
+- Deterministic build: `npm run build:progress-map-art` uses `sharp` to resize the complete AI source canvas to 1840 × 1940 with `fit: 'fill'`, preserves its sea/sky/landscape composition, then post-processes the Hoàng Sa/Trường Sa labels. The reference SVG is validated separately as QA geometry and is not used to clip runtime pixels.
+- Label policy: the two labels are generated from UTF-8 SVG text in the local build script; no AI-rendered text is used.
+- Runtime policy: one local PNG; no map tile, remote image, embedded script, province label, maritime claim line or yellow route.
 
 ## Source record
 
@@ -25,14 +41,14 @@
 - Source geometry is GeoJSON in longitude/latitude degrees.
 - The prototype uses an equirectangular presentation transform into a 920 by 970 SVG viewBox.
 - Simplification tolerance: 0.02 degrees in source coordinate space; coordinates rounded to one decimal SVG unit after projection.
-- Province boundaries are rendered with a low-opacity common stroke and fill for recognizability; no province name or political boundary claim is exposed in the child UI.
+- The reference SVG retains province-shaped geometry only as a QA source; it is not an alpha mask for the runtime artwork, and no province name or political boundary claim is exposed in the child UI.
 - Hoàng Sa and Trường Sa are identified from the source feature notes and remain separate geometry groups.
 - The map viewport is minLatitude 6.7, maxLatitude 23.5, minLongitude 102.1, maxLongitude 118.0. The initial 8.2/115 limits were rejected because the source geometry reaches approximately 6.95°B and 116.95°Đ in Trường Sa; keeping the narrower viewport would clip part of the archipelago.
 - Topic anchors are interface storytelling points, not administrative regions, maritime boundaries, travel routes or new geographic claims.
 
 ## Review record
 
-- [x] Technical visual QA completed at desktop, tablet/mobile and low-height landscape sizes; the local SVG remains the geography layer and the UI overlays remain separate.
-- [x] Confirmed Hoàng Sa and Trường Sa are both visible, separately labelled in the DOM layer, and not covered by route/node/decorative layers at the checked viewports.
+- [ ] Technical visual QA for the illustrated runtime asset completed at desktop, tablet/mobile and low-height landscape sizes; CUA verified `577 × 814`, while `390 × 844`, `1180 × 700` and `1440 × 900` were unavailable in the current browser host. See `docs/executor/PROGRESS-MAP-AI-ART-AUDIT.md`.
+- [x] Hoàng Sa and Trường Sa are both visible and separately labelled in the flattened artwork at the observed viewport; multi-viewport coverage remains pending, as recorded in the audit.
 - [x] Permission basis recorded: the pinned source README explicitly says the dataset is free for public use and requests citation; attribution, source commit and checksums are preserved here and beside the runtime asset. This is a documented permission basis, not a formal legal opinion.
-- Reviewer: Codex implementation audit, 2026-09-17.
+- Reviewer: Codex implementation audit, 2026-09-18.

@@ -1,0 +1,58 @@
+[
+  {
+    "id": "lung-cu",
+    "name": "Cột cờ Lũng Cú",
+    "description": "Cùng tớ ngắm lá cờ trên nóc nhà cực Bắc nhé!",
+    "anchor": { "latitude": 23.358, "longitude": 105.315 },
+    "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
+  },
+  {
+    "id": "khue-van-cac",
+    "name": "Khuê Văn Các",
+    "description": "Cùng tớ ghé Khuê Văn Các, biểu tượng thân quen của Văn Miếu nhé!",
+    "anchor": { "latitude": 21.028, "longitude": 105.836 },
+    "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
+  },
+  {
+    "id": "hoa-lu",
+    "name": "Cố đô Hoa Lư",
+    "description": "Tớ kể cậu nghe chuyện kinh đô xưa giữa những núi đá vôi nhé!",
+    "anchor": { "latitude": 20.276, "longitude": 105.907 },
+    "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
+  },
+  {
+    "id": "kim-lien",
+    "name": "Làng Sen Kim Liên",
+    "description": "Cùng tớ ghé làng Sen, nơi có hàng tre và hương sen thân thương.",
+    "anchor": { "latitude": 18.823, "longitude": 105.577 },
+    "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
+  },
+  {
+    "id": "hue",
+    "name": "Cố đô Huế",
+    "description": "Huế có thành quách, mái ngói và nét dịu dàng bên dòng Hương.",
+    "anchor": { "latitude": 16.463, "longitude": 107.590 },
+    "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
+  },
+  {
+    "id": "hoi-an",
+    "name": "Phố cổ Hội An",
+    "description": "Cùng tớ ngắm Hội An rực rỡ đèn lồng bên những mái nhà cổ nhé!",
+    "anchor": { "latitude": 15.880, "longitude": 108.338 },
+    "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
+  },
+  {
+    "id": "tay-nguyen-rong-house",
+    "name": "Nhà rông Tây Nguyên",
+    "description": "Nhà rông và tiếng cồng chiêng kể tớ nghe chuyện văn hóa Tây Nguyên.",
+    "anchor": { "latitude": 14.342, "longitude": 108.009 },
+    "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
+  },
+  {
+    "id": "mekong-floating-market",
+    "name": "Chợ nổi miền Tây",
+    "description": "Cùng tớ khám phá chợ nổi với thuyền, trái cây và sông nước nhé!",
+    "anchor": { "latitude": 10.002, "longitude": 105.748 },
+    "hitArea": { "widthPercent": 5.4, "heightPercent": 5.4 }
+  }
+]

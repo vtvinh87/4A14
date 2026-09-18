@@ -36,7 +36,7 @@ describe('ProgressMapScene', () => {
     mount.remove();
   });
 
-  it('renders a local Vietnam map, six topic nodes and both archipelago labels', () => {
+  it('renders the illustrated Vietnam map, six topic nodes and both archipelago labels', () => {
     const onSelectLesson = vi.fn();
     act(() => root.render(createElement(ProgressMapScene, {
       topics,
@@ -48,8 +48,11 @@ describe('ProgressMapScene', () => {
     })));
 
     expect(mount.querySelector('[data-progress-map]')).not.toBeNull();
-    expect(mount.querySelector<HTMLImageElement>('[data-progress-map-base]')?.getAttribute('src')).toBe('/art/progress/vietnam-progress-map.svg');
+    expect(mount.querySelector<HTMLImageElement>('[data-progress-map-base]')?.getAttribute('src')).toBe('/art/progress/vietnam-progress-map-illustrated.png');
     expect(mount.querySelectorAll('[data-progress-map-node]')).toHaveLength(6);
+    expect(mount.querySelector('[data-progress-map-route]')).toBeNull();
+    expect(mount.querySelector('polyline')).toBeNull();
+    expect(mount.querySelector<HTMLImageElement>('[data-progress-map-base]')?.getAttribute('alt')).toMatch(/Hoàng Sa.*Trường Sa|Trường Sa.*Hoàng Sa/);
     expect(mount.textContent).toContain('Hoàng Sa');
     expect(mount.textContent).toContain('Trường Sa');
 
@@ -73,7 +76,44 @@ describe('ProgressMapScene', () => {
 
     expect(mount.querySelectorAll('[data-progress-map-node]')).toHaveLength(6);
     expect(mount.querySelector('[data-progress-map][data-reduced-motion="true"]')).not.toBeNull();
-    expect(mount.querySelector('[data-progress-map-route]')).not.toBeNull();
+    expect(mount.querySelector('[data-progress-map-route]')).toBeNull();
+  });
+
+  it('exposes eight landmark controls and opens a short card', () => {
+    act(() => root.render(createElement(ProgressMapScene, {
+      topics,
+      nextLessonId: 'lesson-01',
+      selectedLessonId: 'lesson-01',
+      reducedMotion: true,
+      onSelectLesson: vi.fn(),
+      onOpenLesson: vi.fn(),
+    })));
+
+    expect(mount.querySelectorAll('[data-progress-map-landmark]')).toHaveLength(8);
+    const button = mount.querySelector<HTMLButtonElement>('[data-progress-map-landmark="hoa-lu"]')!;
+    expect(button.getAttribute('aria-label')).toBe('Mở thông tin Cố đô Hoa Lư');
+    act(() => button.click());
+    const card = mount.querySelector('[data-progress-map-landmark-card="hoa-lu"]');
+    expect(card).not.toBeNull();
+    expect(card?.parentElement).toBe(mount.querySelector('[data-progress-map]'));
+    expect(mount.querySelector('[data-progress-map-canvas]')?.contains(card)).toBe(false);
+  });
+
+  it('closes the landmark card and returns focus to its trigger', () => {
+    act(() => root.render(createElement(ProgressMapScene, {
+      topics,
+      nextLessonId: 'lesson-01',
+      selectedLessonId: 'lesson-01',
+      reducedMotion: true,
+      onSelectLesson: vi.fn(),
+      onOpenLesson: vi.fn(),
+    })));
+
+    const button = mount.querySelector<HTMLButtonElement>('[data-progress-map-landmark="hue"]')!;
+    act(() => button.click());
+    act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng Cố đô Huế"]')?.click());
+    expect(mount.querySelector('[data-progress-map-landmark-card="hue"]')).toBeNull();
+    expect(document.activeElement).toBe(button);
   });
 
   it('does not reopen a completed topic by falling back to its first lesson', () => {
