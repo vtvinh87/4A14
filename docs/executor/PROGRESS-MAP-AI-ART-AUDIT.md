@@ -84,5 +84,6 @@ Môi trường hiện chỉ cho phép viewport in-app browser `577 × 814`; Chro
 ## Handoff status
 
 - Implementation code, asset pipeline, offline wiring, tests, build và local HTTP smoke đã hoàn tất.
-- Chưa commit/push/deploy trong audit này; plan ghi rõ Git/hosting handoff chỉ thực hiện khi có quyền Git/hosting cụ thể.
+- Commit `eaf3c5b` (`feat: ship full-canvas illustrated progress map`) đã được push lên `origin/codex/bang-tien-bo`.
+- Firebase Hosting đã deploy thành công vào cả `https://a14-82a69.web.app` và `https://4a14.web.app`; production smoke xác nhận root, map PNG, offline manifest và Service Worker đều HTTP 200, còn SHA-256 map khớp local/dist.
 - Spec vẫn giữ trạng thái review cho đến khi có visual sign-off desktop thật; không đánh dấu PASS giả cho các viewport chưa quan sát được.

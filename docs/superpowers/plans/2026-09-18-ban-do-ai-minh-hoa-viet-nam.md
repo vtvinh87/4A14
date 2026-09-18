@@ -67,7 +67,7 @@ Execution order: Task 1 → Task 2 → Task 3 → Task 4 → Task 5 → Task 6 �
 - Tasks 1–6 đã được triển khai và kiểm tra: artwork PNG, metadata/card, scene, CSS, offline allowlist/validator và provenance docs.
 - Task 7 automated gates đã PASS: typecheck client/server, focused asset/offline tests 14/14, full suite 522 PASS với 4 integration test skip, production build, dist/security scan và HTTP smoke.
 - CUA đã kiểm tra `577 × 814`, 8 landmark controls, 6 topic nodes, card/focus/Escape và route/polyline removal. Các viewport `390 × 844`, `1180 × 700`, `1440 × 900` chưa thể mở trong browser host hiện tại; chi tiết nằm trong `docs/executor/PROGRESS-MAP-AI-ART-AUDIT.md`.
-- Chưa thực hiện commit/push/deploy; đây là giới hạn Git/hosting của plan, không phải thay đổi runtime.
+- Commit `eaf3c5b` đã được push lên `origin/codex/bang-tien-bo`; Firebase Hosting đã deploy thành công tới `a14-82a69.web.app` và `4a14.web.app`. Các bước này là handoff sau triển khai, không thay đổi runtime/API/database.
 
 ### User follow-up correction — hiển thị toàn bộ artwork
 
