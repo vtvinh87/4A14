@@ -90,12 +90,40 @@ describe('useProgressBoard', () => {
   it('returns empty for a valid board with no activity and success after progress exists', async () => {
     act(() => root.render(createElement(Probe, { options: { enabled: true, accountId: identity.accountId, generation: identity.generation } })));
     await settle();
+    expect(mockedConfig).not.toHaveBeenCalled();
     expect(current?.status).toBe('empty');
     expect(current?.data?.stale).toBe(false);
 
     mockedBoard.mockResolvedValueOnce({ ok: true, data: board({ summary: { ...board().summary, exploredLessonCount: 1 } }) });
     await act(async () => { await current?.refresh(); });
     expect(current?.status).toBe('success');
+  });
+
+  it('does not show private cache when the board endpoint reports rollout disabled', async () => {
+    const cached = board({ summary: { ...board().summary, exploredLessonCount: 1 } });
+    expect(saveProgressBoardCache(identity, cached)).toBe(true);
+    mockedBoard.mockResolvedValue({ ok: false, code: 'unavailable', reason: 'rollout_disabled', message: 'Bảng tiến bộ đang được mở dần cho lớp.' } as never);
+
+    act(() => root.render(createElement(Probe, { options: { enabled: true, accountId: identity.accountId, generation: identity.generation } })));
+    await settle();
+
+    expect(mockedConfig).not.toHaveBeenCalled();
+    expect(mockedBoard).toHaveBeenCalledOnce();
+    expect(current?.status).toBe('unavailable');
+    expect(current?.data).toBeNull();
+    expect(current?.error).toContain('mở dần');
+  });
+
+  it.each(['expired', 'forbidden'] as const)('does not use private cache for %s board failures', async (code) => {
+    expect(saveProgressBoardCache(identity, board({ summary: { ...board().summary, exploredLessonCount: 1 } }))).toBe(true);
+    mockedBoard.mockResolvedValue({ ok: false, code, message: 'Phiên không còn quyền.' });
+
+    act(() => root.render(createElement(Probe, { options: { enabled: true, accountId: identity.accountId, generation: identity.generation } })));
+    await settle();
+
+    expect(mockedConfig).not.toHaveBeenCalled();
+    expect(current?.status).toBe('unavailable');
+    expect(current?.data).toBeNull();
   });
 
   it('uses a valid session cache as stale fallback when the API is unavailable', async () => {
@@ -122,28 +150,20 @@ describe('useProgressBoard', () => {
   });
 
   it('ignores an older account response after switching identity', async () => {
-    const configA = deferred<{ ok: true; config: { enabled: true } }>();
-    const configB = deferred<{ ok: true; config: { enabled: true } }>();
     const dataA = deferred<{ ok: true; data: ProgressBoardData }>();
     const dataB = deferred<{ ok: true; data: ProgressBoardData }>();
-    mockedConfig.mockReset();
     mockedBoard.mockReset();
-    mockedConfig.mockImplementationOnce(() => configA.promise).mockImplementationOnce(() => configB.promise);
-    mockedBoard.mockImplementationOnce(() => dataB.promise).mockImplementationOnce(() => dataA.promise);
+    mockedBoard.mockImplementationOnce(() => dataA.promise).mockImplementationOnce(() => dataB.promise);
 
     act(() => root.render(createElement(Probe, { options: { enabled: true, accountId: 'student-a', generation: 2 } })));
     await settle();
     act(() => root.render(createElement(Probe, { options: { enabled: true, accountId: 'student-b', generation: 2 } })));
     await settle();
 
-    configB.resolve({ ok: true, config: { enabled: true } });
-    await settle();
     dataB.resolve({ ok: true, data: board({ generation: '2', summary: { ...board().summary, exploredLessonCount: 2 } }) });
     await settle();
     expect(current?.data?.summary.exploredLessonCount).toBe(2);
 
-    configA.resolve({ ok: true, config: { enabled: true } });
-    await settle();
     dataA.resolve({ ok: true, data: board({ summary: { ...board().summary, exploredLessonCount: 99 } }) });
     await settle();
     expect(current?.data?.summary.exploredLessonCount).toBe(2);

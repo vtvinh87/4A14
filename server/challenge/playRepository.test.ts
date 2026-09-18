@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MemoryPlayRepository } from './memoryPlayRepository';
+import { PostgresPlayRepository } from './postgresPlayRepository';
 import type { CreateRoundInput, CreateRoundItemInput, InsertAttemptInput } from './playTypes';
 
 const round: CreateRoundInput = {
@@ -36,6 +37,30 @@ const attempt = (overrides: Partial<InsertAttemptInput> = {}): InsertAttemptInpu
   answeredAt: '2026-09-17T08:00:00.000Z',
   ...overrides,
 });
+
+function mockedDatabase(rows: unknown[]) {
+  const queries: string[] = [];
+  const db = ((strings: TemplateStringsArray, ..._values: unknown[]) => {
+    queries.push(strings.join('¦').replace(/\s+/g, ' ').trim().toLowerCase());
+    return Promise.resolve(rows);
+  }) as unknown as { (strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown[]>; unsafe: (value: string) => string };
+  db.unsafe = (value: string) => value;
+  return { db, queries };
+}
+
+function itemRow(id: string, roundDate: string) {
+  return {
+    id,
+    round_date: roundDate,
+    question_id: `question-${id}`,
+    author_id: `author-${id}`,
+    position: 1,
+    featured_at: '2026-09-17T08:00:00.000Z',
+    selection_seed_version: 'challenge-round-v1',
+    selection_metadata: {},
+    closed_at: null,
+  };
+}
 
 describe('MemoryPlayRepository', () => {
   it('creates one round per local date and keeps the first canonical record', async () => {
@@ -87,6 +112,42 @@ describe('MemoryPlayRepository', () => {
     expect(await repository.countCorrectContributions(round.roundDate)).toBe(1);
     await repository.voidAttemptsForQuestion('question-1', '2026-09-17T09:00:00.000Z');
     expect(await repository.countCorrectContributions(round.roundDate)).toBe(0);
+  });
+
+  it('reads item ranges and contribution aggregates without changing contribution semantics', async () => {
+    const repository = new MemoryPlayRepository({
+      items: [
+        { ...item({ id: 'item-mon', roundDate: '2026-09-14', questionId: 'question-item-mon', authorId: 'author-item-mon' }) } as never,
+        { ...item({ id: 'item-sun', roundDate: '2026-09-20', questionId: 'question-item-sun', authorId: 'author-item-sun' }) } as never,
+      ],
+      attempts: [
+        { ...attempt({ id: 'attempt-mon', roundItemId: 'item-mon', isCorrect: true, selectedOptionId: 'correct', contribution: 1 }), roundDate: '2026-09-14', questionId: 'question-item-mon' } as never,
+        { ...attempt({ id: 'attempt-practice', roundItemId: 'item-mon', isCorrect: true, selectedOptionId: 'correct', isPractice: true, contribution: 0 }), roundDate: '2026-09-14', questionId: 'question-item-mon' } as never,
+        { ...attempt({ id: 'attempt-void', roundItemId: 'item-sun', isCorrect: true, selectedOptionId: 'correct', isVoided: true, contribution: 0 }), roundDate: '2026-09-20', questionId: 'question-item-sun' } as never,
+      ],
+    });
+
+    await expect(repository.listRoundItemsBetween('2026-09-14', '2026-09-20')).resolves.toHaveLength(2);
+    await expect(repository.countCorrectContributionsBetween('2026-09-14', '2026-09-20')).resolves.toEqual(new Map([['2026-09-14', 1], ['2026-09-20', 0]]));
+  });
+
+  it('uses one range query and one grouped contribution query', async () => {
+    const itemMock = mockedDatabase([itemRow('item-1', '2026-09-14')]);
+    const itemRepository = new PostgresPlayRepository(itemMock.db as never);
+    await expect(itemRepository.listRoundItemsBetween('2026-09-14', '2026-09-20')).resolves.toEqual([
+      expect.objectContaining({ id: 'item-1', roundDate: '2026-09-14' }),
+    ]);
+    expect(itemMock.queries).toHaveLength(1);
+    expect(itemMock.queries[0]).toContain('round_date between');
+    expect(itemMock.queries[0]).toContain('challenge_round_items');
+
+    const countMock = mockedDatabase([{ round_date: '2026-09-14', contribution_count: 3 }]);
+    const countRepository = new PostgresPlayRepository(countMock.db as never);
+    await expect(countRepository.countCorrectContributionsBetween('2026-09-14', '2026-09-20')).resolves.toEqual(new Map([['2026-09-14', 3]]));
+    expect(countMock.queries).toHaveLength(1);
+    expect(countMock.queries[0]).toContain('group by round_date');
+    expect(countMock.queries[0]).toContain('is_voided = false');
+    expect(countMock.queries[0]).toContain('sum(contribution)');
   });
 
   it('deduplicates reactions, open reports and namespaced events', async () => {

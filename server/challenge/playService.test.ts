@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MemoryAuthoringRepository } from './memoryAuthoringRepository';
 import { MemoryPlayRepository } from './memoryPlayRepository';
 import { createChallengePlayService } from './playService';
@@ -50,6 +50,31 @@ function serviceFixture(activeStudentCount = 3) {
     idFactory: () => `event-${++nextId}`,
   });
   return { authoring, play, service, setNow: (value: Date) => { now = value; } };
+}
+
+async function seedCompleteRound(authoring: MemoryAuthoringRepository, play: MemoryPlayRepository) {
+  const roundDate = '2026-09-17';
+  await play.insertRoundIfAbsent({
+    roundDate,
+    timezone: 'Asia/Ho_Chi_Minh',
+    status: 'open',
+    targetContributions: 10,
+    closesAt: '2026-09-17T16:59:59.999Z',
+    selectionSeedVersion: 'challenge-round-v1',
+  });
+  for (let index = 1; index <= 5; index += 1) {
+    const authorId = `student-${index}`;
+    await approved(authoring, question(`question-batch-${index}`, authorId));
+    await play.insertRoundItem({
+      id: `round-item-${index}`,
+      roundDate,
+      questionId: `question-batch-${index}`,
+      authorId,
+      position: index,
+      featuredAt: '2026-09-17T08:00:00.000Z',
+      selectionSeedVersion: 'challenge-round-v1',
+    });
+  }
 }
 
 describe('Challenge play service', () => {
@@ -132,5 +157,64 @@ describe('Challenge play service', () => {
     await play.voidAttemptsForQuestion(created.id, '2026-09-17T09:00:00.000Z');
     expect(await play.countCorrectContributions('2026-09-17')).toBe(0);
     expect((await play.findAttempt(today.questions[0].roundItemId, 'student-b'))?.isVoided).toBe(true);
+  });
+
+  it('loads a complete round with fixed batch reads, keeps item order, and omits unsafe question fields', async () => {
+    const { authoring, play, service } = serviceFixture();
+    await seedCompleteRound(authoring, play);
+    const batchQuestions = vi.spyOn(authoring, 'findQuestionsByIds');
+    const batchAuthors = vi.spyOn(authoring, 'getAuthorViewsByIds');
+    const legacyQuestions = vi.spyOn(authoring, 'findForAuthor');
+    const legacyAuthors = vi.spyOn(authoring, 'getAuthorView');
+
+    const result = await service.getToday('student-reader');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('expected today response');
+    expect(result.questions.map((item) => item.id)).toEqual([
+      'question-batch-1',
+      'question-batch-2',
+      'question-batch-3',
+      'question-batch-4',
+      'question-batch-5',
+    ]);
+    expect(batchQuestions).toHaveBeenCalledOnce();
+    expect(batchQuestions.mock.calls[0]?.[0]).toEqual([
+      'question-batch-1',
+      'question-batch-2',
+      'question-batch-3',
+      'question-batch-4',
+      'question-batch-5',
+    ]);
+    expect(batchAuthors).toHaveBeenCalledOnce();
+    expect(batchAuthors.mock.calls[0]?.[0]).toEqual([
+      'student-1',
+      'student-2',
+      'student-3',
+      'student-4',
+      'student-5',
+    ]);
+    expect(legacyQuestions).not.toHaveBeenCalled();
+    expect(legacyAuthors).not.toHaveBeenCalled();
+    expect(JSON.stringify(result)).not.toContain('correctOptionId');
+    expect(JSON.stringify(result)).not.toContain('explanation');
+  });
+
+  it('drops withdrawn, voided, and author-mismatched batch rows before public mapping', async () => {
+    const { authoring, play, service } = serviceFixture();
+    await seedCompleteRound(authoring, play);
+    const withdrawn = authoring.questions.get('question-batch-2');
+    const voided = authoring.questions.get('question-batch-3');
+    const mismatched = authoring.questions.get('question-batch-4');
+    if (!withdrawn || !voided || !mismatched) throw new Error('missing fixture question');
+    authoring.questions.set(withdrawn.id, { ...withdrawn, status: 'withdrawn' });
+    authoring.questions.set(voided.id, { ...voided, status: 'voided' });
+    authoring.questions.set(mismatched.id, { ...mismatched, authorId: 'student-other' });
+
+    const result = await service.getToday('student-reader');
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('expected today response');
+    expect(result.questions.map((item) => item.id)).toEqual(['question-batch-1', 'question-batch-5']);
   });
 });

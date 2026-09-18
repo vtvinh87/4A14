@@ -78,8 +78,17 @@ export function createChallengeWeeklyService(deps: {
     const { start, end } = challengeWeekBounds(now);
     const rounds = await deps.play.listRoundsBetween(start, end);
     const roundsByDate = new Map(rounds.map((round) => [round.roundDate, round]));
+    const [allItems, contributionByDate] = await Promise.all([
+      deps.play.listRoundItemsBetween(start, end),
+      deps.play.countCorrectContributionsBetween(start, end),
+    ]);
+    const itemsByDate = new Map<string, ChallengeRoundItemRecord[]>();
+    for (const item of allItems) {
+      const items = itemsByDate.get(item.roundDate) ?? [];
+      items.push(item);
+      itemsByDate.set(item.roundDate, items);
+    }
     const days: ChallengeWeeklyDay[] = [];
-    const allItems: ChallengeRoundItemRecord[] = [];
     let current = 0;
     let target = 0;
     let completedDays = 0;
@@ -87,8 +96,8 @@ export function createChallengeWeeklyService(deps: {
     for (let offset = 0; offset < 7; offset += 1) {
       const date = addDays(start, offset);
       const round = roundsByDate.get(date);
-      const items = round ? await deps.play.listRoundItems(date) : [];
-      const contribution = round ? await deps.play.countCorrectContributions(date) : 0;
+      const items = round ? (itemsByDate.get(date) ?? []) : [];
+      const contribution = round ? Number(contributionByDate.get(date) ?? 0) : 0;
       const completed = Boolean(round && (round.completed || round.rewardGranted));
       days.push({
         date,
@@ -98,18 +107,19 @@ export function createChallengeWeeklyService(deps: {
         rewardGranted: Boolean(round?.rewardGranted),
         questionCount: items.length,
       });
-      allItems.push(...items);
       current += contribution;
       target += round?.targetContributions ?? 0;
       if (completed) completedDays += 1;
     }
 
-    const [questions, attempts, reactions, roster] = await Promise.all([
+    const [questions, attempts, reactions, roster, itemQuestions] = await Promise.all([
       deps.authoring.listQuestionsBetween(start, end),
       deps.play.listAttemptsBetween(start, end),
       deps.play.listReactionsBetween(start, end),
       deps.activeStudentIds?.() ?? Promise.resolve([] as readonly string[]),
+      deps.authoring.findQuestionsByIds(allItems.map((item) => item.questionId)),
     ]);
+    const itemQuestionsById = new Map(itemQuestions.map((question) => [question.id, question]));
     const discoveredIds = new Set<string>([
       ...questions.map((question) => question.authorId),
       ...attempts.map((attempt) => attempt.studentId),
@@ -119,8 +129,8 @@ export function createChallengeWeeklyService(deps: {
 
     const topicCounts = new Map<string, { lessonId: string; title: string; questionCount: number }>();
     for (const item of allItems) {
-      const question = await deps.authoring.findForAuthor(item.authorId, item.questionId);
-      if (!question || !questionIsCountable(question)) continue;
+      const question = itemQuestionsById.get(item.questionId);
+      if (!question || question.authorId !== item.authorId || !questionIsCountable(question)) continue;
       const currentTopic = topicCounts.get(question.lessonId) ?? { lessonId: question.lessonId, title: question.lessonTitle, questionCount: 0 };
       currentTopic.questionCount += 1;
       topicCounts.set(question.lessonId, currentTopic);

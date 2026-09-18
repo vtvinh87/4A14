@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { ChallengeOptionTuple } from '../../shared/challenge-contracts';
 import { MemoryAuthoringRepository } from './memoryAuthoringRepository';
 import { MemoryPlayRepository } from './memoryPlayRepository';
@@ -78,5 +78,30 @@ describe('Challenge weekly class map service', () => {
     const boundary = await service.getWeekly('student-a', new Date('2026-09-13T17:00:00.000Z'));
     expect(boundary).toMatchObject({ ok: true, weekStart: '2026-09-14', weekEnd: '2026-09-20', classProgress: { current: 0, target: 0, completedDays: 0 }, topics: [], recognitions: [] });
     if (boundary.ok) expect(boundary.mySummary).toEqual({ questionsCreated: 0, correctAnswers: 0, revisits: 0 });
+  });
+
+  it('uses one item range and one contribution aggregate for a seven-day, 35-item week', async () => {
+    const dates = ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18', '2026-09-19', '2026-09-20'];
+    const rounds = dates.map((date) => makeRound(date, 5));
+    const items = dates.flatMap((date) => Array.from({ length: 5 }, (_, index) => makeItem(`${date}-${index}`, date, `question-${date}-${index}`, `student-${index}`, index + 1)));
+    const authoring = new MemoryAuthoringRepository({ now: () => NOW });
+    const play = new MemoryPlayRepository({ now: () => NOW, rounds, items });
+    const rangeItems = vi.spyOn(play, 'listRoundItemsBetween');
+    const rangeContributions = vi.spyOn(play, 'countCorrectContributionsBetween');
+    const perDayItems = vi.spyOn(play, 'listRoundItems');
+    const perDayContributions = vi.spyOn(play, 'countCorrectContributions');
+    const batchQuestions = vi.spyOn(authoring, 'findQuestionsByIds');
+
+    const result = await createChallengeWeeklyService({ play, authoring, now: () => NOW, activeStudentIds: async () => [] }).getWeekly('student-a');
+
+    expect(result.ok).toBe(true);
+    expect(rangeItems).toHaveBeenCalledOnce();
+    expect(rangeItems).toHaveBeenCalledWith('2026-09-14', '2026-09-20');
+    expect(rangeContributions).toHaveBeenCalledOnce();
+    expect(rangeContributions).toHaveBeenCalledWith('2026-09-14', '2026-09-20');
+    expect(perDayItems).not.toHaveBeenCalled();
+    expect(perDayContributions).not.toHaveBeenCalled();
+    expect(batchQuestions).toHaveBeenCalledOnce();
+    expect(batchQuestions.mock.calls[0]?.[0]).toHaveLength(35);
   });
 });

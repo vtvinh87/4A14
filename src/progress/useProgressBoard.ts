@@ -3,9 +3,8 @@ import { CONTENT_VERSION } from '../../shared/learning-contracts';
 import {
   PROGRESS_BOARD_RULE_VERSION,
   type ProgressBoardData,
-  type ProgressBoardRolloutConfig,
 } from '../../shared/progress-board-contracts';
-import { getProgressBoard, getProgressBoardRolloutConfig } from '../auth/apiClient';
+import { getProgressBoard } from '../auth/apiClient';
 import { isProgressBoardData, loadProgressBoardCache, saveProgressBoardCache, type ProgressBoardCacheIdentity } from './progressBoardCache';
 
 export type ProgressBoardStatus = 'idle' | 'loading' | 'success' | 'stale' | 'empty' | 'unavailable' | 'logged-out';
@@ -27,10 +26,6 @@ export type ProgressBoardHookResult = {
 
 const UNAVAILABLE_MESSAGE = 'Bảng tiến bộ tạm thời chưa sẵn sàng. Bạn thử lại nhé.';
 const ROLLOUT_DISABLED_MESSAGE = 'Bảng tiến bộ đang được mở dần cho lớp.';
-
-function isRolloutConfig(value: unknown): value is ProgressBoardRolloutConfig {
-  return Boolean(value && typeof value === 'object' && !Array.isArray(value) && typeof (value as { enabled?: unknown }).enabled === 'boolean');
-}
 
 function hasActivity(data: ProgressBoardData): boolean {
   return data.summary.exploredLessonCount > 0
@@ -80,22 +75,23 @@ export function useProgressBoard(options: ProgressBoardOptions): ProgressBoardHo
       }
     };
 
-    const rollout = await getProgressBoardRolloutConfig();
-    if (!isCurrent()) return;
-    if (!rollout.ok || !isRolloutConfig(rollout.config)) {
-      fallback();
-      return;
-    }
-    if (!rollout.config.enabled) {
-      setStatus('unavailable');
-      setData(null);
-      setError(ROLLOUT_DISABLED_MESSAGE);
-      return;
-    }
-
     const result = await getProgressBoard();
     if (!isCurrent()) return;
-    if (!result.ok || !isProgressBoardData(result.data, identity)) {
+    if (!result.ok) {
+      if ('reason' in result && result.reason === 'rollout_disabled') {
+        setStatus('unavailable');
+        setData(null);
+        setError(ROLLOUT_DISABLED_MESSAGE);
+      } else if (result.code === 'expired' || result.code === 'forbidden') {
+        setStatus('unavailable');
+        setData(null);
+        setError(UNAVAILABLE_MESSAGE);
+      } else {
+        fallback();
+      }
+      return;
+    }
+    if (!isProgressBoardData(result.data, identity)) {
       fallback();
       return;
     }

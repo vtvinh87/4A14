@@ -1,5 +1,5 @@
 import { DEFAULT_AVATAR_ID } from '../../shared/account-contracts';
-import type { AdminAuditRecord, AuthRepository, ServerAccountRecord, ServerSessionRecord } from './types';
+import type { AdminAuditRecord, AuthRepository, ServerAccountRecord, ServerSessionRecord, SessionContext, SessionAccountView } from './types';
 
 function cloneAccount(account: ServerAccountRecord): ServerAccountRecord {
   return structuredClone({
@@ -8,6 +8,17 @@ function cloneAccount(account: ServerAccountRecord): ServerAccountRecord {
     birthDate: account.birthDate ?? null,
     birthdayWishesEnabled: account.birthdayWishesEnabled ?? false,
   });
+}
+
+function sessionAccountView(account: ServerAccountRecord): SessionAccountView {
+  return {
+    id: account.id,
+    username: account.username,
+    displayName: account.displayName,
+    role: account.role,
+    active: account.active,
+    credentialVersion: account.credentialVersion,
+  };
 }
 
 export class MemoryAuthRepository implements AuthRepository {
@@ -45,6 +56,13 @@ export class MemoryAuthRepository implements AuthRepository {
   async findSession(tokenHash: string): Promise<ServerSessionRecord | null> {
     const session = this.sessions.get(tokenHash);
     return session ? structuredClone(session) : null;
+  }
+
+  async findSessionContext(tokenHash: string): Promise<SessionContext | null> {
+    const session = await this.findSession(tokenHash);
+    if (!session) return null;
+    const account = this.accounts.get(session.accountId);
+    return { session, account: account ? sessionAccountView(account) : null };
   }
 
   async updateSession(session: ServerSessionRecord): Promise<void> {

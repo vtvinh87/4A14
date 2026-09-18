@@ -121,6 +121,14 @@ export class MemoryAuthoringRepository implements AuthoringRepository {
     return question?.authorId === authorId ? clone(question) : null;
   }
 
+  async findQuestionsByIds(ids: readonly string[]): Promise<readonly ChallengeQuestionRecord[]> {
+    const uniqueIds = [...new Set(ids)];
+    return uniqueIds.flatMap((id) => {
+      const question = this.questions.get(id);
+      return question ? [clone(question)] : [];
+    });
+  }
+
   async updateDraftRevision(
     authorId: string,
     questionId: string,
@@ -177,6 +185,11 @@ export class MemoryAuthoringRepository implements AuthoringRepository {
 
   async getAuthorView(authorId: string): Promise<ChallengeAuthorView | null> {
     return clone(this.authorViews.get(authorId) ?? { id: authorId, displayName: 'Bạn trong lớp', avatarId: 'fox-leaf' });
+  }
+
+  async getAuthorViewsByIds(ids: readonly string[]): Promise<readonly ChallengeAuthorView[]> {
+    const uniqueIds = [...new Set(ids)];
+    return uniqueIds.map((id) => clone(this.authorViews.get(id) ?? { id, displayName: 'Bạn trong lớp', avatarId: 'fox-leaf' }));
   }
 
   async markQuestionFeatured(questionId: string, featuredAt: string): Promise<void> {

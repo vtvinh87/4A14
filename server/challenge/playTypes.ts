@@ -145,12 +145,14 @@ export interface PlayRepository {
   insertRoundIfAbsent(input: CreateRoundInput): Promise<ChallengeRoundRecord>;
   closeRound(roundDate: string, closedAt: string): Promise<void>;
   listRoundItems(roundDate: string): Promise<readonly ChallengeRoundItemRecord[]>;
+  listRoundItemsBetween(startDate: string, endDate: string): Promise<readonly ChallengeRoundItemRecord[]>;
   insertRoundItem(input: CreateRoundItemInput): Promise<ChallengeRoundItemRecord>;
   findRoundItem(itemId: string): Promise<ChallengeRoundItemRecord | null>;
   findAttempt(itemId: string, studentId: string): Promise<ChallengeAttemptRecord | null>;
   findAttemptByIdempotency(studentId: string, idempotencyKey: string): Promise<ChallengeAttemptRecord | null>;
   insertAttempt(input: InsertAttemptInput): Promise<ChallengeAttemptRecord | 'duplicate'>;
   countCorrectContributions(roundDate: string): Promise<number>;
+  countCorrectContributionsBetween(startDate: string, endDate: string): Promise<ReadonlyMap<string, number>>;
   listAttemptsForStudent(studentId: string, startDate: string, endDate: string): Promise<readonly ChallengeAttemptRecord[]>;
   listAttemptsBetween(startDate: string, endDate: string): Promise<readonly ChallengeAttemptRecord[]>;
   listReactionsBetween(startDate: string, endDate: string): Promise<readonly ChallengeReactionRecord[]>;

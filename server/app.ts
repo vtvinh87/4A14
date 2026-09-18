@@ -22,6 +22,7 @@ import type { AddChallengeReactionInput, ChallengeFailure, ChallengePreferencesP
 import { getEnv } from './runtime/env.ts';
 import { challengeRolloutFailure, getChallengeRolloutConfig, isChallengeRolloutEnabled } from './challenge/rollout.ts';
 import { getProgressBoardRolloutConfig, isProgressBoardRolloutEnabled, progressBoardRolloutFailure } from './progress/rollout.ts';
+import type { RequestTiming } from './performance/timing.ts';
 
 const SESSION_COOKIE = 'hoc_vui_session';
 const LOCAL_SESSION_MAX_AGE = 7 * 24 * 60 * 60;
@@ -32,6 +33,7 @@ export type AppRequest = {
   path: string;
   headers?: Record<string, string | undefined>;
   body?: unknown;
+  timing?: RequestTiming;
 };
 
 export type AppResponse = {
@@ -252,17 +254,24 @@ export function createApp(dependencies: AppDependencies) {
   }
 
   async function authorizeStudent(request: AppRequest): Promise<StudentAuthorization> {
-    const token = requireToken(request);
-    if (typeof token !== 'string') return { ok: false, response: failure(token, 401) };
-    if (parentGrantToken(request)) {
-      return { ok: false, response: failure({ ok: false, code: 'forbidden', message: 'Parent grant chỉ được dùng cho vùng phụ huynh.' }) };
-    }
-    const session = await auth.getSession(token);
-    if ('ok' in session) return { ok: false, response: failure(session, 401) };
-    if (session.account.role !== 'student' || session.mode !== 'full') {
-      return { ok: false, response: failure({ ok: false, code: 'forbidden', message: 'Hãy hoàn tất đăng nhập tài khoản học sinh trước.' }) };
-    }
-    return { ok: true, token, studentId: session.account.id };
+    const work = async (): Promise<StudentAuthorization> => {
+      const token = requireToken(request);
+      if (typeof token !== 'string') return { ok: false, response: failure(token, 401) };
+      if (parentGrantToken(request)) {
+        return { ok: false, response: failure({ ok: false, code: 'forbidden', message: 'Parent grant chỉ được dùng cho vùng phụ huynh.' }) };
+      }
+      const session = await auth.getSession(token);
+      if ('ok' in session) return { ok: false, response: failure(session, 401) };
+      if (session.account.role !== 'student' || session.mode !== 'full') {
+        return { ok: false, response: failure({ ok: false, code: 'forbidden', message: 'Hãy hoàn tất đăng nhập tài khoản học sinh trước.' }) };
+      }
+      return { ok: true, token, studentId: session.account.id };
+    };
+    return request.timing ? request.timing.measure('auth', work) : work();
+  }
+
+  async function measureData<T>(request: AppRequest, work: () => Promise<T>): Promise<T> {
+    return request.timing ? request.timing.measure('data', work) : work();
   }
 
   async function authorizeAdmin(request: AppRequest): Promise<{ ok: true; token: string; adminId: string } | { ok: false; response: AppResponse }> {
@@ -276,7 +285,7 @@ export function createApp(dependencies: AppDependencies) {
     return { ok: true, token, adminId: session.account.id };
   }
 
-  async function handle(request: AppRequest): Promise<AppResponse> {
+  async function dispatch(request: AppRequest): Promise<AppResponse> {
     const { pathname, query } = routeParts(request);
     const method = request.method.toUpperCase();
     const isWrite = method === 'POST' || method === 'PATCH' || method === 'PUT' || method === 'DELETE';
@@ -335,8 +344,10 @@ export function createApp(dependencies: AppDependencies) {
     if (method === 'GET' && pathname === '/api/me/friends') {
       const student = await authorizeStudent(request);
       if (!student.ok) return student.response;
-      if (!dependencies.classroom) return failure({ ok: false, code: 'unavailable', message: 'Classroom chưa sẵn sàng trên máy chủ.' }, 503);
-      return success(await dependencies.classroom.listFriends(student.studentId));
+      return measureData(request, async () => {
+        if (!dependencies.classroom) return failure({ ok: false, code: 'unavailable', message: 'Classroom chưa sẵn sàng trên máy chủ.' }, 503);
+        return success(await dependencies.classroom.listFriends(student.studentId));
+      });
     }
     if (method === 'GET' && pathname === '/api/me/realtime') {
       const student = await authorizeStudent(request);
@@ -401,11 +412,13 @@ export function createApp(dependencies: AppDependencies) {
     if (method === 'GET' && pathname === '/api/me/challenge/today') {
       const student = await authorizeStudent(request);
       if (!student.ok) return student.response;
-      if (!dependencies.challengePlay) return failure({ ok: false, code: 'unavailable', message: 'Vòng Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
-      const result = await dependencies.challengePlay.getToday(student.studentId);
-      if (!result.ok) return failure(result);
-      const { ok: _ok, ...today } = result;
-      return success(today);
+      return measureData(request, async () => {
+        if (!dependencies.challengePlay) return failure({ ok: false, code: 'unavailable', message: 'Vòng Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+        const result = await dependencies.challengePlay.getToday(student.studentId);
+        if (!result.ok) return failure(result);
+        const { ok: _ok, ...today } = result;
+        return success(today);
+      });
     }
     const challengeAttemptMatch = pathname.match(/^\/api\/me\/challenge\/items\/([^/]+)\/attempt$/);
     if (challengeAttemptMatch && method === 'POST') {
@@ -675,10 +688,12 @@ export function createApp(dependencies: AppDependencies) {
     if (method === 'GET' && pathname === '/api/me/progress-board') {
       const student = await authorizeStudent(request);
       if (!student.ok) return student.response;
-      if (!isProgressBoardRolloutEnabled()) return failure(progressBoardRolloutFailure(), 503);
-      if (!dependencies.learning) return failure({ ok: false, code: 'unavailable', message: 'Kho tiến bộ local chưa sẵn sàng.' }, 503);
-      const data = await dependencies.learning.getProgressBoard(student.studentId);
-      return success({ data });
+      return measureData(request, async () => {
+        if (!isProgressBoardRolloutEnabled()) return failure(progressBoardRolloutFailure(), 503);
+        if (!dependencies.learning) return failure({ ok: false, code: 'unavailable', message: 'Kho tiến bộ local chưa sẵn sàng.' }, 503);
+        const data = await dependencies.learning.getProgressBoard(student.studentId);
+        return success({ data });
+      });
     }
     if (method === 'POST' && pathname === '/api/me/events') {
       const token = requireToken(request);
@@ -733,6 +748,18 @@ export function createApp(dependencies: AppDependencies) {
     return { statusCode: 404, headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/json; charset=utf-8' }, body: { ok: false, code: 'invalid', message: 'Không tìm thấy API.' } };
   }
 
+  async function handle(request: AppRequest): Promise<AppResponse> {
+    try {
+      const response = await dispatch(request);
+      if (!request.timing) return response;
+      request.timing.finish();
+      return { ...response, headers: { ...response.headers, 'Server-Timing': request.timing.header() } };
+    } catch (error) {
+      request.timing?.finish();
+      throw error;
+    }
+  }
+
   return { handle };
 }
 
@@ -760,7 +787,7 @@ export async function getDefaultApp(): Promise<{ app: ReturnType<typeof createAp
         authoring: challengeAuthoringRepository,
         play: challengePlayRepository,
         clock: () => new Date(),
-        activeStudentCount: async () => (await authRepository.listStudents()).filter((account) => account.role === 'student' && account.active).length,
+        activeStudentCount: () => authRepository.countActiveStudents(),
         idFactory: randomUUID,
       });
       const challengeSocial = createChallengeSocialService({ authoring: challengeAuthoringRepository, play: challengePlayRepository, clock: () => new Date() });
@@ -768,7 +795,7 @@ export async function getDefaultApp(): Promise<{ app: ReturnType<typeof createAp
         authoring: challengeAuthoringRepository,
         play: challengePlayRepository,
         now: () => new Date(),
-        activeStudentIds: async () => (await authRepository.listStudents()).filter((account) => account.role === 'student' && account.active).map((account) => account.id),
+        activeStudentIds: () => authRepository.listActiveStudentIds(),
       });
       return { app: createApp({ auth, learning, classroom, challengeAuthoring, challengeReview, challengePlay, challengeSocial, challengeWeekly }), db };
     }).catch((error) => {

@@ -75,6 +75,31 @@ describe('MemoryClassroomRepository', () => {
     ]);
   });
 
+  it('returns one roster record with presence and unread state for each active peer', async () => {
+    const repository = new MemoryClassroomRepository([
+      peer('self', 'Minh', true, 'fox-scout'),
+      peer('active-peer', 'Lan', true, 'fox-leaf'),
+      peer('inactive-peer', 'Bao', false, 'fox-night'),
+      adminPeer('admin', 'Admin'),
+    ]);
+    await repository.upsertPresence('active-peer', '2026-09-16T08:00:00.000Z');
+    await repository.insertMessage({ senderId: 'active-peer', recipientId: 'self', body: 'Unread', createdAt: '2026-09-16T08:00:00.000Z' });
+    await repository.insertMessage({ senderId: 'inactive-peer', recipientId: 'self', body: 'Not in roster', createdAt: '2026-09-16T08:00:00.000Z' });
+
+    await expect(repository.listRoster('self')).resolves.toEqual([
+      {
+        id: 'active-peer',
+        username: 'active-peer',
+        displayName: 'Lan',
+        avatarId: 'fox-leaf',
+        role: 'student',
+        active: true,
+        lastSeen: '2026-09-16T08:00:00.000Z',
+        unreadCount: 1,
+      },
+    ]);
+  });
+
   it('isolates mutable peer and message records returned to callers', async () => {
     const repository = new MemoryClassroomRepository([
       peer('self', 'Minh', true, 'fox-scout'),
@@ -160,6 +185,42 @@ describe('MemoryClassroomRepository', () => {
 });
 
 describe('PostgresClassroomRepository', () => {
+  it('loads roster, presence and unread counts with one scoped statement', async () => {
+    const mock = mockedDatabase({
+      onQuery: (query) => query.includes('left join hoc_vui_private.classroom_presence')
+        ? [{
+          id: 'peer-a',
+          username: 'lan',
+          display_name: 'Lan',
+          avatar_id: 'fox-leaf',
+          last_seen: '2026-09-16T08:00:00.000Z',
+          unread_count: 2,
+        }]
+        : [],
+    });
+    const repository = new PostgresClassroomRepository(mock.db as never);
+
+    await expect(repository.listRoster('self')).resolves.toEqual([
+      {
+        id: 'peer-a',
+        username: 'lan',
+        displayName: 'Lan',
+        avatarId: 'fox-leaf',
+        role: 'student',
+        active: true,
+        lastSeen: '2026-09-16T08:00:00.000Z',
+        unreadCount: 2,
+      },
+    ]);
+    expect(mock.queries).toHaveLength(1);
+    expect(mock.queries[0]).toContain('left join hoc_vui_private.classroom_presence');
+    expect(mock.queries[0]).toContain('group by sender_id');
+    expect(mock.queries[0]).toContain('read_at is null');
+    expect(mock.queries[0]).toContain("role = 'student'");
+    expect(mock.queries[0]).toContain('active = true');
+    expect(mock.queries[0]).not.toContain('body');
+  });
+
   it('projects only the four public account columns for both roster queries', async () => {
     const { db, queries } = mockedDatabase({
       onQuery: (query) => query.includes('from hoc_vui_private.accounts')

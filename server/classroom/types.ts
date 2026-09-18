@@ -9,6 +9,11 @@ export type ClassroomPeerRecord = {
   active: boolean;
 };
 
+export type ClassroomRosterRecord = ClassroomPeerRecord & {
+  lastSeen: string | null;
+  unreadCount: number;
+};
+
 export type ClassroomMessageRecord = {
   id: string;
   senderId: string;
@@ -20,6 +25,7 @@ export type ClassroomMessageRecord = {
 
 export type ClassroomRepository = {
   listActivePeers(actorId: string): Promise<ClassroomPeerRecord[]>;
+  listRoster(actorId: string): Promise<ClassroomRosterRecord[]>;
   upsertPresence(accountId: string, lastSeen: string): Promise<void>;
   listPresence(accountIds: readonly string[]): Promise<ReadonlyMap<string, string>>;
   listUnreadCounts(recipientId: string): Promise<ReadonlyMap<string, number>>;

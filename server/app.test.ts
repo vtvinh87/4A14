@@ -15,6 +15,7 @@ import { MemoryPlayRepository } from './challenge/memoryPlayRepository';
 import { createChallengePlayService } from './challenge/playService';
 import { createChallengeSocialService } from './challenge/socialService';
 import { createChallengeWeeklyService } from './challenge/weeklyService';
+import { createRequestTiming } from './performance/timing';
 
 function cookieValue(response: AppResponse): string {
   const cookie = response.headers['Set-Cookie'] ?? '';
@@ -41,6 +42,44 @@ function expectNoAccessToken(response: AppResponse): void {
 }
 
 describe('same-origin account API', () => {
+  it('emits request-local auth/data/total timing for protected roster reads and preserves no-store', async () => {
+    const now = new Date('2026-09-19T08:00:00.000Z');
+    const repository = new MemoryAuthRepository();
+    const auth = createAuthService(repository, () => now);
+    const provisional = createApp({ auth });
+    const admin = await request(provisional, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'admin', password: '123456@' } });
+    const created = await request(provisional, { method: 'POST', path: '/api/admin/students', cookie: cookieValue(admin), body: { username: 'timing01', displayName: 'Timing' } });
+    const login = await request(provisional, { method: 'POST', path: '/api/auth/student/login', body: { username: 'timing01', pin: '123456' } });
+    const changed = await request(provisional, { method: 'POST', path: '/api/auth/student/change-pin', cookie: cookieValue(login), body: { currentPin: '123456', newPin: '246810' } });
+    const classroom: ClassroomService = {
+      listFriends: vi.fn(async () => ({ friends: [], unreadCount: 0 })),
+      heartbeat: vi.fn(),
+      listMessages: vi.fn(),
+      sendMessage: vi.fn(),
+      markRead: vi.fn(),
+      realtimeConfig: vi.fn(async () => null),
+    };
+    const app = createApp({ auth, classroom });
+    let tick = 0;
+    const timing = createRequestTiming(() => ++tick);
+    const response = await request(app, { method: 'GET', path: '/api/me/friends', cookie: cookieValue(changed), timing });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['Cache-Control']).toBe('no-store');
+    expect(response.headers['Server-Timing']).toMatch(/^auth;dur=\d+(?:\.\d+)?, data;dur=\d+(?:\.\d+)?, total;dur=\d+(?:\.\d+)?$/);
+    expect(response.headers['Server-Timing']).not.toContain(String((created.body.account as { id: string }).id));
+    expect(response.headers['Server-Timing']).not.toContain(String(changed.body.accessToken));
+  });
+
+  it('emits timing on protected auth failure without inventing data duration', async () => {
+    const app = createApp({ auth: createAuthService(new MemoryAuthRepository()) });
+    const timing = createRequestTiming(() => 1);
+    const response = await request(app, { method: 'GET', path: '/api/me/progress-board', timing });
+    expect(response.statusCode).toBe(401);
+    expect(response.headers['Server-Timing']).toMatch(/^auth;dur=0(?:\.\d+)?, data;dur=0(?:\.\d+)?, total;dur=0(?:\.\d+)?$/);
+    expect(response.headers['Server-Timing']).not.toContain('opaque-token');
+  });
+
   it('returns controlled invalid failures for malformed message and read peer IDs before classroom operations', async () => {
     const authRepository = new MemoryAuthRepository();
     const auth = createAuthService(authRepository);

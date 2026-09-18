@@ -149,11 +149,17 @@ export function createChallengePlayService(deps: {
     const items = await deps.play.listRoundItems(roundDate);
     const attempts = await deps.play.listAttemptsForStudent(studentId, roundDate, roundDate);
     const attemptsByItem = new Map(attempts.map((attempt) => [attempt.roundItemId, attempt]));
+    const [questionRecords, authors] = await Promise.all([
+      deps.authoring.findQuestionsByIds(items.map((item) => item.questionId)),
+      deps.authoring.getAuthorViewsByIds(items.map((item) => item.authorId)),
+    ]);
+    const questionsById = new Map(questionRecords.map((question) => [question.id, question]));
+    const authorsById = new Map(authors.map((author) => [author.id, author]));
     const questions: ChallengeQuestionView[] = [];
     for (const item of items) {
-      const question = await deps.authoring.findForAuthor(item.authorId, item.questionId);
-      const author = await deps.authoring.getAuthorView(item.authorId);
-      if (!question || !author || question.status === 'withdrawn' || question.status === 'voided') continue;
+      const question = questionsById.get(item.questionId);
+      const author = authorsById.get(item.authorId);
+      if (!question || question.authorId !== item.authorId || !author || question.status === 'withdrawn' || question.status === 'voided') continue;
       const attempt = attemptsByItem.get(item.id);
       questions.push(publicQuestion(question, item, round, author, Boolean(attempt), Boolean(attempt?.isPractice)));
     }

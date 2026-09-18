@@ -300,6 +300,16 @@ export class PostgresPlayRepository implements PlayRepository {
     return rows.map(mapItem);
   }
 
+  async listRoundItemsBetween(startDate: string, endDate: string): Promise<readonly ChallengeRoundItemRecord[]> {
+    const rows = await this.db<ItemRow[]>`
+      select ${this.db.unsafe(itemColumns)}
+      from hoc_vui_private.challenge_round_items
+      where round_date between ${startDate}::date and ${endDate}::date
+      order by round_date asc, position asc, id asc
+    `;
+    return rows.map(mapItem);
+  }
+
   async insertRoundItem(input: CreateRoundItemInput): Promise<ChallengeRoundItemRecord> {
     return withTransaction(this.db, async (tx) => {
       const existingQuestionRows = await tx<ItemRow[]>`
@@ -416,6 +426,17 @@ export class PostgresPlayRepository implements PlayRepository {
       where round_date = ${roundDate}::date and is_voided = false
     `;
     return Number(rows[0]?.contribution_count ?? 0);
+  }
+
+  async countCorrectContributionsBetween(startDate: string, endDate: string): Promise<ReadonlyMap<string, number>> {
+    const rows = await this.db<{ round_date: Date | string; contribution_count: number }[]>`
+      select round_date, coalesce(sum(contribution), 0)::int as contribution_count
+      from hoc_vui_private.challenge_attempts
+      where round_date between ${startDate}::date and ${endDate}::date and is_voided = false
+      group by round_date
+      order by round_date asc
+    `;
+    return new Map(rows.map((row) => [localDate(row.round_date), Number(row.contribution_count ?? 0)]));
   }
 
   async listAttemptsForStudent(studentId: string, startDate: string, endDate: string): Promise<readonly ChallengeAttemptRecord[]> {

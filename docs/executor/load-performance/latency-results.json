@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-19T00:45:11+07:00",
+  "status": "NOT_RUN",
+  "source": "/Volumes/Pictures/Projects/Hoc_Vui",
+  "environment": {
+    "label": "local source checkout",
+    "dbValidation": "DB_VALIDATION_PENDING",
+    "httpTarget": null,
+    "staging": false,
+    "production": false
+  },
+  "runner": {
+    "path": "scripts/measure-load-performance.mjs",
+    "baseUrlPolicy": "localhost-only",
+    "samplesRequested": 30,
+    "samplesCollected": 0,
+    "routes": [
+      "/api/me/friends",
+      "/api/me/progress-board",
+      "/api/me/challenge/today",
+      "/api/me/challenge/week"
+    ]
+  },
+  "measurements": [],
+  "summary": {
+    "warm": { "sampleCount": 0, "medianMs": null, "p95Ms": null, "errorCount": null },
+    "firstOpen": { "sampleCount": 0, "medianMs": null, "p95Ms": null, "errorCount": null },
+    "cold": { "sampleCount": 0, "medianMs": null, "p95Ms": null, "errorCount": null }
+  },
+  "missingPrerequisites": [
+    "No approved local synthetic authenticated session/server was available.",
+    "No explicit verified local PostgreSQL target was supplied.",
+    "No staging or production measurement was authorized or performed."
+  ],
+  "interpretation": "No latency number is asserted. Historical anonymous 401 samples, skeleton time, unit/mock timing, and SQL-shape tests are not HTTP or click-to-fresh-data measurements."
+}

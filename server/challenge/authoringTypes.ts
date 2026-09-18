@@ -49,6 +49,7 @@ export interface AuthoringRepository {
   listMine(authorId: string, limit: number): Promise<readonly ChallengeQuestionMine[]>;
   listQuestionsBetween(startDate: string, endDate: string): Promise<readonly ChallengeQuestionRecord[]>;
   findForAuthor(authorId: string, questionId: string): Promise<ChallengeQuestionRecord | null>;
+  findQuestionsByIds(ids: readonly string[]): Promise<readonly ChallengeQuestionRecord[]>;
   updateDraftRevision(
     authorId: string,
     questionId: string,
@@ -57,6 +58,7 @@ export interface AuthoringRepository {
   ): Promise<ChallengeQuestionRecord | 'not_found' | 'revision_conflict'>;
   listApprovedCandidates(roundDate: string): Promise<readonly RoundCandidate[]>;
   getAuthorView(authorId: string): Promise<ChallengeAuthorView | null>;
+  getAuthorViewsByIds(ids: readonly string[]): Promise<readonly ChallengeAuthorView[]>;
   markQuestionFeatured(questionId: string, featuredAt: string): Promise<void>;
   markQuestionClosed(questionId: string, closedAt: string): Promise<void>;
   voidQuestion(questionId: string, voidedAt: string): Promise<'ok' | 'not_found' | 'invalid_state'>;

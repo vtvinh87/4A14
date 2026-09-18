@@ -206,6 +206,19 @@ export class PostgresAuthoringRepository implements AuthoringRepository {
     return row ? mapQuestion(row) : null;
   }
 
+  async findQuestionsByIds(ids: readonly string[]): Promise<readonly ChallengeQuestionRecord[]> {
+    const uniqueIds = [...new Set(ids)];
+    if (uniqueIds.length === 0) return [];
+    const rows = await this.db<QuestionRow[]>`
+      select id, author_id, source_fact_id, source_version, lesson_id, lesson_title, prompt, options, correct_option_id, explanation,
+             status, revision, created_local_date, created_at, updated_at, submitted_at, reviewed_at, featured_at, closed_at,
+             review_reason, withdrawn_at, voided_at
+      from hoc_vui_private.challenge_questions
+      where id = any(${this.db.array(uniqueIds)}::uuid[])
+    `;
+    return rows.map(mapQuestion);
+  }
+
   async updateDraftRevision(
     authorId: string,
     questionId: string,
@@ -267,6 +280,17 @@ export class PostgresAuthoringRepository implements AuthoringRepository {
     `;
     const row = rows[0];
     return row ? { id: row.id, displayName: row.display_name, avatarId: row.avatar_id } : null;
+  }
+
+  async getAuthorViewsByIds(ids: readonly string[]): Promise<readonly ChallengeAuthorView[]> {
+    const uniqueIds = [...new Set(ids)];
+    if (uniqueIds.length === 0) return [];
+    const rows = await this.db<{ id: string; display_name: string; avatar_id: string }[]>`
+      select id, display_name, avatar_id
+      from hoc_vui_private.accounts
+      where id = any(${this.db.array(uniqueIds)}::uuid[]) and role = 'student' and active = true
+    `;
+    return rows.map((row) => ({ id: row.id, displayName: row.display_name, avatarId: row.avatar_id }));
   }
 
   async markQuestionFeatured(questionId: string, featuredAt: string): Promise<void> {
@@ -401,6 +425,13 @@ export class PostgresAuthoringRepository implements AuthoringRepository {
   }
 
   async getPreferences(studentId: string): Promise<ChallengePreferences> {
+    const existing = await this.db<PreferenceRow[]>`
+      select student_id, can_create, can_participate, updated_at
+      from hoc_vui_private.challenge_preferences
+      where student_id = ${studentId}::uuid
+      limit 1
+    `;
+    if (existing[0]) return mapPreference(existing[0]);
     await this.db`
       insert into hoc_vui_private.challenge_preferences (student_id)
       values (${studentId}::uuid)

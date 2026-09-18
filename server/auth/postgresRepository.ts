@@ -1,7 +1,7 @@
 import type postgres from 'postgres';
 import { DEFAULT_AVATAR_ID, isAvatarId, type AvatarId } from '../../shared/account-contracts.ts';
 import { withTransaction, type DatabaseClient, type DatabaseTransaction } from '../db/client.ts';
-import type { AdminAuditRecord, AuthRepository, CredentialKind, CredentialRecord, ServerAccountRecord, ServerSessionRecord } from './types.ts';
+import type { AdminAuditRecord, AuthRepository, CredentialKind, CredentialRecord, ServerAccountRecord, ServerSessionRecord, SessionContext, SessionAccountView } from './types.ts';
 
 type AccountRow = {
   id: string;
@@ -41,6 +41,26 @@ type SessionRow = {
   credential_version: number;
   parent_grant_until: Date | string | null;
   parent_grant_hash: string | null;
+};
+
+type SessionContextRow = {
+  session_id: string;
+  token_hash: string;
+  session_account_id: string;
+  mode: 'full' | 'change-only';
+  change_kind: 'student' | 'parent' | null;
+  session_created_at: Date | string;
+  expires_at: Date | string;
+  revoked_at: Date | string | null;
+  session_credential_version: number;
+  parent_grant_until: Date | string | null;
+  parent_grant_hash: string | null;
+  account_id: string | null;
+  username: string | null;
+  display_name: string | null;
+  role: 'student' | 'admin' | null;
+  active: boolean | null;
+  account_credential_version: number | null;
 };
 
 type QueryClient = DatabaseClient | DatabaseTransaction;
@@ -136,6 +156,33 @@ function mapSession(row: SessionRow): ServerSessionRecord {
   };
 }
 
+function mapSessionContext(row: SessionContextRow): SessionContext {
+  const session: ServerSessionRecord = {
+    id: row.session_id,
+    tokenHash: row.token_hash,
+    accountId: row.session_account_id,
+    mode: row.mode,
+    changeKind: row.change_kind,
+    createdAt: iso(row.session_created_at)!,
+    expiresAt: iso(row.expires_at)!,
+    revokedAt: iso(row.revoked_at),
+    credentialVersion: Number(row.session_credential_version),
+    parentGrantUntil: iso(row.parent_grant_until),
+    parentGrantHash: row.parent_grant_hash,
+  };
+  const account: SessionAccountView | null = row.account_id && row.username !== null && row.display_name !== null && row.role !== null && row.active !== null && row.account_credential_version !== null
+    ? {
+      id: row.account_id,
+      username: row.username,
+      displayName: row.display_name,
+      role: row.role,
+      active: row.active,
+      credentialVersion: Number(row.account_credential_version),
+    }
+    : null;
+  return { session, account };
+}
+
 export class PostgresAuthRepository implements AuthRepository {
   constructor(private readonly db: DatabaseClient) {}
 
@@ -165,6 +212,25 @@ export class PostgresAuthRepository implements AuthRepository {
       order by lower(display_name), username
     ` as AccountRow[];
     return Promise.all(rows.map(async (row) => mapAccount(row, await loadCredentials(this.db, row.id))));
+  }
+
+  async listActiveStudentIds(): Promise<string[]> {
+    const rows = await this.db<{ id: string }[]>`
+      select id
+      from hoc_vui_private.accounts
+      where role = 'student' and active = true
+      order by id asc
+    `;
+    return rows.map((row) => row.id);
+  }
+
+  async countActiveStudents(): Promise<number> {
+    const rows = await this.db<{ student_count: number }[]>`
+      select count(*)::int as student_count
+      from hoc_vui_private.accounts
+      where role = 'student' and active = true
+    `;
+    return Number(rows[0]?.student_count ?? 0);
   }
 
   async insertAccount(account: ServerAccountRecord): Promise<void> {
@@ -217,6 +283,34 @@ export class PostgresAuthRepository implements AuthRepository {
       limit 1
     ` as SessionRow[];
     return rows[0] ? mapSession(rows[0]) : null;
+  }
+
+  async findSessionContext(tokenHash: string): Promise<SessionContext | null> {
+    const rows = await this.db<SessionContextRow[]>`
+      select
+        sessions.id as session_id,
+        sessions.token_hash,
+        sessions.account_id as session_account_id,
+        sessions.mode,
+        sessions.change_kind,
+        sessions.created_at as session_created_at,
+        sessions.expires_at,
+        sessions.revoked_at,
+        sessions.credential_version as session_credential_version,
+        sessions.parent_grant_until,
+        sessions.parent_grant_hash,
+        accounts.id as account_id,
+        accounts.username,
+        accounts.display_name,
+        accounts.role,
+        accounts.active,
+        accounts.credential_version as account_credential_version
+      from hoc_vui_private.auth_sessions as sessions
+      left join hoc_vui_private.accounts as accounts on accounts.id = sessions.account_id
+      where sessions.token_hash = ${tokenHash}
+      limit 1
+    ` as SessionContextRow[];
+    return rows[0] ? mapSessionContext(rows[0]) : null;
   }
 
   async updateSession(session: ServerSessionRecord): Promise<void> {

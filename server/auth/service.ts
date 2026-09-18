@@ -12,7 +12,7 @@ import {
   type StudentProfileView,
 } from '../../shared/account-contracts.ts';
 import { credentialAlgorithm, hashSecret, hashToken, randomToken, randomUuid, verifySecret } from './crypto.ts';
-import type { AccountView, AdminAuditRecord, AuthFailure, AuthRepository, AuthResult, AuthSessionView, CredentialKind, CredentialRecord, ServerAccountRecord, ServerSessionRecord } from './types.ts';
+import type { AccountView, AdminAuditRecord, AuthFailure, AuthRepository, AuthResult, AuthSessionView, CredentialKind, CredentialRecord, ServerAccountRecord, ServerSessionRecord, SessionAccountView } from './types.ts';
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
@@ -23,7 +23,7 @@ const DEFAULT_ADMIN_PASSWORD = '123456@';
 
 function nowIso(): string { return new Date().toISOString(); }
 function id(): string { return randomUuid(); }
-function accountView(account: ServerAccountRecord): AccountView {
+function accountView(account: ServerAccountRecord | SessionAccountView): AccountView {
   return { id: account.id, username: account.username, displayName: account.displayName, role: account.role, active: account.active, credentialVersion: account.credentialVersion };
 }
 function profileView(account: ServerAccountRecord): StudentProfileView {
@@ -78,7 +78,7 @@ function auditRecord(actorId: string, action: string, subjectId: string | null, 
   return { id: randomUuid(), actorId, action, subjectId, result: 'success', metadata, createdAt: clock().toISOString() };
 }
 
-function viewSession(token: string, account: ServerAccountRecord, record: ServerSessionRecord): AuthSessionView {
+function viewSession(token: string, account: ServerAccountRecord | SessionAccountView, record: ServerSessionRecord): AuthSessionView {
   return {
     token,
     account: accountView(account),
@@ -162,8 +162,14 @@ export function createAuthService(repository: AuthRepository, clock: () => Date 
     loginStudent: (username: string, pin: string) => loginWithCredential(username, pin, 'student'),
     loginAdmin: (username: string, password: string) => loginWithCredential(username, password, 'admin'),
     async getSession(token: string): Promise<AuthSessionView | AuthFailure> {
-      const current = await currentSession(token);
-      if ('ok' in current) return current;
+      await ready;
+      const current = await repository.findSessionContext(hashToken(token));
+      if (!current || current.session.revokedAt || Date.parse(current.session.expiresAt) <= clock().getTime()) {
+        return { ok: false, code: 'expired', message: 'Phiên đăng nhập đã hết; hãy đăng nhập lại.' };
+      }
+      if (!current.account || !current.account.active || current.account.credentialVersion !== current.session.credentialVersion) {
+        return { ok: false, code: 'forbidden', message: 'Tài khoản không còn hoạt động trong phiên này.' };
+      }
       return viewSession(token, current.account, current.session);
     },
     async clearParentGrant(token: string): Promise<void> {

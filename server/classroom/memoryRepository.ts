@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { ClassroomMessageRecord, ClassroomPeerRecord, ClassroomRepository } from './types';
+import type { ClassroomMessageRecord, ClassroomPeerRecord, ClassroomRepository, ClassroomRosterRecord } from './types';
 
 function clone<T>(value: T): T {
   return structuredClone(value);
@@ -18,6 +18,15 @@ export class MemoryClassroomRepository implements ClassroomRepository {
     return [...this.peers.values()]
       .filter((peer) => peer.role === 'student' && peer.active && peer.id !== actorId)
       .map(clone);
+  }
+
+  async listRoster(actorId: string): Promise<ClassroomRosterRecord[]> {
+    const unreadCounts = await this.listUnreadCounts(actorId);
+    return (await this.listActivePeers(actorId)).map((peer) => ({
+      ...peer,
+      lastSeen: this.presence.get(peer.id) ?? null,
+      unreadCount: unreadCounts.get(peer.id) ?? 0,
+    }));
   }
 
   async upsertPresence(accountId: string, lastSeen: string): Promise<void> {

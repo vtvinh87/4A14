@@ -46,6 +46,7 @@ describe('Supabase Edge API adapter', () => {
 
     expect(result.status).toBe(200);
     expect(result.headers.get('Cache-Control')).toBe('no-store');
+    expect(result.headers.get('Access-Control-Expose-Headers')).toBe('Server-Timing');
     expect(result.headers.get('Set-Cookie')).toBe('hoc_vui_session=opaque-token; Path=/; HttpOnly');
     expect(await result.json()).toEqual({ ok: true, accessToken: 'opaque-token' });
     expect(received).toMatchObject({
@@ -73,6 +74,7 @@ describe('Supabase Edge API adapter', () => {
     expect(result.headers.get('Access-Control-Allow-Credentials')).toBe('true');
     expect(result.headers.get('Access-Control-Allow-Methods')).toBe('GET,POST,PATCH,PUT,DELETE,OPTIONS');
     expect(result.headers.get('Access-Control-Allow-Headers')).toBe('Authorization,Content-Type,X-Parent-Grant');
+    expect(result.headers.get('Access-Control-Max-Age')).toBe('600');
     expect(result.headers.get('Vary')).toBe('Origin');
     expect(app.handle).not.toHaveBeenCalled();
   });
@@ -146,5 +148,17 @@ describe('Supabase Edge API adapter', () => {
     const body = await result.text();
     expect(body).not.toContain('postgresql://secret');
     expect(body).toContain('API');
+  });
+
+  it('adds finite server timing to an allowed protected read even when the app loader fails', async () => {
+    const handler = createEdgeHandler(async () => { throw new Error('DATABASE_URL=postgresql://secret'); });
+    const result = await handler(new Request('https://project.supabase.co/functions/v1/api/me/friends', {
+      headers: { Origin: 'https://hoc-vui.web.app', Authorization: 'Bearer opaque-token' },
+    }));
+
+    expect(result.status).toBe(503);
+    expect(result.headers.get('Server-Timing')).toMatch(/^auth;dur=0(?:\.\d+)?, data;dur=0(?:\.\d+)?, total;dur=\d+(?:\.\d+)?$/);
+    expect(result.headers.get('Access-Control-Expose-Headers')).toBe('Server-Timing');
+    expect(result.headers.get('Server-Timing')).not.toContain('opaque-token');
   });
 });

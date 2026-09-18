@@ -53,6 +53,18 @@ type EventRow = {
   interactive: boolean;
 };
 
+type ProgressBoardSourceRow = {
+  snapshot_student_id: string | null;
+  snapshot_schema_version: number | null;
+  snapshot_revision: number | null;
+  snapshot_generation: number | null;
+  snapshot_content_version: string | null;
+  snapshot_progress: Progress | null;
+  snapshot_legacy_imported: boolean | null;
+  snapshot_updated_at: Date | string | null;
+  events: EventRow[] | null;
+};
+
 type MigrationReceiptRow = {
   fingerprint: string;
   student_id: string;
@@ -194,14 +206,88 @@ export class PostgresLearningRepository implements LearningRepository {
   }
 
   async getProgressBoardSource(studentId: string) {
-    return withTransaction(this.db, async (tx) => {
-      const snapshot = await selectSnapshot(tx, studentId);
-      const rows = await tx.unsafe<EventRow[]>(
-        'select event_id, run_id, student_id, sequence, event_type, lesson_id, lesson_version, device_id, activity_id, response, client_time, received_at, generation, hint_used, correct, visible, interactive from hoc_vui_private.learning_events where student_id = $1::uuid order by received_at asc, sequence asc, event_id asc',
-        [studentId],
-      ) as EventRow[];
-      return { snapshot, events: rows.map(mapEvent) };
+    const emptySnapshot = createEmptySnapshot(studentId, new Date().toISOString());
+    const rows = await this.db.unsafe<ProgressBoardSourceRow[]>(`
+      with actor as (
+        select $1::uuid as student_id
+      ), anchor as (
+        select
+          actor.student_id,
+          snapshots.student_id as snapshot_student_id,
+          snapshots.schema_version as snapshot_schema_version,
+          snapshots.revision as snapshot_revision,
+          snapshots.generation as snapshot_generation,
+          snapshots.content_version as snapshot_content_version,
+          snapshots.snapshot as snapshot_progress,
+          snapshots.legacy_imported as snapshot_legacy_imported,
+          snapshots.updated_at as snapshot_updated_at,
+          coalesce(snapshots.generation, $2::int) as effective_generation
+        from actor
+        left join hoc_vui_private.progress_snapshots as snapshots on snapshots.student_id = actor.student_id
+      )
+      select
+        anchor.snapshot_student_id,
+        anchor.snapshot_schema_version,
+        anchor.snapshot_revision,
+        anchor.snapshot_generation,
+        anchor.snapshot_content_version,
+        anchor.snapshot_progress,
+        anchor.snapshot_legacy_imported,
+        anchor.snapshot_updated_at,
+        coalesce(
+          jsonb_agg(
+            jsonb_build_object(
+              'event_id', events.event_id,
+              'run_id', events.run_id,
+              'student_id', events.student_id,
+              'sequence', events.sequence,
+              'event_type', events.event_type,
+              'lesson_id', events.lesson_id,
+              'lesson_version', events.lesson_version,
+              'device_id', events.device_id,
+              'activity_id', events.activity_id,
+              'response', events.response,
+              'client_time', events.client_time,
+              'received_at', events.received_at,
+              'generation', events.generation,
+              'hint_used', events.hint_used,
+              'correct', events.correct,
+              'visible', events.visible,
+              'interactive', events.interactive
+            ) order by events.received_at, events.sequence, events.event_id
+          ) filter (where events.event_id is not null),
+          '[]'::jsonb
+        ) as events
+      from anchor
+      left join hoc_vui_private.learning_events as events
+        on events.student_id = anchor.student_id
+        and events.generation = anchor.effective_generation
+      group by
+        anchor.student_id,
+        anchor.snapshot_student_id,
+        anchor.snapshot_schema_version,
+        anchor.snapshot_revision,
+        anchor.snapshot_generation,
+        anchor.snapshot_content_version,
+        anchor.snapshot_progress,
+        anchor.snapshot_legacy_imported,
+        anchor.snapshot_updated_at
+    `, [studentId, emptySnapshot.generation]) as ProgressBoardSourceRow[];
+    const row = rows[0];
+    if (!row || row.snapshot_revision === null || row.snapshot_progress === null) {
+      return { snapshot: emptySnapshot, events: (row?.events ?? []).map(mapEvent) };
+    }
+    const snapshot = mapSnapshot({
+      student_id: row.snapshot_student_id ?? studentId,
+      schema_version: row.snapshot_schema_version ?? 1,
+      revision: row.snapshot_revision,
+      generation: row.snapshot_generation ?? emptySnapshot.generation,
+      content_version: row.snapshot_content_version ?? emptySnapshot.contentVersion,
+      snapshot: row.snapshot_progress,
+      legacy_imported: Boolean(row.snapshot_legacy_imported),
+      updated_at: row.snapshot_updated_at ?? emptySnapshot.updatedAt,
     });
+    return { snapshot, events: (row.events ?? []).map(mapEvent) };
   }
 
   async resetProgress(studentId: string, now: string): Promise<LearningSnapshotRecord> {

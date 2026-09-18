@@ -311,7 +311,7 @@ describe('App cross-feature account flow', () => {
     expect(mount.textContent).toContain('Bảng tiến bộ');
     expect(mount.querySelector('#journey-title')).not.toBeNull();
     expect(apiMocks.getProgressBoard).toHaveBeenCalledOnce();
-    expect(apiMocks.getProgressBoardRolloutConfig).toHaveBeenCalledTimes(2);
+    expect(apiMocks.getProgressBoardRolloutConfig).toHaveBeenCalledOnce();
     expect(document.body.style.overflow).toBe('hidden');
 
     act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng Bảng tiến bộ"]')?.click());

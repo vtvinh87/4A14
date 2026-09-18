@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { ChallengeOptionTuple } from '../../shared/challenge-contracts';
 import { MemoryAuthoringRepository } from './memoryAuthoringRepository';
+import { PostgresAuthoringRepository } from './postgresAuthoringRepository';
 
 const NOW = '2026-09-17T08:00:00.000Z';
 const LOCAL_DATE = '2026-09-17';
@@ -26,6 +27,57 @@ function input(id: string, authorId = 'student-a', createdLocalDate = LOCAL_DATE
     createdAt: NOW,
     updatedAt: NOW,
   };
+}
+
+function questionRow(id: string, authorId: string) {
+  return {
+    id,
+    author_id: authorId,
+    source_fact_id: 'map',
+    source_version: 'challenge-facts-v1',
+    lesson_id: 'lesson-01',
+    lesson_title: 'Làm quen với phương tiện học tập môn Lịch sử và Địa lí',
+    prompt: `Câu hỏi ${id}: Bản đồ dùng để làm gì trong học tập?`,
+    options: [
+      { id: 'correct', text: 'Bản đồ thu nhỏ một khu vực hoặc toàn bộ bề mặt Trái Đất theo tỉ lệ.' },
+      { id: 'wrong-a', text: 'Một bài hát về ngày hội.' },
+      { id: 'wrong-b', text: 'Một loại bánh truyền thống.' },
+      { id: 'wrong-c', text: 'Một câu chuyện kể về nhân vật.' },
+    ],
+    correct_option_id: 'correct',
+    explanation: 'Bản đồ giúp thể hiện thu nhỏ một khu vực hoặc toàn bộ bề mặt Trái Đất theo tỉ lệ.',
+    status: 'approved',
+    revision: 1,
+    created_local_date: LOCAL_DATE,
+    created_at: NOW,
+    updated_at: NOW,
+    submitted_at: NOW,
+    reviewed_at: NOW,
+    featured_at: null,
+    closed_at: null,
+    review_reason: null,
+    withdrawn_at: null,
+    voided_at: null,
+  };
+}
+
+function mockedDatabase(rows: unknown[]) {
+  const callable = vi.fn(async (..._args: unknown[]) => rows);
+  const array = vi.fn((values: readonly string[]) => values);
+  const db = Object.assign(callable, { array });
+  return { db: db as never, callable, array };
+}
+
+function mockedDatabaseSequence(rowSets: unknown[][]) {
+  const queries: string[] = [];
+  let index = 0;
+  const callable = vi.fn(async (strings: TemplateStringsArray, ..._args: unknown[]) => {
+    queries.push(String(strings).replace(/\s+/g, ' ').trim().toLowerCase());
+    return rowSets[index++] ?? [];
+  });
+  const array = vi.fn((values: readonly string[]) => values);
+  const db = Object.assign(callable, { array });
+  return { db: db as never, callable, queries };
 }
 
 describe('MemoryAuthoringRepository', () => {
@@ -177,5 +229,72 @@ describe('MemoryAuthoringRepository', () => {
       canParticipate: true,
       updatedAt: NOW,
     });
+  });
+
+  it('reads unique questions and author views in stable batch order', async () => {
+    const repository = new MemoryAuthoringRepository({
+      now: () => new Date(NOW),
+      authorViews: [{ id: 'student-a', displayName: 'Bạn A', avatarId: 'fox-leaf' }],
+    });
+    const first = await repository.insertPendingQuestion(input('q-batch-1', 'student-a'));
+    const second = await repository.insertPendingQuestion(input('q-batch-2', 'student-b'));
+    expect(first).not.toBe('quota_exceeded');
+    expect(second).not.toBe('quota_exceeded');
+
+    await expect(repository.findQuestionsByIds(['q-batch-2', 'q-batch-1', 'q-batch-2'])).resolves.toEqual([
+      expect.objectContaining({ id: 'q-batch-2' }),
+      expect.objectContaining({ id: 'q-batch-1' }),
+    ]);
+    await expect(repository.getAuthorViewsByIds(['student-a', 'student-b', 'student-a'])).resolves.toEqual([
+      { id: 'student-a', displayName: 'Bạn A', avatarId: 'fox-leaf' },
+      { id: 'student-b', displayName: 'Bạn trong lớp', avatarId: 'fox-leaf' },
+    ]);
+  });
+
+  it('uses one SQL statement per non-empty batch and no SQL for empty input', async () => {
+    const questionMock = mockedDatabase([questionRow('q-batch-2', 'student-b'), questionRow('q-batch-1', 'student-a')]);
+    const questionRepository = new PostgresAuthoringRepository(questionMock.db);
+    await expect(questionRepository.findQuestionsByIds(['q-batch-1', 'q-batch-1', 'q-batch-2'])).resolves.toEqual([
+      expect.objectContaining({ id: 'q-batch-2' }),
+      expect.objectContaining({ id: 'q-batch-1' }),
+    ]);
+    expect(questionMock.callable).toHaveBeenCalledOnce();
+    expect(questionMock.array).toHaveBeenCalledWith(['q-batch-1', 'q-batch-2']);
+    expect(String(questionMock.callable.mock.calls[0]?.[0])).toContain('any');
+
+    const authorMock = mockedDatabase([
+      { id: 'student-a', display_name: 'Bạn A', avatar_id: 'fox-leaf' },
+      { id: 'student-b', display_name: 'Bạn B', avatar_id: 'fox-sun' },
+    ]);
+    const authorRepository = new PostgresAuthoringRepository(authorMock.db);
+    await expect(authorRepository.getAuthorViewsByIds(['student-b', 'student-a', 'student-b'])).resolves.toEqual([
+      { id: 'student-a', displayName: 'Bạn A', avatarId: 'fox-leaf' },
+      { id: 'student-b', displayName: 'Bạn B', avatarId: 'fox-sun' },
+    ]);
+    expect(authorMock.callable).toHaveBeenCalledOnce();
+    expect(authorMock.array).toHaveBeenCalledWith(['student-b', 'student-a']);
+
+    const emptyMock = mockedDatabase([]);
+    const emptyRepository = new PostgresAuthoringRepository(emptyMock.db);
+    await expect(emptyRepository.findQuestionsByIds([])).resolves.toEqual([]);
+    await expect(emptyRepository.getAuthorViewsByIds([])).resolves.toEqual([]);
+    expect(emptyMock.callable).not.toHaveBeenCalled();
+  });
+
+  it('reads existing preferences first and re-reads after a missing-row insert', async () => {
+    const existing = { student_id: 'student-a', can_create: false, can_participate: true, updated_at: NOW };
+    const existingMock = mockedDatabaseSequence([[existing]]);
+    const existingRepository = new PostgresAuthoringRepository(existingMock.db);
+    await expect(existingRepository.getPreferences('student-a')).resolves.toEqual({ studentId: 'student-a', canCreate: false, canParticipate: true, updatedAt: NOW });
+    expect(existingMock.callable).toHaveBeenCalledOnce();
+    expect(existingMock.queries[0]).toContain('select');
+
+    const inserted = { student_id: 'student-b', can_create: true, can_participate: false, updated_at: NOW };
+    const missingMock = mockedDatabaseSequence([[], [], [inserted]]);
+    const missingRepository = new PostgresAuthoringRepository(missingMock.db);
+    await expect(missingRepository.getPreferences('student-b')).resolves.toEqual({ studentId: 'student-b', canCreate: true, canParticipate: false, updatedAt: NOW });
+    expect(missingMock.callable).toHaveBeenCalledTimes(3);
+    expect(missingMock.queries[1]).toContain('insert');
+    expect(missingMock.queries[2]).toContain('select');
   });
 });

@@ -130,6 +130,13 @@ export class MemoryPlayRepository implements PlayRepository {
       .map(clone);
   }
 
+  async listRoundItemsBetween(startDate: string, endDate: string): Promise<readonly ChallengeRoundItemRecord[]> {
+    return [...this.items.values()]
+      .filter((item) => item.roundDate >= startDate && item.roundDate <= endDate)
+      .sort((left, right) => left.roundDate.localeCompare(right.roundDate) || left.position - right.position || left.id.localeCompare(right.id))
+      .map(clone);
+  }
+
   async insertRoundItem(input: CreateRoundItemInput): Promise<ChallengeRoundItemRecord> {
     if (!this.rounds.has(input.roundDate)) throw new Error('round_not_found');
     const existingByQuestion = [...this.items.values()].find((item) => item.roundDate === input.roundDate && item.questionId === input.questionId);
@@ -209,6 +216,16 @@ export class MemoryPlayRepository implements PlayRepository {
     return [...this.attempts.values()]
       .filter((attempt) => attempt.roundDate === roundDate)
       .reduce((sum, attempt) => sum + classContribution({ isCorrect: attempt.isCorrect, isPractice: attempt.isPractice, isVoided: attempt.isVoided }), 0);
+  }
+
+  async countCorrectContributionsBetween(startDate: string, endDate: string): Promise<ReadonlyMap<string, number>> {
+    const counts = new Map<string, number>();
+    for (const attempt of this.attempts.values()) {
+      if (attempt.roundDate < startDate || attempt.roundDate > endDate) continue;
+      const contribution = classContribution({ isCorrect: attempt.isCorrect, isPractice: attempt.isPractice, isVoided: attempt.isVoided });
+      counts.set(attempt.roundDate, (counts.get(attempt.roundDate) ?? 0) + contribution);
+    }
+    return counts;
   }
 
   async listAttemptsForStudent(studentId: string, startDate: string, endDate: string): Promise<readonly ChallengeAttemptRecord[]> {

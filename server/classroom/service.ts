@@ -43,18 +43,14 @@ export function createClassroomService(repository: ClassroomRepository, clock: (
   return {
     async listFriends(studentId) {
       const now = clock();
-      const peers = await repository.listActivePeers(studentId);
-      const [presence, unreadCounts] = await Promise.all([
-        repository.listPresence(peers.map((peer) => peer.id)),
-        repository.listUnreadCounts(studentId),
-      ]);
-      const friends: FriendSummary[] = peers.map((peer) => ({
+      const roster = await repository.listRoster(studentId);
+      const friends: FriendSummary[] = roster.map((peer) => ({
         id: peer.id,
         username: peer.username,
         displayName: peer.displayName,
         avatarId: peer.avatarId,
-        online: Date.parse(presence.get(peer.id) ?? '') >= now.getTime() - ONLINE_WINDOW_MS,
-        unreadCount: unreadCounts.get(peer.id) ?? 0,
+        online: Date.parse(peer.lastSeen ?? '') >= now.getTime() - ONLINE_WINDOW_MS,
+        unreadCount: peer.unreadCount,
       })).sort((left, right) => Number(right.online) - Number(left.online)
         || left.displayName.localeCompare(right.displayName)
         || left.username.localeCompare(right.username));

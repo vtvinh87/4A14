@@ -1,5 +1,6 @@
 import { getDefaultApp, type AppRequest, type AppResponse } from '../../../server/app.ts';
 import { getEnv } from '../../../server/runtime/env.ts';
+import { createRequestTiming, isTimedReadPath, type RequestTiming } from '../../../server/performance/timing.ts';
 
 const ALLOWED_METHODS = 'GET,POST,PATCH,PUT,DELETE,OPTIONS';
 const ALLOWED_HEADERS = 'Authorization,Content-Type,X-Parent-Grant';
@@ -38,17 +39,19 @@ function corsHeaders(origin: string | null): Record<string, string> {
   if (normalized && isAllowedOrigin(normalized)) {
     headers['Access-Control-Allow-Origin'] = normalized;
     headers['Access-Control-Allow-Credentials'] = 'true';
+    headers['Access-Control-Expose-Headers'] = 'Server-Timing';
   }
   return headers;
 }
 
-function jsonResponse(body: Record<string, unknown>, status: number, origin: string | null): Response {
+function jsonResponse(body: Record<string, unknown>, status: number, origin: string | null, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'Cache-Control': 'no-store',
       'Content-Type': 'application/json; charset=utf-8',
       ...corsHeaders(origin),
+      ...extraHeaders,
     },
   });
 }
@@ -69,11 +72,11 @@ async function requestBody(request: Request): Promise<unknown> {
   try { return JSON.parse(text); } catch { return text; }
 }
 
-function appRequestFromWebRequest(request: Request, body: unknown): AppRequest {
+function appRequestFromWebRequest(request: Request, body: unknown, timing?: RequestTiming): AppRequest {
   const url = new URL(request.url);
   const headers: Record<string, string> = {};
   request.headers.forEach((value, key) => { headers[key.toLowerCase()] = value; });
-  return { method: request.method, path: toAppPath(url), headers, body };
+  return { method: request.method, path: toAppPath(url), headers, body, ...(timing ? { timing } : {}) };
 }
 
 function appResponseToWebResponse(appResponse: AppResponse, origin: string | null): Response {
@@ -94,18 +97,35 @@ export function createEdgeHandler(loadApp: AppLoader = getDefaultApp): (request:
           ...corsHeaders(origin),
           'Access-Control-Allow-Methods': ALLOWED_METHODS,
           'Access-Control-Allow-Headers': ALLOWED_HEADERS,
+          'Access-Control-Max-Age': '600',
         },
       });
     }
 
+    const requestPath = toAppPath(new URL(request.url));
+    const timing = isTimedReadPath(request.method, requestPath) ? createRequestTiming() : undefined;
     let dispose: LoadedEdgeApp['dispose'];
     try {
       const loaded = await loadApp();
       dispose = loaded.dispose;
       const { app } = loaded;
-      const result = await app.handle(appRequestFromWebRequest(request, await requestBody(request)));
-      return appResponseToWebResponse(result, origin);
+      const result = await app.handle(appRequestFromWebRequest(request, await requestBody(request), timing));
+      const response = appResponseToWebResponse(result, origin);
+      if (timing) {
+        timing.finish();
+        response.headers.set('Server-Timing', timing.header());
+      }
+      return response;
     } catch {
+      if (timing) {
+        timing.finish();
+        return jsonResponse(
+          { ok: false, code: 'unavailable', message: 'API tạm thời chưa sẵn sàng; hãy kiểm tra kết nối rồi thử lại.' },
+          503,
+          origin,
+          { 'Server-Timing': timing.header() },
+        );
+      }
       return jsonResponse({ ok: false, code: 'unavailable', message: 'API tạm thời chưa sẵn sàng; hãy kiểm tra kết nối rồi thử lại.' }, 503, origin);
     } finally {
       if (dispose) {

@@ -55,7 +55,13 @@ export type AdminAuditRecord = {
   createdAt: string;
 };
 
-export type AccountView = Pick<ServerAccountRecord, 'id' | 'username' | 'displayName' | 'role' | 'active' | 'credentialVersion'>;
+export type SessionAccountView = Pick<ServerAccountRecord, 'id' | 'username' | 'displayName' | 'role' | 'active' | 'credentialVersion'>;
+export type AccountView = SessionAccountView;
+
+export type SessionContext = {
+  session: ServerSessionRecord;
+  account: SessionAccountView | null;
+};
 
 export type AuthSessionView = {
   token: string;
@@ -84,6 +90,7 @@ export type AuthRepository = {
   updateAccount(account: ServerAccountRecord): Promise<void>;
   insertSession(session: ServerSessionRecord): Promise<void>;
   findSession(tokenHash: string): Promise<ServerSessionRecord | null>;
+  findSessionContext(tokenHash: string): Promise<SessionContext | null>;
   updateSession(session: ServerSessionRecord): Promise<void>;
   revokeSessions(accountId: string): Promise<void>;
   insertAdminAudit(audit: AdminAuditRecord): Promise<void>;

@@ -1,4 +1,4 @@
-import type { AccountApiFailure, AccountApiFailureCode, AccountView, ClientAuthSession, StudentProfilePatch, StudentProfileView } from '../../shared/account-contracts';
+import type { AccountApiFailure, AccountView, ClientAuthSession, StudentProfilePatch, StudentProfileView } from '../../shared/account-contracts';
 import type { AccountProgressSnapshot, CurrentLearningRun, LearningEventAcknowledgement, LearningEventInput, LearningEventRecord, MigrationPreview } from '../../shared/learning-contracts';
 import type { DashboardRange, ParentDashboardData } from '../../shared/dashboard-contracts';
 import type { ClassroomMessage, ClassroomMessagesResponse, ClassroomRealtimeConfig, FriendsResponse } from '../../shared/classroom-contracts';
@@ -9,7 +9,8 @@ export type ClientSession = ClientAuthSession & { mustChange: boolean };
 export type ClientAccount = AccountView;
 export type StudentProfileResponse = { profile: StudentProfileView };
 export type ParentDashboardResponse = { studentId: string; snapshot: AccountProgressSnapshot; dashboard: ParentDashboardData; events: LearningEventRecord[] };
-export type ApiFailure = AccountApiFailure | ChallengeFailure | { ok: false; code: AccountApiFailureCode | 'unavailable'; message: string };
+export type ProgressBoardUnavailable = { ok: false; code: 'unavailable'; reason?: 'rollout_disabled'; message: string };
+export type ApiFailure = AccountApiFailure | ChallengeFailure | ProgressBoardUnavailable;
 export type ApiResult<T> = { ok: true } & T | ApiFailure;
 export type ChallengeQuestionResponse = { question: ChallengeQuestionMine };
 export type ChallengeQuestionsMineResponse = { questions: ChallengeQuestionMine[] };

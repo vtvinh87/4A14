@@ -1,9 +1,10 @@
 import type postgres from 'postgres';
 import { withTransaction, type DatabaseClient, type DatabaseTransaction } from '../db/client.ts';
-import type { ClassroomMessageRecord, ClassroomPeerRecord, ClassroomRepository } from './types.ts';
+import type { ClassroomMessageRecord, ClassroomPeerRecord, ClassroomRepository, ClassroomRosterRecord } from './types.ts';
 
 type QueryClient = DatabaseClient | DatabaseTransaction;
 type PeerRow = { id: string; username: string; display_name: string; avatar_id: ClassroomPeerRecord['avatarId'] };
+type RosterRow = PeerRow & { last_seen: Date | string | null; unread_count: number };
 type MessageRow = { id: string; sender_id: string; recipient_id: string; body: string; created_at: Date | string; read_at: Date | string | null };
 type CountRow = { message_count: number };
 
@@ -13,6 +14,10 @@ function iso(value: Date | string | null): string | null {
 
 function mapPeer(row: PeerRow): ClassroomPeerRecord {
   return { id: row.id, username: row.username, displayName: row.display_name, avatarId: row.avatar_id, role: 'student', active: true };
+}
+
+function mapRoster(row: RosterRow): ClassroomRosterRecord {
+  return { ...mapPeer(row), lastSeen: iso(row.last_seen), unreadCount: Number(row.unread_count) };
 }
 
 function mapMessage(row: MessageRow): ClassroomMessageRecord {
@@ -30,6 +35,29 @@ export class PostgresClassroomRepository implements ClassroomRepository {
       order by lower(display_name), username
     `;
     return rows.map(mapPeer);
+  }
+
+  async listRoster(actorId: string): Promise<ClassroomRosterRecord[]> {
+    const rows = await this.db<RosterRow[]>`
+      select
+        accounts.id,
+        accounts.username,
+        accounts.display_name,
+        accounts.avatar_id,
+        presence.last_seen,
+        coalesce(unread.unread_count, 0)::int as unread_count
+      from hoc_vui_private.accounts as accounts
+      left join hoc_vui_private.classroom_presence as presence on presence.account_id = accounts.id
+      left join (
+        select sender_id, count(*)::int as unread_count
+        from hoc_vui_private.classroom_messages
+        where recipient_id = ${actorId}::uuid and read_at is null
+        group by sender_id
+      ) as unread on unread.sender_id = accounts.id
+      where accounts.role = 'student' and accounts.active = true and accounts.id <> ${actorId}::uuid
+      order by lower(accounts.display_name), accounts.username
+    `;
+    return rows.map(mapRoster);
   }
 
   async upsertPresence(accountId: string, lastSeen: string): Promise<void> {

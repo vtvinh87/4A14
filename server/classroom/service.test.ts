@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CLASSROOM_MESSAGE_MAX_LENGTH } from '../../shared/classroom-contracts';
 import { MemoryClassroomRepository } from './memoryRepository';
 import { createClassroomService } from './service';
@@ -43,6 +43,29 @@ describe('ClassroomService', () => {
       ],
       unreadCount: 2,
     });
+  });
+
+  it('uses the roster read boundary once and preserves online sorting', async () => {
+    const now = new Date('2026-09-16T08:00:00.000Z');
+    const repository = fixtureRepository();
+    const listRoster = vi.fn(async () => [
+      { id: 'peer-offline', username: 'chi', displayName: 'Chi', avatarId: 'fox-night' as const, role: 'student' as const, active: true, lastSeen: null, unreadCount: 1 },
+      { id: 'peer-online', username: 'binh', displayName: 'Bình', avatarId: 'fox-leaf' as const, role: 'student' as const, active: true, lastSeen: '2026-09-16T07:59:00.000Z', unreadCount: 2 },
+    ]);
+    Object.assign(repository, { listRoster });
+    const listActivePeers = vi.spyOn(repository, 'listActivePeers').mockRejectedValue(new Error('legacy roster path used'));
+    const service = createClassroomService(repository, () => now);
+
+    await expect(service.listFriends('student-a')).resolves.toEqual({
+      friends: [
+        { id: 'peer-online', username: 'binh', displayName: 'Bình', avatarId: 'fox-leaf', online: true, unreadCount: 2 },
+        { id: 'peer-offline', username: 'chi', displayName: 'Chi', avatarId: 'fox-night', online: false, unreadCount: 1 },
+      ],
+      unreadCount: 3,
+    });
+    expect(listRoster).toHaveBeenCalledOnce();
+    expect(listRoster).toHaveBeenCalledWith('student-a');
+    expect(listActivePeers).not.toHaveBeenCalled();
   });
 
   it('normalizes a message body before storing it', async () => {
