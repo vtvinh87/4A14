@@ -1,8 +1,18 @@
 # Load performance — handoff
 
-Status: `READY_FOR_REVIEW_WITH_BLOCKER` — deployment attempted, backend rolled back, performance target not achieved.
+Status: `READY_FOR_REVIEW_WITH_GAPS` — fixed backend is active and verified; performance target is not globally achieved.
 
-## Current handoff — 2026-09-19
+## Current handoff — fixed release, 2026-09-19T01:05Z
+
+- Actual checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`; source commit `2f2ac390ab29ad02d9b0b01cd5fdf8b5ed5f9b49` pushed. No new task/subagent/worktree. `deno.lock` remains pre-existing and unstaged; accepted roster lifecycle remains preserved.
+- L0–L6 code and local DB gates: 136 files / 607 tests / zero skipped; typechecks, build, Edge check, Firebase validation and diff check exit 0. L7 release evidence is complete, but global performance acceptance remains open.
+- Backend fixed release: Edge `api` v21 ACTIVE, bundle SHA `8f1f542ce0cdbb7822bdf2c0f0db25d5d8abb00647482cfbbacb5d469345735f`. Fixed weekly smoke 200 and no timeout; the TDD RED/GREEN serialization fix is in `server/challenge/weeklyService.ts` and its test.
+- Production HTTP warm p95 (friends/board/today/week): 2.633 / 2.566 / 4.913 / 4.455 seconds, 30 warm samples each, 0 errors. Production Chrome click-to-fresh warm p95: 2.512 / 2.511 / 4.913 / 4.579 seconds, 30 warm samples each, 0 page errors. First-open is separate; cold Edge is not measured.
+- Hosting frontend remains 4a14 `5a4345d7c6742f03` and a14-82a69 `4acefa21863e4043`; no frontend redeploy needed. QA account was disabled and token revocation verified.
+- Evidence links: [verification.md](verification.md), [latency-results.json](latency-results.json), [progress.md](progress.md), [baseline.md](baseline.md). Artifacts: `cloud-fixed-smoke.json`, `cloud-fixed-http.json`, `cloud-fixed-browser.json`, `cloud-fixed-qa-cleanup.json`.
+- Next required packet: reduce/measure auth (~1.9 s) and Today/Week data (~2.6/~2.2 s) without stale private cache or authorization weakening; provide SQL/HTTP/click evidence before any further deployment. Do not alter cloud region/pool/secrets or apply migrations under this packet.
+
+## Previous handoff — failed optimized release, superseded
 
 - Actual checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`; code commit `6f5927f` pushed. No new worktree/task/subagent. `deno.lock` and accepted lifecycle source preserved.
 - L0–L6 code/local database gates achieved (605 tests, zero skips; typechecks/build/Edge/Firebase validation exit 0). L7 performance/release acceptance remains blocked.

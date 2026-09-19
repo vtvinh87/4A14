@@ -1,0 +1,903 @@
+{
+  "target": "https://4a14.web.app",
+  "measuredAt": "2026-09-19T01:04:27.097Z",
+  "browser": "153.0.8010.50",
+  "method": "captured click event to successful fresh response body completion, ready DOM, and two animation frames; isolated headless Chrome desktop; cold Edge not established",
+  "summary": [
+    {
+      "flow": "friends",
+      "warmSamples": 30,
+      "warmP95Ms": 2511.7999999988824,
+      "firstOpenMs": 2583.800000000745
+    },
+    {
+      "flow": "board",
+      "warmSamples": 30,
+      "warmP95Ms": 2510.7000000011176,
+      "firstOpenMs": 2193.7000000011176
+    },
+    {
+      "flow": "today",
+      "warmSamples": 30,
+      "warmP95Ms": 4912.5,
+      "firstOpenMs": 5094.299999998882
+    },
+    {
+      "flow": "week",
+      "warmSamples": 30,
+      "warmP95Ms": 4579.200000001118,
+      "firstOpenMs": 4594
+    }
+  ],
+  "errors": [],
+  "samples": [
+    {
+      "flow": "friends",
+      "iteration": 0,
+      "phase": "first-open",
+      "status": 200,
+      "elapsedMs": 2583.800000000745
+    },
+    {
+      "flow": "friends",
+      "iteration": 1,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2511.7999999988824
+    },
+    {
+      "flow": "friends",
+      "iteration": 2,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 679.9000000003725
+    },
+    {
+      "flow": "friends",
+      "iteration": 3,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2395.9000000003725
+    },
+    {
+      "flow": "friends",
+      "iteration": 4,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2377.9000000003725
+    },
+    {
+      "flow": "friends",
+      "iteration": 5,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2377.800000000745
+    },
+    {
+      "flow": "friends",
+      "iteration": 6,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2396.7000000011176
+    },
+    {
+      "flow": "friends",
+      "iteration": 7,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2428.9000000003725
+    },
+    {
+      "flow": "friends",
+      "iteration": 8,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 729.5
+    },
+    {
+      "flow": "friends",
+      "iteration": 9,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2412.2000000011176
+    },
+    {
+      "flow": "friends",
+      "iteration": 10,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2379.5999999996275
+    },
+    {
+      "flow": "friends",
+      "iteration": 11,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2431.800000000745
+    },
+    {
+      "flow": "friends",
+      "iteration": 12,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2461
+    },
+    {
+      "flow": "friends",
+      "iteration": 13,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2395.5
+    },
+    {
+      "flow": "friends",
+      "iteration": 14,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2380.4000000003725
+    },
+    {
+      "flow": "friends",
+      "iteration": 15,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2363.0999999996275
+    },
+    {
+      "flow": "friends",
+      "iteration": 16,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2413.199999999255
+    },
+    {
+      "flow": "friends",
+      "iteration": 17,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2397
+    },
+    {
+      "flow": "friends",
+      "iteration": 18,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2380.7999999988824
+    },
+    {
+      "flow": "friends",
+      "iteration": 19,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2412
+    },
+    {
+      "flow": "friends",
+      "iteration": 20,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2463.9000000003725
+    },
+    {
+      "flow": "friends",
+      "iteration": 21,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2496.10000000149
+    },
+    {
+      "flow": "friends",
+      "iteration": 22,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2479.4000000003725
+    },
+    {
+      "flow": "friends",
+      "iteration": 23,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2378.9000000003725
+    },
+    {
+      "flow": "friends",
+      "iteration": 24,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2513.699999999255
+    },
+    {
+      "flow": "friends",
+      "iteration": 25,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2412.5999999996275
+    },
+    {
+      "flow": "friends",
+      "iteration": 26,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2413.2000000011176
+    },
+    {
+      "flow": "friends",
+      "iteration": 27,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2396.300000000745
+    },
+    {
+      "flow": "friends",
+      "iteration": 28,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2413.60000000149
+    },
+    {
+      "flow": "friends",
+      "iteration": 29,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2413
+    },
+    {
+      "flow": "friends",
+      "iteration": 30,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2378.9000000003725
+    },
+    {
+      "flow": "board",
+      "iteration": 0,
+      "phase": "first-open",
+      "status": 200,
+      "elapsedMs": 2193.7000000011176
+    },
+    {
+      "flow": "board",
+      "iteration": 1,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2398.0999999996275
+    },
+    {
+      "flow": "board",
+      "iteration": 2,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2363.0999999996275
+    },
+    {
+      "flow": "board",
+      "iteration": 3,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2478.4000000003725
+    },
+    {
+      "flow": "board",
+      "iteration": 4,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2446.5999999996275
+    },
+    {
+      "flow": "board",
+      "iteration": 5,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 1809.7999999988824
+    },
+    {
+      "flow": "board",
+      "iteration": 6,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2461.800000000745
+    },
+    {
+      "flow": "board",
+      "iteration": 7,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2459.300000000745
+    },
+    {
+      "flow": "board",
+      "iteration": 8,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2413.9000000003725
+    },
+    {
+      "flow": "board",
+      "iteration": 9,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2396.800000000745
+    },
+    {
+      "flow": "board",
+      "iteration": 10,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2461.7999999988824
+    },
+    {
+      "flow": "board",
+      "iteration": 11,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2528.2000000011176
+    },
+    {
+      "flow": "board",
+      "iteration": 12,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2377.10000000149
+    },
+    {
+      "flow": "board",
+      "iteration": 13,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2477.5
+    },
+    {
+      "flow": "board",
+      "iteration": 14,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2379.5999999996275
+    },
+    {
+      "flow": "board",
+      "iteration": 15,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2510.7000000011176
+    },
+    {
+      "flow": "board",
+      "iteration": 16,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2379.800000000745
+    },
+    {
+      "flow": "board",
+      "iteration": 17,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 1877.7000000011176
+    },
+    {
+      "flow": "board",
+      "iteration": 18,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2396.699999999255
+    },
+    {
+      "flow": "board",
+      "iteration": 19,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2496.800000000745
+    },
+    {
+      "flow": "board",
+      "iteration": 20,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2480.0999999996275
+    },
+    {
+      "flow": "board",
+      "iteration": 21,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2495.7000000011176
+    },
+    {
+      "flow": "board",
+      "iteration": 22,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2377.800000000745
+    },
+    {
+      "flow": "board",
+      "iteration": 23,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2377.4000000003725
+    },
+    {
+      "flow": "board",
+      "iteration": 24,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2412.800000000745
+    },
+    {
+      "flow": "board",
+      "iteration": 25,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 727.5999999996275
+    },
+    {
+      "flow": "board",
+      "iteration": 26,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2394
+    },
+    {
+      "flow": "board",
+      "iteration": 27,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2478.4000000003725
+    },
+    {
+      "flow": "board",
+      "iteration": 28,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2494.60000000149
+    },
+    {
+      "flow": "board",
+      "iteration": 29,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2398.199999999255
+    },
+    {
+      "flow": "board",
+      "iteration": 30,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2377.9000000003725
+    },
+    {
+      "flow": "today",
+      "iteration": 0,
+      "phase": "first-open",
+      "status": 200,
+      "elapsedMs": 5094.299999998882
+    },
+    {
+      "flow": "week",
+      "iteration": 0,
+      "phase": "first-open",
+      "status": 200,
+      "elapsedMs": 4594
+    },
+    {
+      "flow": "today",
+      "iteration": 1,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4781.199999999255
+    },
+    {
+      "flow": "week",
+      "iteration": 1,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4562.199999999255
+    },
+    {
+      "flow": "today",
+      "iteration": 2,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4845.800000000745
+    },
+    {
+      "flow": "week",
+      "iteration": 2,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4361.9000000003725
+    },
+    {
+      "flow": "today",
+      "iteration": 3,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4845.5
+    },
+    {
+      "flow": "week",
+      "iteration": 3,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4312.5
+    },
+    {
+      "flow": "today",
+      "iteration": 4,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4728.699999999255
+    },
+    {
+      "flow": "week",
+      "iteration": 4,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4412.300000000745
+    },
+    {
+      "flow": "today",
+      "iteration": 5,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4731.0999999996275
+    },
+    {
+      "flow": "week",
+      "iteration": 5,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4978.5
+    },
+    {
+      "flow": "today",
+      "iteration": 6,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4780
+    },
+    {
+      "flow": "week",
+      "iteration": 6,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4360.4000000003725
+    },
+    {
+      "flow": "today",
+      "iteration": 7,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4813.199999999255
+    },
+    {
+      "flow": "week",
+      "iteration": 7,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 2662.800000000745
+    },
+    {
+      "flow": "today",
+      "iteration": 8,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 3095.9000000003725
+    },
+    {
+      "flow": "week",
+      "iteration": 8,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4464.4000000003725
+    },
+    {
+      "flow": "today",
+      "iteration": 9,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4846.299999998882
+    },
+    {
+      "flow": "week",
+      "iteration": 9,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4330.0999999996275
+    },
+    {
+      "flow": "today",
+      "iteration": 10,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4779.299999998882
+    },
+    {
+      "flow": "week",
+      "iteration": 10,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4379.300000000745
+    },
+    {
+      "flow": "today",
+      "iteration": 11,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4729.800000000745
+    },
+    {
+      "flow": "week",
+      "iteration": 11,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4379.4000000003725
+    },
+    {
+      "flow": "today",
+      "iteration": 12,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 3196.2000000011176
+    },
+    {
+      "flow": "week",
+      "iteration": 12,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4346.299999998882
+    },
+    {
+      "flow": "today",
+      "iteration": 13,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4962.199999999255
+    },
+    {
+      "flow": "week",
+      "iteration": 13,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4311.9000000003725
+    },
+    {
+      "flow": "today",
+      "iteration": 14,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4629.0999999996275
+    },
+    {
+      "flow": "week",
+      "iteration": 14,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4361
+    },
+    {
+      "flow": "today",
+      "iteration": 15,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4812.9000000003725
+    },
+    {
+      "flow": "week",
+      "iteration": 15,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4413.0999999996275
+    },
+    {
+      "flow": "today",
+      "iteration": 16,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4796.200000001118
+    },
+    {
+      "flow": "week",
+      "iteration": 16,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4479.4000000003725
+    },
+    {
+      "flow": "today",
+      "iteration": 17,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4844.700000001118
+    },
+    {
+      "flow": "week",
+      "iteration": 17,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4331
+    },
+    {
+      "flow": "today",
+      "iteration": 18,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4779.199999999255
+    },
+    {
+      "flow": "week",
+      "iteration": 18,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4363.199999999255
+    },
+    {
+      "flow": "today",
+      "iteration": 19,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4844.9000000003725
+    },
+    {
+      "flow": "week",
+      "iteration": 19,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4362.199999999255
+    },
+    {
+      "flow": "today",
+      "iteration": 20,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4746.5
+    },
+    {
+      "flow": "week",
+      "iteration": 20,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4363.9000000003725
+    },
+    {
+      "flow": "today",
+      "iteration": 21,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4746.199999999255
+    },
+    {
+      "flow": "week",
+      "iteration": 21,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4360.4000000003725
+    },
+    {
+      "flow": "today",
+      "iteration": 22,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4745.4000000003725
+    },
+    {
+      "flow": "week",
+      "iteration": 22,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4460.5999999996275
+    },
+    {
+      "flow": "today",
+      "iteration": 23,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4845.699999999255
+    },
+    {
+      "flow": "week",
+      "iteration": 23,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4412.200000001118
+    },
+    {
+      "flow": "today",
+      "iteration": 24,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4695.699999999255
+    },
+    {
+      "flow": "week",
+      "iteration": 24,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4461.800000000745
+    },
+    {
+      "flow": "today",
+      "iteration": 25,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4779.5
+    },
+    {
+      "flow": "week",
+      "iteration": 25,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4328.299999998882
+    },
+    {
+      "flow": "today",
+      "iteration": 26,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4844.5
+    },
+    {
+      "flow": "week",
+      "iteration": 26,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4579.200000001118
+    },
+    {
+      "flow": "today",
+      "iteration": 27,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4746.4000000003725
+    },
+    {
+      "flow": "week",
+      "iteration": 27,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4428.4000000003725
+    },
+    {
+      "flow": "today",
+      "iteration": 28,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4795.9000000003725
+    },
+    {
+      "flow": "week",
+      "iteration": 28,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4545.799999998882
+    },
+    {
+      "flow": "today",
+      "iteration": 29,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4745
+    },
+    {
+      "flow": "week",
+      "iteration": 29,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4395.5
+    },
+    {
+      "flow": "today",
+      "iteration": 30,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4912.5
+    },
+    {
+      "flow": "week",
+      "iteration": 30,
+      "phase": "warm",
+      "status": 200,
+      "elapsedMs": 4379
+    }
+  ]
+}

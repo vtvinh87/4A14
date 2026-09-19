@@ -1,6 +1,6 @@
 # Load performance — execution ledger
 
-Status: `READY_FOR_REVIEW_WITH_BLOCKER` — local DB verified; optimized backend release failed cloud weekly smoke and was rolled back; frontend deployed; performance target NOT achieved
+Status: `READY_FOR_REVIEW_WITH_GAPS` — fixed backend release is active and verified; frontend deployed; global performance target NOT achieved for Today/Week
 Plan: `/Volumes/Pictures/Projects/Hoc_Vui/docs/superpowers/plans/2026-09-18-load-performance-luna.md`
 Actual checkout: `/Volumes/Pictures/Projects/Hoc_Vui`
 HEAD at start: `00ac8fb0e5681fbc9c4a177b4425484c4ce95bfc`
@@ -10,7 +10,7 @@ Accepted roster baseline: seven manifest hashes matched before L0; six lifecycle
 Old worktree: `/Users/macbook/.codex/worktrees/4fc1/Hoc_Vui` — not read or integrated.
 External actions: user-authorized commit/push, Edge deploy/rollback, Hosting deploy and synthetic QA account creation. No cloud migration, secret/region/pool change, PR, merge, or Brain_Vault write. Local migrations applied only to the verified isolated database.
 
-Current package status (supersedes the historical table below): L0–L6 implementation and local PostgreSQL verification completed; L1 frontend deployed; L2–L6 backend reverted in production after L5B weekly regression. L7 evidence updated but release/performance acceptance BLOCKED. Do not redeploy `6f5927f` unchanged.
+Current package status (supersedes the historical table below): L0–L6 implementation and local PostgreSQL verification completed; fixed L5B backend is active as Edge v21; frontend remains deployed. L7 evidence is updated, but global performance acceptance remains open because Today/Week exceed the warm p95 target. Do not redeploy the failed `6f5927f` backend unchanged.
 
 ## L5B regression diagnosis checkpoint — 2026-09-19
 
@@ -22,6 +22,21 @@ Current package status (supersedes the historical table below): L0–L6 implemen
 - Direct real service measurement on the retained isolated PostgreSQL 17.11 database: pool max 1 -> 70.16 ms; pool max 10 -> 28.51 ms; both `ok:true`. This is local service timing, not cloud HTTP or click-to-fresh-data.
 - L6 timing coverage now includes `/api/me/challenge/week` with the same fixed `auth/data/total` labels. It is observability only and must not be used as SQL timing.
 - Next: commit/push this bounded fix, deploy Edge only, run one protected cloud weekly smoke plus all four routes, inspect status/body/header/errors, then collect 30 warm HTTP/browser samples only if all smoke is clean. Roll back on timeout or data/security regression; frontend bundle is unchanged.
+
+## Fixed release validation checkpoint — 2026-09-19T01:05Z
+
+- Source commit `2f2ac390ab29ad02d9b0b01cd5fdf8b5ed5f9b49` pushed to `origin/codex/bang-tien-bo`. Edge deploy -> exit 0; `api` version **21 ACTIVE**, bundle SHA `8f1f542ce0cdbb7822bdf2c0f0db25d5d8abb00647482cfbbacb5d469345735f`. No migration, secret, region or pool setting changed.
+- Fixed-release source/test changes are limited to `server/challenge/weeklyService.ts`, `server/challenge/weeklyService.test.ts`, `server/performance/timing.ts`, `server/performance/timing.test.ts`, `server/app.ts`; release evidence is in `cloud-fixed-smoke.json`, `cloud-fixed-http.json`, `cloud-fixed-browser.json` and `cloud-fixed-qa-cleanup.json`.
+- Evidence SHA-256: smoke `c12b1ae6fe98eec814841c1089598a4740234c1a0b86cb6690c3e3172f0195ce`; HTTP `6163b2ce26241965915d80ceacdaa079dcb905eb79dd5b76c5c0ed490449bf85`; browser `af1dc8d2037bf395390fe6b539bceca6ab270ab6a1aa0fd9d730d4da33dcc9de`; QA cleanup `628b36e5c40a97db98c011dafdf3d883b67eed40c9a64270bf1b89453806ee64`.
+- Protected cloud fixed smoke: `node scripts/measure-load-cloud.mjs 1 .../cloud-fixed-smoke.json` -> exit 0; every route 200, `no-store`, no answer leak/account mismatch; weekly returned `Server-Timing` instead of timing out. The report was inspected route-by-route.
+- Protected cloud HTTP: `node scripts/measure-load-cloud.mjs 31 .../cloud-fixed-http.json` -> exit 0; 1 first-open + 30 warm per route, 0 errors. HTTP warm p95 (ms): friends **2632.7**, board **2566.1**, today **4913.2**, week **4455.1**. First-open total (ms): **2488.3 / 2363.1 / 4809.3 / 4397.2**. These are production HTTP body-complete timings; they include network and auth, not click-to-paint.
+- Fixed cloud `Server-Timing` warm sample auth/data/total (ms): friends **1898.8 / 264.8 / 2168.6**, board **1875.9 / 262.2 / 2143.7**, today **1880.2 / 2617.8 / 4503.6**, week **1902.4 / 2242.7 / 4150.3**. This is server timing, not SQL timing; no production SQL count was captured.
+- Protected Chrome production: `scripts/measure-load-browser.mjs` -> exit 0; isolated Chrome, 1 first-open + 30 warm per flow, 0 page errors. Click-to-fresh warm p95 (ms): friends **2511.8**, board **2510.7**, today **4912.5**, week **4579.2**. First-open (ms): **2583.8 / 2193.7 / 5094.3 / 4594.0**. Cold Edge was not established; these first-open samples are not cold p95.
+- Frontend remained the already-deployed build: Firebase 4a14 `5a4345d7c6742f03`, a14-82a69 `4acefa21863e4043`, index asset `index-DiBNMkhK.js`; no frontend redeploy was needed for this backend-only fix.
+- QA cleanup: `cloud-fixed-qa-cleanup.json` -> disable 200/active false, old student token 401, admin logout 200. Account/audit history retained; no learner account touched. Local PostgreSQL stopped cleanly after verification; cluster retained.
+- Goal status: **NOT PERFORMANCE_ACCEPTED**. Friends/board HTTP and browser warm p95 are below 3 seconds; Today and Week exceed it. Auth alone is approximately 1.9 seconds server-side, Today data approximately 2.6 seconds, Week data approximately 2.2 seconds. Do not claim the global `<3s` target.
+- Remaining gap: optimize/measure auth and Challenge today/week data separately with a new bounded packet; region/pool/index changes require evidence/change review and remain outside this packet. No additional cloud mutation is authorized by this checkpoint.
+- Next step: start the next bounded packet from this checkpoint, first separating auth overhead from Today/Week data with fresh non-sensitive stage/SQL timing evidence, then add RED tests and a minimal fix only for the confirmed bottleneck. Keep v21 active until a new protected smoke and 30-warm HTTP/browser gate passes; stop before any further external action if the `<3s` target is still unmet.
 
 ## Release recovery checkpoint — 2026-09-19 00:30 UTC
 

@@ -1,10 +1,15 @@
 {
-  "schemaVersion": 2,
-  "capturedAt": "2026-09-19",
-  "status": "PRODUCTION_REGRESSION_ROLLED_BACK_PERFORMANCE_NOT_ACCEPTED",
+  "schemaVersion": 3,
+  "capturedAt": "2026-09-19T01:05:34Z",
+  "status": "READY_FOR_REVIEW_WITH_GAPS_PERFORMANCE_NOT_ACCEPTED",
   "source": "/Volumes/Pictures/Projects/Hoc_Vui",
-  "codeCommit": "6f5927f95450f244b35d9132ef7cb149a779ddd0",
-  "localDatabaseValidation": "PASSED_605_TESTS_ZERO_SKIPS",
+  "codeCommit": "2f2ac390ab29ad02d9b0b01cd5fdf8b5ed5f9b49",
+  "edge": {
+    "version": 21,
+    "status": "ACTIVE",
+    "bundleSha": "8f1f542ce0cdbb7822bdf2c0f0db25d5d8abb00647482cfbbacb5d469345735f"
+  },
+  "localDatabaseValidation": "PASSED_607_TESTS_ZERO_SKIPS",
   "flowOrder": [
     "friends",
     "board",
@@ -15,13 +20,13 @@
     "httpArtifact": "local-http-sql.json",
     "browserArtifact": "local-browser.json",
     "warmSamplesPerFlow": 30,
-    "firstOpenSamplesPerFlow": 1,
     "sqlStatementsWarmAuthInclusive": [
       2,
       2,
       12,
       10
     ],
+    "sqlCountEvidence": "Unit/mock contract counts only; no live SQL trace was captured.",
     "sqlBeforeMeasured": null,
     "sqlProductionMeasured": null,
     "httpWarmP95MsRounded": [
@@ -36,7 +41,7 @@
       143.9,
       47.6
     ],
-    "warning": "Local Node/PostgreSQL + Chrome/Vite dev, not production. Fixture retries left extra synthetic accounts."
+    "warning": "Local Node/PostgreSQL + Chrome/Vite dev only; fixture retries left extra synthetic accounts."
   },
   "productionBefore": {
     "artifact": "cloud-before.json",
@@ -48,51 +53,60 @@
       5618.7,
       16985.6
     ],
-    "warning": "Small N percentile is maximum, insufficient for acceptance."
+    "warning": "Small N percentile is maximum and insufficient for acceptance."
   },
-  "productionOptimizedV17": {
+  "productionFailedV17": {
     "artifacts": [
       "cloud-smoke.json",
       "cloud-diagnostic.json"
     ],
-    "diagnosticWarmSamplesPerFlow": 2,
-    "httpDiagnosticWarmMaxMsRounded": [
-      2405.4,
-      2407.9,
-      4801.4,
-      null
-    ],
     "weeklyTimeoutsAt20Seconds": 4,
     "weeklySeparateTimeoutAt60Seconds": 1,
     "accepted": false,
-    "warning": "Timeouts are not completed latency. Runner exits zero even when report contains errors; inspect statuses."
+    "warning": "Timeouts are not completed latency; runner exits zero when report contains errors, so errors were inspected."
   },
-  "productionCurrent": {
-    "backend": "rollback Edge v18; bundle hash matches predeploy v16",
-    "frontend": "index-DiBNMkhK.js both Hosting sites",
-    "httpArtifact": "cloud-rollback-smoke.json",
-    "browserArtifact": "cloud-rollback-browser.json",
-    "samplesPerFlow": 1,
-    "clickToFreshMsRounded": [
-      3695.9,
-      3613.9,
-      5744.7,
-      17111.8
+  "productionFixedV21": {
+    "httpArtifact": "cloud-fixed-http.json",
+    "browserArtifact": "cloud-fixed-browser.json",
+    "smokeArtifact": "cloud-fixed-smoke.json",
+    "qaCleanupArtifact": "cloud-fixed-qa-cleanup.json",
+    "httpWarmSamplesPerFlow": 30,
+    "browserWarmSamplesPerFlow": 30,
+    "httpWarmP95MsRounded": [
+      2632.7,
+      2566.1,
+      4913.2,
+      4455.1
     ],
-    "httpStatuses": [
-      200,
-      200,
-      200,
-      200
+    "browserClickToFreshWarmP95MsRounded": [
+      2511.8,
+      2510.7,
+      4912.5,
+      4579.2
     ],
-    "warmP95Ms": null,
-    "coldP95Ms": null,
-    "accepted": false
+    "httpFirstOpenMsRounded": [
+      2488.3,
+      2363.1,
+      4809.3,
+      4397.2
+    ],
+    "browserFirstOpenMsRounded": [
+      2583.8,
+      2193.7,
+      5094.3,
+      4594
+    ],
+    "errors": 0,
+    "coldEdge": "NOT_ESTABLISHED",
+    "sqlCount": "NOT_MEASURED",
+    "sqlCountEvidence": "No production SQL count or duration was captured.",
+    "accepted": false,
+    "artifactSha256": {
+      "smoke": "c12b1ae6fe98eec814841c1089598a4740234c1a0b86cb6690c3e3172f0195ce",
+      "http": "6163b2ce26241965915d80ceacdaa079dcb905eb79dd5b76c5c0ed490449bf85",
+      "browser": "af1dc8d2037bf395390fe6b539bceca6ab270ab6a1aa0fd9d730d4da33dcc9de",
+      "qaCleanup": "628b36e5c40a97db98c011dafdf3d883b67eed40c9a64270bf1b89453806ee64"
+    }
   },
-  "gaps": [
-    "Cloud-only weekly root cause unknown.",
-    "30-warm production click-to-fresh and cold measurements not collected after failed gate.",
-    "No measured before SQL trace or production SQL count.",
-    "Complete offline/account-switch/reset browser matrix and multiple dataset sizes pending."
-  ]
+  "interpretation": "Weekly timeout regression resolved by serialized bounded reads; global <3s warm target remains unmet for Today and Week. HTTP and browser evidence are separate; click-to-fresh data is not inferred from anonymous or skeleton timing."
 }

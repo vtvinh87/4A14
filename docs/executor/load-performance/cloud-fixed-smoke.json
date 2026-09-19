@@ -1,0 +1,127 @@
+{
+  "environment": "host to Supabase Edge production, synthetic account, sequential HTTP body-complete timing",
+  "measuredAt": "2026-09-19T00:49:39.828Z",
+  "coldEdge": "NOT_ESTABLISHED",
+  "reports": [
+    {
+      "route": "/me/friends",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 2489.483458,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1839.58,
+          "data": 274.86,
+          "total": 2119.54
+        },
+        "noStore": true
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 2489.483458,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1839.58,
+            "data": 274.86,
+            "total": 2119.54
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/progress-board",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 2355.606125,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1856.81,
+          "data": 274.63,
+          "total": 2137.48
+        },
+        "noStore": true
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 2355.606125,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1856.81,
+            "data": 274.63,
+            "total": 2137.48
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/today",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 4748.655041000001,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1891.77,
+          "data": 2640.05,
+          "total": 4537.95
+        },
+        "noStore": true
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 4748.655041000001,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1891.77,
+            "data": 2640.05,
+            "total": 4537.95
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/week",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 4433.153582999999,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1889.53,
+          "data": 2241.05,
+          "total": 4136.28
+        },
+        "noStore": true
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 4433.153582999999,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1889.53,
+            "data": 2241.05,
+            "total": 4136.28
+          },
+          "noStore": true
+        }
+      ]
+    }
+  ]
+}

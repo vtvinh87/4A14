@@ -1,6 +1,20 @@
 # Load performance — verification report
 
-## Current release result — 2026-09-19 (supersedes historical snapshot below)
+## Current fixed-release result — 2026-09-19T01:05Z
+
+`READY_FOR_REVIEW_WITH_GAPS`; L0–L7 implementation/release gates are documented, but the global warm `<3 s` goal is **not achieved**. Actual checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`, source commit `2f2ac390ab29ad02d9b0b01cd5fdf8b5ed5f9b49` pushed.
+
+- Fixed Edge `api` version 21 is ACTIVE, bundle SHA `8f1f542ce0cdbb7822bdf2c0f0db25d5d8abb00647482cfbbacb5d469345735f`; no cloud schema, secret, region or pool mutation.
+- Fresh local DB full suite: exit 0, **136 files / 607 tests / zero skipped**. Local DB is PostgreSQL 17.11 at `127.0.0.1:55432/hoc_vui_load_test`, six existing migrations, synthetic-only data, non-superuser runtime role. Typecheck, server typecheck, Edge check, build, Firebase validation and diff check all exit 0; existing large-chunk warning only.
+- TDD regression: weekly pool-bound probe RED at `maxConcurrentReads=5`, then GREEN at 1 after serializing only the bounded weekly reads. Local real service was `ok:true`: 70.16 ms pool max 1, 28.51 ms pool max 10. This explains and guards the concurrency risk, but is not proof of the exact cloud database cause.
+- Fixed production HTTP: `cloud-fixed-http.json`, 1 first-open + 30 warm per route, 0 errors. Warm p95 ms in route order friends/board/today/week: **2632.7 / 2566.1 / 4913.2 / 4455.1**. First-open total ms: **2488.3 / 2363.1 / 4809.3 / 4397.2**.
+- Fixed production Chrome: `cloud-fixed-browser.json`, 1 first-open + 30 warm per flow, 0 page errors. Click-to-fresh warm p95 ms: **2511.8 / 2510.7 / 4912.5 / 4579.2**. First-open ms: **2583.8 / 2193.7 / 5094.3 / 4594.0**. Cold Edge was not established, so first-open is reported separately and is not cold p95.
+- `Server-Timing` is present for all four protected read routes. Warm sample auth/data/total ms: friends **1898.8/264.8/2168.6**, board **1875.9/262.2/2143.7**, today **1880.2/2617.8/4503.6**, week **1902.4/2242.7/4150.3**. These are server spans, not SQL durations; production SQL count was not captured.
+- Frontend remains the deployed Hosting build: 4a14 version `5a4345d7c6742f03`, a14-82a69 version `4acefa21863e4043`, asset `index-DiBNMkhK.js`. No frontend redeploy was necessary for this backend-only fix.
+- QA cleanup passed: account disabled 200, old token 401, admin logout 200 (`cloud-fixed-qa-cleanup.json`). No real-child data was used or modified.
+- Acceptance: Friends/Board meet the warm target at browser p95; Today/Week do not. Remaining work is a new bounded optimization packet for auth and Today/Week data; index/region/pool changes require separate evidence/review. No further external action is implied by this report.
+
+## Previous failed-release snapshot — superseded
 
 `READY_FOR_REVIEW_WITH_BLOCKER`; goal `<3 s` NOT achieved. Checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`, verified implementation commit `6f5927f95450f244b35d9132ef7cb149a779ddd0` pushed.
 
