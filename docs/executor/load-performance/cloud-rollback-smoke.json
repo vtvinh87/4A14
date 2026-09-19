@@ -1,0 +1,95 @@
+{
+  "environment": "host to Supabase Edge production, synthetic account, sequential HTTP body-complete timing",
+  "measuredAt": "2026-09-19T00:30:52.421Z",
+  "coldEdge": "NOT_ESTABLISHED",
+  "reports": [
+    {
+      "route": "/me/friends",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 5308.334208,
+        "status": 200,
+        "serverTiming": {},
+        "noStore": true
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 5308.334208,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/progress-board",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 3324.6610419999997,
+        "status": 200,
+        "serverTiming": {},
+        "noStore": true
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 3324.6610419999997,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/today",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 5440.362333000001,
+        "status": 200,
+        "serverTiming": {},
+        "noStore": true
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 5440.362333000001,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/week",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 16773.151749999997,
+        "status": 200,
+        "serverTiming": {},
+        "noStore": true
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 16773.151749999997,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        }
+      ]
+    }
+  ]
+}

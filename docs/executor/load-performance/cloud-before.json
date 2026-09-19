@@ -1,0 +1,207 @@
+{
+  "environment": "host to Supabase Edge production, synthetic account, sequential HTTP body-complete timing",
+  "measuredAt": "2026-09-19T00:23:31.836Z",
+  "coldEdge": "NOT_ESTABLISHED",
+  "reports": [
+    {
+      "route": "/me/friends",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 3684.974166,
+        "status": 200,
+        "serverTiming": {},
+        "noStore": true
+      },
+      "warmSamples": 4,
+      "warmP95Ms": 3498.619458,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 3684.974166,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 1,
+          "totalMs": 3443.4881670000004,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 2,
+          "totalMs": 3498.619458,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 3,
+          "totalMs": 3402.1631670000006,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 4,
+          "totalMs": 3387.6725419999984,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/progress-board",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 3396.6872909999984,
+        "status": 200,
+        "serverTiming": {},
+        "noStore": true
+      },
+      "warmSamples": 4,
+      "warmP95Ms": 3503.514167000001,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 3396.6872909999984,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 1,
+          "totalMs": 3395.962958,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 2,
+          "totalMs": 3503.514167000001,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 3,
+          "totalMs": 3481.2387909999998,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 4,
+          "totalMs": 3475.701500000003,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/today",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 5507.189667000006,
+        "status": 200,
+        "serverTiming": {},
+        "noStore": true
+      },
+      "warmSamples": 4,
+      "warmP95Ms": 5618.6782500000045,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 5507.189667000006,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 1,
+          "totalMs": 5533.675291,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 2,
+          "totalMs": 5618.6782500000045,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 3,
+          "totalMs": 5533.788374999996,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 4,
+          "totalMs": 5547.732333,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/week",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 16575.757416999993,
+        "status": 200,
+        "serverTiming": {},
+        "noStore": true
+      },
+      "warmSamples": 4,
+      "warmP95Ms": 16985.64237500001,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 16575.757416999993,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 1,
+          "totalMs": 16520.377540999994,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 2,
+          "totalMs": 16681.797542,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 3,
+          "totalMs": 16985.64237500001,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        },
+        {
+          "iteration": 4,
+          "totalMs": 16528.968083,
+          "status": 200,
+          "serverTiming": {},
+          "noStore": true
+        }
+      ]
+    }
+  ]
+}

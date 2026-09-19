@@ -1,0 +1,195 @@
+{
+  "environment": "host to Supabase Edge production, synthetic account, sequential HTTP body-complete timing",
+  "measuredAt": "2026-09-19T00:28:43.730Z",
+  "coldEdge": "NOT_ESTABLISHED",
+  "reports": [
+    {
+      "route": "/me/friends",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 2506.519958,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1892.6,
+          "data": 263.43,
+          "total": 2161.16
+        },
+        "noStore": true
+      },
+      "warmSamples": 2,
+      "warmP95Ms": 2405.3687919999998,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 2506.519958,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1892.6,
+            "data": 263.43,
+            "total": 2161.16
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 1,
+          "totalMs": 2405.3687919999998,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1938.89,
+            "data": 265.38,
+            "total": 2210.8
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 2,
+          "totalMs": 2366.3233340000006,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1893.27,
+            "data": 270.36,
+            "total": 2169.05
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/progress-board",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 2376.820667,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1894.94,
+          "data": 264.42,
+          "total": 2165.43
+        },
+        "noStore": true
+      },
+      "warmSamples": 2,
+      "warmP95Ms": 2407.9492090000003,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 2376.820667,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1894.94,
+            "data": 264.42,
+            "total": 2165.43
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 1,
+          "totalMs": 633.5025420000002,
+          "status": 200,
+          "serverTiming": {
+            "auth": 263.49,
+            "data": 263.66,
+            "total": 527.51
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 2,
+          "totalMs": 2407.9492090000003,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1918.8,
+            "data": 267.07,
+            "total": 2191.09
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/today",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 4750.3585,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1904.92,
+          "data": 2633.38,
+          "total": 4543.6
+        },
+        "noStore": true
+      },
+      "warmSamples": 2,
+      "warmP95Ms": 4801.405459000001,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 4750.3585,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1904.92,
+            "data": 2633.38,
+            "total": 4543.6
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 1,
+          "totalMs": 4801.405459000001,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1891.85,
+            "data": 2635.8,
+            "total": 4533.21
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 2,
+          "totalMs": 4705.204833,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1878.81,
+            "data": 2615.02,
+            "total": 4499.34
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/week",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 20007.610709,
+        "status": null,
+        "error": "TimeoutError"
+      },
+      "warmSamples": 2,
+      "warmP95Ms": 20002.55674999999,
+      "errors": 3,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 20007.610709,
+          "status": null,
+          "error": "TimeoutError"
+        },
+        {
+          "iteration": 1,
+          "totalMs": 20000.223666000005,
+          "status": null,
+          "error": "TimeoutError"
+        },
+        {
+          "iteration": 2,
+          "totalMs": 20002.55674999999,
+          "status": null,
+          "error": "TimeoutError"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "measuredAt": "2026-09-19T00:31:50.929Z",
+  "environment": "production Hosting optimized frontend with rollback backend; isolated Chrome; one sample per flow, not p95",
+  "results": [
+    {
+      "flow": "friends",
+      "status": 200,
+      "clickToFreshMs": 3695.9000000003725
+    },
+    {
+      "flow": "board",
+      "status": 200,
+      "clickToFreshMs": 3613.89999999851
+    },
+    {
+      "flow": "today",
+      "status": 200,
+      "clickToFreshMs": 5744.699999999255
+    },
+    {
+      "flow": "week",
+      "status": 200,
+      "clickToFreshMs": 17111.800000000745
+    }
+  ],
+  "errors": []
+}

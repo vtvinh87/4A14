@@ -1,6 +1,18 @@
 # Load performance — handoff
 
-Status: `READY_FOR_REVIEW`
+Status: `READY_FOR_REVIEW_WITH_BLOCKER` — deployment attempted, backend rolled back, performance target not achieved.
+
+## Current handoff — 2026-09-19
+
+- Actual checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`; code commit `6f5927f` pushed. No new worktree/task/subagent. `deno.lock` and accepted lifecycle source preserved.
+- L0–L6 code/local database gates achieved (605 tests, zero skips; typechecks/build/Edge/Firebase validation exit 0). L7 performance/release acceptance remains blocked.
+- Firebase frontend deployed to both sites (4a14 `5a4345d7c6742f03`, a14-82a69 `4acefa21863e4043`). Optimized Edge v17 regressed weekly reads to repeated 20 s and one 60 s timeout. Backend rollback v18 is ACTIVE; bundle hash matches predeploy v16. Do not redeploy `6f5927f` backend unchanged.
+- Current production browser smoke works, but one sample per flow is 3.70/3.61/5.74/17.11 seconds (friends/board/today/week). This is not p95 and fails the target even for these samples. No cold measurements.
+- Full evidence, sample sizes, local SQL counts and missing checks: [verification.md](verification.md), [latency-results.json](latency-results.json), [progress.md](progress.md). Original baseline remains [baseline.md](baseline.md).
+- Next required work: instrument only non-sensitive weekly stage/SQL durations, reproduce against a local transaction pooler, identify the cloud-only regression, add RED test and minimal fix. Re-run all protected cloud smoke before further Hosting deployment, then 30 warm browser samples and separate first-open/cold measurements. No cloud migrations/secrets/region/pool changes are approved.
+- If frontend rollback is needed, retained predeploy Firebase versions are 4a14 `d2fe8f7477a005ba` and a14-82a69 `a481d578c95bf39a`. Backend rollback already executed. Do not roll back data or revoke unrelated sessions.
+
+The remaining sections are the **historical pre-shipment handoff**, preserved for audit; their pending/unshipped statements are superseded above.
 
 ## Delivered
 

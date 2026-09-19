@@ -1,6 +1,6 @@
 # Load performance — execution ledger
 
-Status: `READY_FOR_REVIEW` — local code verified; DB/performance validation pending; commit pushed; production not deployed
+Status: `READY_FOR_REVIEW_WITH_BLOCKER` — local DB verified; optimized backend release failed cloud weekly smoke and was rolled back; frontend deployed; performance target NOT achieved
 Plan: `/Volumes/Pictures/Projects/Hoc_Vui/docs/superpowers/plans/2026-09-18-load-performance-luna.md`
 Actual checkout: `/Volumes/Pictures/Projects/Hoc_Vui`
 HEAD at start: `00ac8fb0e5681fbc9c4a177b4425484c4ce95bfc`
@@ -8,7 +8,38 @@ Plan reference HEAD: `98690ab3b5b527862821658cd8afcfa8287ebcbe` (not checked out
 Pre-existing dirty file: `deno.lock` (`776554a46c7706ff0e6e7175b79d205ecdb0b11daadf6730bad2e7575e4869e3`), preserved
 Accepted roster baseline: seven manifest hashes matched before L0; six lifecycle files remain byte-identical. `src/App.test.ts` changed only in L1 to update the planned progress-board config-call assertion; accepted manifest JSON itself is unchanged.
 Old worktree: `/Users/macbook/.codex/worktrees/4fc1/Hoc_Vui` — not read or integrated.
-External actions: commit/push completed for the user-authorized code shipment; no PR, merge, deploy, migration, cloud mutation, or Brain_Vault write.
+External actions: user-authorized commit/push, Edge deploy/rollback, Hosting deploy and synthetic QA account creation. No cloud migration, secret/region/pool change, PR, merge, or Brain_Vault write. Local migrations applied only to the verified isolated database.
+
+Current package status (supersedes the historical table below): L0–L6 implementation and local PostgreSQL verification completed; L1 frontend deployed; L2–L6 backend reverted in production after L5B weekly regression. L7 evidence updated but release/performance acceptance BLOCKED. Do not redeploy `6f5927f` unchanged.
+
+## Release recovery checkpoint — 2026-09-19 00:30 UTC
+
+- Actual source commit: `6f5927f95450f244b35d9132ef7cb149a779ddd0`, branch `codex/bang-tien-bo`, pushed. Only pre-existing `deno.lock` dirty before release reports.
+- Baseline `cloud-before.json`: 5 requests/route (1 first + 4 warm), all 200. Warm nearest-rank p95 at this small N is the maximum: friends 3498.6 ms, board 3503.5 ms, today 5618.7 ms, week 16985.6 ms. First-open is NOT proven cold.
+- `supabase functions deploy api --project-ref tvlpabqkternfvsxqovi --use-api` -> exit 0, version 17 ACTIVE, bundle `1fe2fb33b20fb3c4dfdab122713e7a3a5d58f22d751a7907db50cef2ddf7a41f`.
+- `node scripts/measure-load-cloud.mjs 1 .../cloud-smoke.json` -> process exit 0 BUT report has one weekly TimeoutError at 20 s. The script exit code is not a successful smoke gate; inspect `errors` and every status.
+- `node scripts/measure-load-cloud.mjs 3 .../cloud-diagnostic.json` -> process exit 0 BUT all 3 weekly requests timed out at 20 s. Friends/board/today returned 200 with no-store; diagnostic 2-warm maxima 2405.4/2407.9/4801.4 ms, insufficient for release p95.
+- Separate weekly 60 s diagnostic -> exit 1, TimeoutError at 60009.5 ms. No response body or timing received. Do not treat timeout thresholds as completed request latency.
+- Deno local real PostgreSQL invocation of the same weekly service -> exit 0, `ok:true`, 82.8 ms. This rules out a universal Node-only success but does NOT reproduce production connection/pool/data behavior.
+- Allowed OPTIONS 204, origin exact, max-age 600, exposed Server-Timing; denied origin 403; anonymous auth/me 401, no-store. Correction: prior preflight wording incorrectly implied max-age was verified on v16; it was verified on v17 only.
+- `firebase deploy --only hosting --project a14-82a69` -> exit 0. Sites 4a14 version `5a4345d7c6742f03`, a14-82a69 version `4acefa21863e4043`. **Process deviation:** Hosting was started before the final weekly smoke result arrived. This did not satisfy the planned all-green backend gate; no performance acceptance follows from deployment.
+- Rolled backend back using verified accepted source archive `00ac8fb` under `/tmp/hoc-vui-edge-rollback.bgwbyX`, not an old implementation worktree. `supabase functions deploy api --project-ref tvlpabqkternfvsxqovi --use-api --workdir /tmp/hoc-vui-edge-rollback.bgwbyX` -> exit 0. Archive is source rollback, not byte-identical v16.
+- `cloud-rollback-smoke.json`: all 4 requests 200/no-store; friends 5308.3 ms, board 3324.7 ms, today 5440.4 ms, week 16773.2 ms. Weekly recovered to baseline behavior. No 30-warm production benchmark was run after the failed release gate.
+
+Next mandatory step: isolate the L5B regression with non-sensitive stage/SQL-duration telemetry and a production-like local transaction-pooler fixture; determine whether the new range/aggregate/batch statement or driver concurrency stalls. No root cause is proven yet. Add a reproducing RED test, fix only the confirmed cause, rerun local + cloud smoke, then 30-warm click-to-fresh-data samples. Keep cloud migrations/secrets/region/pool unchanged. Re-evaluate auth connection cost (~1.9 s observed v17) and today SQL cost only after weekly correctness is restored. Do not reuse expired/revoked QA tokens or recreate accounts blindly.
+
+Final release checkpoint:
+
+- Edge v18 ACTIVE, bundle SHA `e57d786f1d09ba2bf5b1b6912bd47a097812ea998597d0d370abfbbf8f583f1d` matches predeploy v16 hash (subsequently verified by CLI).
+- Isolated production Chrome smoke -> exit 0, no page errors, 4 routes 200; one click-to-fresh sample each recorded in `cloud-rollback-browser.json`. Not p95.
+- Own synthetic QA account `qamu7n18no` disabled via scoped PATCH -> 200, prior token -> 401, own admin session logout -> 200 (`cloud-qa-cleanup.json`). Account/audit history retained and can be re-enabled; no learner account disabled.
+- Dedicated localhost PostgreSQL stopped cleanly via exact `pg_ctl -D /tmp/hoc-vui-load-db.wdmwtV/data stop -m fast` -> exit 0. Cluster retained for resume; local Node/Vite processes had already ended during interruption. PostgreSQL installation remains.
+- Changed release-evidence files: `progress.md`, `verification.md`, `handoff.md`, `latency-results.json`, `cloud-before.json`, `cloud-smoke.json`, `cloud-diagnostic.json`, `cloud-rollback-smoke.json`, `cloud-rollback-browser.json`, `cloud-qa-cleanup.json` in this directory. Full implementation paths are in Git diff `00ac8fb..6f5927f`; historical handoff list additionally gains the three release scripts and two local measurement artifacts.
+- Source SHA-256: authoring repository `bee8d1fd16bd82791d316fe6b1bb7f1d22f0725abdafc53d0277851c2ba14c94`; play repository `b36304a47625aa94a847d64db2a8e85ac54c70e31266436b54c6eeec277887e0`; DB regression test `baacf17ffd5487019a865b0d31811b8e6ed2dea3a7904abf25cb7e768a2b271f`.
+- Evidence SHA-256: cloud-before `c563f33581c929eb56c2d28b0a758ce0c05a45d38a6ea819dbd6c5c13726d076`; cloud-diagnostic `e731734a2e29ee0a8f921d3811ecc171c4fe2ddae3207a5a01d1d6e8cfe12ca3`; rollback-browser `b64bf78bed32b7ebc793ac602de676280595b09b29acf6115089663b7663dc79`.
+- Accepted six lifecycle hashes rechecked MATCH; planned `src/App.test.ts` assertion change only. `deno.lock` SHA unchanged. `git diff --check` -> exit 0.
+
+## Historical package checkpoints (superseded by current status above)
 
 | Gói | Trạng thái | Evidence |
 |---|---|---|

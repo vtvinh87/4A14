@@ -1,0 +1,117 @@
+{
+  "environment": "host to Supabase Edge production, synthetic account, sequential HTTP body-complete timing",
+  "measuredAt": "2026-09-19T00:26:58.349Z",
+  "coldEdge": "NOT_ESTABLISHED",
+  "reports": [
+    {
+      "route": "/me/friends",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 4446.590083,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1887.51,
+          "data": 266.75,
+          "total": 2160.18
+        },
+        "noStore": true
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 4446.590083,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1887.51,
+            "data": 266.75,
+            "total": 2160.18
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/progress-board",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 2312.857333,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1835.63,
+          "data": 258.96,
+          "total": 2100.32
+        },
+        "noStore": true
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 2312.857333,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1835.63,
+            "data": 258.96,
+            "total": 2100.32
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/today",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 4677.5647500000005,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1864.36,
+          "data": 2601.73,
+          "total": 4471.22
+        },
+        "noStore": true
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 4677.5647500000005,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1864.36,
+            "data": 2601.73,
+            "total": 4471.22
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/week",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 20004.825082999996,
+        "status": null,
+        "error": "TimeoutError"
+      },
+      "warmSamples": 0,
+      "warmP95Ms": null,
+      "errors": 1,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 20004.825082999996,
+          "status": null,
+          "error": "TimeoutError"
+        }
+      ]
+    }
+  ]
+}

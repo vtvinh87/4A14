@@ -1,37 +1,98 @@
 {
-  "schemaVersion": 1,
-  "capturedAt": "2026-09-19T00:45:11+07:00",
-  "status": "NOT_RUN",
+  "schemaVersion": 2,
+  "capturedAt": "2026-09-19",
+  "status": "PRODUCTION_REGRESSION_ROLLED_BACK_PERFORMANCE_NOT_ACCEPTED",
   "source": "/Volumes/Pictures/Projects/Hoc_Vui",
-  "environment": {
-    "label": "local source checkout",
-    "dbValidation": "DB_VALIDATION_PENDING",
-    "httpTarget": null,
-    "staging": false,
-    "production": false
-  },
-  "runner": {
-    "path": "scripts/measure-load-performance.mjs",
-    "baseUrlPolicy": "localhost-only",
-    "samplesRequested": 30,
-    "samplesCollected": 0,
-    "routes": [
-      "/api/me/friends",
-      "/api/me/progress-board",
-      "/api/me/challenge/today",
-      "/api/me/challenge/week"
-    ]
-  },
-  "measurements": [],
-  "summary": {
-    "warm": { "sampleCount": 0, "medianMs": null, "p95Ms": null, "errorCount": null },
-    "firstOpen": { "sampleCount": 0, "medianMs": null, "p95Ms": null, "errorCount": null },
-    "cold": { "sampleCount": 0, "medianMs": null, "p95Ms": null, "errorCount": null }
-  },
-  "missingPrerequisites": [
-    "No approved local synthetic authenticated session/server was available.",
-    "No explicit verified local PostgreSQL target was supplied.",
-    "No staging or production measurement was authorized or performed."
+  "codeCommit": "6f5927f95450f244b35d9132ef7cb149a779ddd0",
+  "localDatabaseValidation": "PASSED_605_TESTS_ZERO_SKIPS",
+  "flowOrder": [
+    "friends",
+    "board",
+    "today",
+    "week"
   ],
-  "interpretation": "No latency number is asserted. Historical anonymous 401 samples, skeleton time, unit/mock timing, and SQL-shape tests are not HTTP or click-to-fresh-data measurements."
+  "local": {
+    "httpArtifact": "local-http-sql.json",
+    "browserArtifact": "local-browser.json",
+    "warmSamplesPerFlow": 30,
+    "firstOpenSamplesPerFlow": 1,
+    "sqlStatementsWarmAuthInclusive": [
+      2,
+      2,
+      12,
+      10
+    ],
+    "sqlBeforeMeasured": null,
+    "sqlProductionMeasured": null,
+    "httpWarmP95MsRounded": [
+      4.2,
+      4.12,
+      6.07,
+      7.53
+    ],
+    "clickToFreshWarmP95MsRounded": [
+      48.2,
+      54.9,
+      143.9,
+      47.6
+    ],
+    "warning": "Local Node/PostgreSQL + Chrome/Vite dev, not production. Fixture retries left extra synthetic accounts."
+  },
+  "productionBefore": {
+    "artifact": "cloud-before.json",
+    "warmSamplesPerFlow": 4,
+    "firstOpenSamplesPerFlow": 1,
+    "httpWarmNearestRankP95MsRounded": [
+      3498.6,
+      3503.5,
+      5618.7,
+      16985.6
+    ],
+    "warning": "Small N percentile is maximum, insufficient for acceptance."
+  },
+  "productionOptimizedV17": {
+    "artifacts": [
+      "cloud-smoke.json",
+      "cloud-diagnostic.json"
+    ],
+    "diagnosticWarmSamplesPerFlow": 2,
+    "httpDiagnosticWarmMaxMsRounded": [
+      2405.4,
+      2407.9,
+      4801.4,
+      null
+    ],
+    "weeklyTimeoutsAt20Seconds": 4,
+    "weeklySeparateTimeoutAt60Seconds": 1,
+    "accepted": false,
+    "warning": "Timeouts are not completed latency. Runner exits zero even when report contains errors; inspect statuses."
+  },
+  "productionCurrent": {
+    "backend": "rollback Edge v18; bundle hash matches predeploy v16",
+    "frontend": "index-DiBNMkhK.js both Hosting sites",
+    "httpArtifact": "cloud-rollback-smoke.json",
+    "browserArtifact": "cloud-rollback-browser.json",
+    "samplesPerFlow": 1,
+    "clickToFreshMsRounded": [
+      3695.9,
+      3613.9,
+      5744.7,
+      17111.8
+    ],
+    "httpStatuses": [
+      200,
+      200,
+      200,
+      200
+    ],
+    "warmP95Ms": null,
+    "coldP95Ms": null,
+    "accepted": false
+  },
+  "gaps": [
+    "Cloud-only weekly root cause unknown.",
+    "30-warm production click-to-fresh and cold measurements not collected after failed gate.",
+    "No measured before SQL trace or production SQL count.",
+    "Complete offline/account-switch/reset browser matrix and multiple dataset sizes pending."
+  ]
 }
