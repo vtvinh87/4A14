@@ -78,10 +78,11 @@ export function createChallengeWeeklyService(deps: {
     const { start, end } = challengeWeekBounds(now);
     const rounds = await deps.play.listRoundsBetween(start, end);
     const roundsByDate = new Map(rounds.map((round) => [round.roundDate, round]));
-    const [allItems, contributionByDate] = await Promise.all([
-      deps.play.listRoundItemsBetween(start, end),
-      deps.play.countCorrectContributionsBetween(start, end),
-    ]);
+    // Keep the bounded reads serial on the shared database client. The default
+    // pool is one connection, and concurrent full-range reads can otherwise
+    // contend with unrelated requests on a constrained production database.
+    const allItems = await deps.play.listRoundItemsBetween(start, end);
+    const contributionByDate = await deps.play.countCorrectContributionsBetween(start, end);
     const itemsByDate = new Map<string, ChallengeRoundItemRecord[]>();
     for (const item of allItems) {
       const items = itemsByDate.get(item.roundDate) ?? [];
@@ -112,13 +113,11 @@ export function createChallengeWeeklyService(deps: {
       if (completed) completedDays += 1;
     }
 
-    const [questions, attempts, reactions, roster, itemQuestions] = await Promise.all([
-      deps.authoring.listQuestionsBetween(start, end),
-      deps.play.listAttemptsBetween(start, end),
-      deps.play.listReactionsBetween(start, end),
-      deps.activeStudentIds?.() ?? Promise.resolve([] as readonly string[]),
-      deps.authoring.findQuestionsByIds(allItems.map((item) => item.questionId)),
-    ]);
+    const questions = await deps.authoring.listQuestionsBetween(start, end);
+    const attempts = await deps.play.listAttemptsBetween(start, end);
+    const reactions = await deps.play.listReactionsBetween(start, end);
+    const roster = deps.activeStudentIds ? await deps.activeStudentIds() : [] as readonly string[];
+    const itemQuestions = await deps.authoring.findQuestionsByIds(allItems.map((item) => item.questionId));
     const itemQuestionsById = new Map(itemQuestions.map((question) => [question.id, question]));
     const discoveredIds = new Set<string>([
       ...questions.map((question) => question.authorId),

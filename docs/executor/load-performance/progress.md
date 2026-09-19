@@ -12,6 +12,17 @@ External actions: user-authorized commit/push, Edge deploy/rollback, Hosting dep
 
 Current package status (supersedes the historical table below): L0–L6 implementation and local PostgreSQL verification completed; L1 frontend deployed; L2–L6 backend reverted in production after L5B weekly regression. L7 evidence updated but release/performance acceptance BLOCKED. Do not redeploy `6f5927f` unchanged.
 
+## L5B regression diagnosis checkpoint — 2026-09-19
+
+- Hypothesis: concurrent weekly repository reads can contend on a constrained/shared production database even though local small-fixture `Promise.all` is fast. This remains a bounded hypothesis, not a claimed cloud root cause; the cloud request timed out before returning timing headers.
+- TDD RED: `npx vitest run server/challenge/weeklyService.test.ts` -> exit 1; the pool-bound repository probe observed `maxConcurrentReads=5`, expected 1. The first probe implementation was corrected for spy recursion before accepting this RED result.
+- Minimal change: `server/challenge/weeklyService.ts` now performs the same bounded L5B reads serially (rounds, item range, contribution aggregate, questions, attempts, reactions, active IDs, batch questions, own questions). No predicates, output fields, authorization, moderation, quota, idempotency or transaction writes changed.
+- GREEN: `npx vitest run server/challenge/weeklyService.test.ts server/performance/timing.test.ts` -> exit 0; 7/7 passed. Real local integration: `HOC_VUI_TEST_DATABASE_URL=postgresql://hoc_vui_runtime@127.0.0.1:55432/hoc_vui_load_test npx vitest run server/challenge/readPerformance.integration.test.ts server/challenge/weeklyService.test.ts server/auth/sessionProjection.test.ts server/app.test.ts --testTimeout=30000 --reporter=dot` -> exit 0; 4 files / 35 tests.
+- Fresh full suite: same local DB URL with `npm test -- --testTimeout=30000 --reporter=dot` -> exit 0; 136 files / 607 tests / zero skipped. Typecheck, server typecheck, Edge check, build, Firebase validation and `git diff --check` -> exit 0. Existing large-chunk warning remains.
+- Direct real service measurement on the retained isolated PostgreSQL 17.11 database: pool max 1 -> 70.16 ms; pool max 10 -> 28.51 ms; both `ok:true`. This is local service timing, not cloud HTTP or click-to-fresh-data.
+- L6 timing coverage now includes `/api/me/challenge/week` with the same fixed `auth/data/total` labels. It is observability only and must not be used as SQL timing.
+- Next: commit/push this bounded fix, deploy Edge only, run one protected cloud weekly smoke plus all four routes, inspect status/body/header/errors, then collect 30 warm HTTP/browser samples only if all smoke is clean. Roll back on timeout or data/security regression; frontend bundle is unchanged.
+
 ## Release recovery checkpoint — 2026-09-19 00:30 UTC
 
 - Actual source commit: `6f5927f95450f244b35d9132ef7cb149a779ddd0`, branch `codex/bang-tien-bo`, pushed. Only pre-existing `deno.lock` dirty before release reports.

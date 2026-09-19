@@ -104,4 +104,50 @@ describe('Challenge weekly class map service', () => {
     expect(batchQuestions).toHaveBeenCalledOnce();
     expect(batchQuestions.mock.calls[0]?.[0]).toHaveLength(35);
   });
+
+  it('does not overlap weekly database reads when the repository is pool-bound', async () => {
+    const dates = ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18', '2026-09-19', '2026-09-20'];
+    const rounds = dates.map((date) => makeRound(date, 5));
+    const items = dates.flatMap((date) => Array.from({ length: 5 }, (_, index) => makeItem(`${date}-${index}`, date, `question-${date}-${index}`, `student-${index}`, index + 1)));
+    const authoring = new MemoryAuthoringRepository({ now: () => NOW });
+    const play = new MemoryPlayRepository({ now: () => NOW, rounds, items });
+    let activeReads = 0;
+    let maxConcurrentReads = 0;
+    const observe = <Args extends readonly unknown[], Result>(read: (...args: Args) => Promise<Result>) => async (...args: Args): Promise<Result> => {
+      activeReads += 1;
+      maxConcurrentReads = Math.max(maxConcurrentReads, activeReads);
+      await new Promise((resolve) => setTimeout(resolve, 2));
+      try {
+        return await read(...args);
+      } finally {
+        activeReads -= 1;
+      }
+    };
+    const listRoundsBetween = play.listRoundsBetween.bind(play);
+    const listRoundItemsBetween = play.listRoundItemsBetween.bind(play);
+    const countCorrectContributionsBetween = play.countCorrectContributionsBetween.bind(play);
+    const listAttemptsBetween = play.listAttemptsBetween.bind(play);
+    const listReactionsBetween = play.listReactionsBetween.bind(play);
+    const listQuestionsBetween = authoring.listQuestionsBetween.bind(authoring);
+    const findQuestionsByIds = authoring.findQuestionsByIds.bind(authoring);
+    const listMine = authoring.listMine.bind(authoring);
+    vi.spyOn(play, 'listRoundsBetween').mockImplementation(observe(listRoundsBetween));
+    vi.spyOn(play, 'listRoundItemsBetween').mockImplementation(observe(listRoundItemsBetween));
+    vi.spyOn(play, 'countCorrectContributionsBetween').mockImplementation(observe(countCorrectContributionsBetween));
+    vi.spyOn(play, 'listAttemptsBetween').mockImplementation(observe(listAttemptsBetween));
+    vi.spyOn(play, 'listReactionsBetween').mockImplementation(observe(listReactionsBetween));
+    vi.spyOn(authoring, 'listQuestionsBetween').mockImplementation(observe(listQuestionsBetween));
+    vi.spyOn(authoring, 'findQuestionsByIds').mockImplementation(observe(findQuestionsByIds));
+    vi.spyOn(authoring, 'listMine').mockImplementation(observe(listMine));
+
+    const result = await createChallengeWeeklyService({
+      play,
+      authoring,
+      now: () => NOW,
+      activeStudentIds: observe(async () => [] as readonly string[]),
+    }).getWeekly('student-a');
+
+    expect(result.ok).toBe(true);
+    expect(maxConcurrentReads).toBe(1);
+  });
 });

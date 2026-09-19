@@ -435,11 +435,13 @@ export function createApp(dependencies: AppDependencies) {
     if (method === 'GET' && pathname === '/api/me/challenge/week') {
       const student = await authorizeStudent(request);
       if (!student.ok) return student.response;
-      if (!dependencies.challengeWeekly) return failure({ ok: false, code: 'unavailable', message: 'Bản đồ tuần Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
-      const result = await dependencies.challengeWeekly.getWeekly(student.studentId);
-      if (!result.ok) return failure(result);
-      const { ok: _ok, ...weekly } = result;
-      return success(weekly);
+      return measureData(request, async () => {
+        if (!dependencies.challengeWeekly) return failure({ ok: false, code: 'unavailable', message: 'Bản đồ tuần Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
+        const result = await dependencies.challengeWeekly.getWeekly(student.studentId);
+        if (!result.ok) return failure(result);
+        const { ok: _ok, ...weekly } = result;
+        return success(weekly);
+      });
     }
     const challengeQuestionMatch = pathname.match(/^\/api\/me\/challenge\/questions\/([^/]+)$/);
     if (challengeQuestionMatch && method === 'PATCH') {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRequestTiming } from './timing';
+import { createRequestTiming, isTimedReadPath } from './timing';
 
 describe('request-local server timing', () => {
   it('records deterministic non-negative auth/data/total durations without sensitive labels', async () => {
@@ -27,5 +27,10 @@ describe('request-local server timing', () => {
     expect(second.header()).not.toBe(first.header());
     expect(second.header()).toContain('data;dur=1');
     expect(second.header()).toContain('total;dur=3');
+  });
+
+  it('includes the weekly challenge read in protected timing coverage', () => {
+    expect(isTimedReadPath('GET', '/api/me/challenge/week')).toBe(true);
+    expect(isTimedReadPath('POST', '/api/me/challenge/week')).toBe(false);
   });
 });

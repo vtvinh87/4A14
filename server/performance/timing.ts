@@ -49,5 +49,6 @@ export function isTimedReadPath(method: string, path: string): boolean {
   }
   return pathname === '/api/me/friends'
     || pathname === '/api/me/progress-board'
-    || pathname === '/api/me/challenge/today';
+    || pathname === '/api/me/challenge/today'
+    || pathname === '/api/me/challenge/week';
 }
