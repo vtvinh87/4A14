@@ -1,8 +1,22 @@
 export type TimingSpan = 'auth' | 'data';
+export type TimingStage =
+  | 'challenge_preferences'
+  | 'challenge_prepare'
+  | 'challenge_rounds'
+  | 'challenge_items'
+  | 'challenge_attempts'
+  | 'challenge_questions'
+  | 'challenge_authors'
+  | 'challenge_contributions'
+  | 'challenge_reactions'
+  | 'challenge_roster'
+  | 'challenge_item_questions'
+  | 'challenge_mine';
 export type TimingClock = () => number;
 
 export type RequestTiming = {
   measure<T>(span: TimingSpan, work: () => Promise<T> | T): Promise<T>;
+  measureStage<T>(stage: TimingStage, work: () => Promise<T> | T): Promise<T>;
   finish(): void;
   header(): string;
 };
@@ -18,6 +32,7 @@ function formatDuration(value: number): string {
 export function createRequestTiming(clock: TimingClock = () => performance.now()): RequestTiming {
   const startedAt = clock();
   const durations: Record<TimingSpan, number> = { auth: 0, data: 0 };
+  const stageDurations = new Map<TimingStage, number>();
   let total: number | null = null;
 
   return {
@@ -29,12 +44,26 @@ export function createRequestTiming(clock: TimingClock = () => performance.now()
         durations[span] += safeDuration(clock() - started);
       }
     },
+    async measureStage<T>(stage: TimingStage, work: () => Promise<T> | T): Promise<T> {
+      const started = clock();
+      try {
+        return await work();
+      } finally {
+        stageDurations.set(stage, (stageDurations.get(stage) ?? 0) + safeDuration(clock() - started));
+      }
+    },
     finish() {
       if (total === null) total = safeDuration(clock() - startedAt);
     },
     header() {
       if (total === null) total = safeDuration(clock() - startedAt);
-      return `auth;dur=${formatDuration(durations.auth)}, data;dur=${formatDuration(durations.data)}, total;dur=${formatDuration(total)}`;
+      const entries = [
+        `auth;dur=${formatDuration(durations.auth)}`,
+        `data;dur=${formatDuration(durations.data)}`,
+        `total;dur=${formatDuration(total)}`,
+      ];
+      for (const [stage, duration] of stageDurations) entries.push(`${stage};dur=${formatDuration(duration)}`);
+      return entries.join(', ');
     },
   };
 }

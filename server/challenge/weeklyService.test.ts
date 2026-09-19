@@ -150,4 +150,26 @@ describe('Challenge weekly class map service', () => {
     expect(result.ok).toBe(true);
     expect(maxConcurrentReads).toBe(1);
   });
+
+  it('reports fixed protected-read stages without exposing data values', async () => {
+    const play = new MemoryPlayRepository();
+    const authoring = new MemoryAuthoringRepository();
+    const stages: string[] = [];
+    const timing = { measureStage: async (stage: string, work: () => Promise<unknown>) => { stages.push(stage); return work(); } };
+
+    await createChallengeWeeklyService({ play, authoring, now: () => NOW, activeStudentIds: async () => [] })
+      .getWeekly('student-a', NOW, timing as never);
+
+    expect(new Set(stages)).toEqual(new Set([
+      'challenge_rounds',
+      'challenge_items',
+      'challenge_contributions',
+      'challenge_questions',
+      'challenge_attempts',
+      'challenge_reactions',
+      'challenge_roster',
+      'challenge_item_questions',
+      'challenge_mine',
+    ]));
+  });
 });

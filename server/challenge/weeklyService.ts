@@ -7,8 +7,15 @@ import type {
 } from '../../shared/challenge-contracts.ts';
 import { buildRecognitions } from './recognition.ts';
 import { challengeWeekBounds } from './roundRules.ts';
+import type { TimingStage, RequestTiming } from '../performance/timing.ts';
 import type { AuthoringRepository } from './authoringTypes.ts';
 import type { ChallengeAttemptRecord, ChallengeRoundRecord, ChallengeRoundItemRecord, ChallengeReactionRecord, PlayRepository } from './playTypes.ts';
+
+type ChallengeReadTiming = Pick<RequestTiming, 'measureStage'>;
+
+function measureStage<T>(timing: ChallengeReadTiming | undefined, stage: TimingStage, work: () => Promise<T> | T): Promise<T> {
+  return timing ? timing.measureStage(stage, work) : Promise.resolve(work());
+}
 
 function addDays(value: string, amount: number): string {
   const date = new Date(`${value}T00:00:00.000Z`);
@@ -74,15 +81,15 @@ export function createChallengeWeeklyService(deps: {
   now: () => Date;
   activeStudentIds?: () => Promise<readonly string[]>;
 }) {
-  async function getWeekly(studentId: string, now = deps.now()): Promise<ServiceResult<ChallengeWeeklyResponse>> {
+  async function getWeekly(studentId: string, now = deps.now(), timing?: ChallengeReadTiming): Promise<ServiceResult<ChallengeWeeklyResponse>> {
     const { start, end } = challengeWeekBounds(now);
-    const rounds = await deps.play.listRoundsBetween(start, end);
+    const rounds = await measureStage(timing, 'challenge_rounds', () => deps.play.listRoundsBetween(start, end));
     const roundsByDate = new Map(rounds.map((round) => [round.roundDate, round]));
     // Keep the bounded reads serial on the shared database client. The default
     // pool is one connection, and concurrent full-range reads can otherwise
     // contend with unrelated requests on a constrained production database.
-    const allItems = await deps.play.listRoundItemsBetween(start, end);
-    const contributionByDate = await deps.play.countCorrectContributionsBetween(start, end);
+    const allItems = await measureStage(timing, 'challenge_items', () => deps.play.listRoundItemsBetween(start, end));
+    const contributionByDate = await measureStage(timing, 'challenge_contributions', () => deps.play.countCorrectContributionsBetween(start, end));
     const itemsByDate = new Map<string, ChallengeRoundItemRecord[]>();
     for (const item of allItems) {
       const items = itemsByDate.get(item.roundDate) ?? [];
@@ -113,11 +120,11 @@ export function createChallengeWeeklyService(deps: {
       if (completed) completedDays += 1;
     }
 
-    const questions = await deps.authoring.listQuestionsBetween(start, end);
-    const attempts = await deps.play.listAttemptsBetween(start, end);
-    const reactions = await deps.play.listReactionsBetween(start, end);
-    const roster = deps.activeStudentIds ? await deps.activeStudentIds() : [] as readonly string[];
-    const itemQuestions = await deps.authoring.findQuestionsByIds(allItems.map((item) => item.questionId));
+    const questions = await measureStage(timing, 'challenge_questions', () => deps.authoring.listQuestionsBetween(start, end));
+    const attempts = await measureStage(timing, 'challenge_attempts', () => deps.play.listAttemptsBetween(start, end));
+    const reactions = await measureStage(timing, 'challenge_reactions', () => deps.play.listReactionsBetween(start, end));
+    const roster = deps.activeStudentIds ? await measureStage(timing, 'challenge_roster', () => deps.activeStudentIds!()) : [] as readonly string[];
+    const itemQuestions = await measureStage(timing, 'challenge_item_questions', () => deps.authoring.findQuestionsByIds(allItems.map((item) => item.questionId)));
     const itemQuestionsById = new Map(itemQuestions.map((question) => [question.id, question]));
     const discoveredIds = new Set<string>([
       ...questions.map((question) => question.authorId),
@@ -136,7 +143,7 @@ export function createChallengeWeeklyService(deps: {
     }
 
     const studentAttempts = attempts.filter((attempt) => attempt.studentId === studentId && !attempt.isVoided);
-    const mineQuestions = await deps.authoring.listMine(studentId, 50);
+    const mineQuestions = await measureStage(timing, 'challenge_mine', () => deps.authoring.listMine(studentId, 50));
     const mineQuestionsInWeek = mineQuestions.filter((question) => question.createdLocalDate >= start && question.createdLocalDate <= end);
     return {
       ok: true,

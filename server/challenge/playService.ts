@@ -7,16 +7,23 @@ import type {
 } from '../../shared/challenge-contracts.ts';
 import { CHALLENGE_ROUND_QUESTION_LIMIT } from '../../shared/challenge-contracts.ts';
 import { challengeTarget, localChallengeDate, selectDailyQuestions } from './roundRules.ts';
+import type { TimingStage, RequestTiming } from '../performance/timing.ts';
 import type { AuthoringRepository } from './authoringTypes.ts';
 import type {
   ChallengeAttemptRecord,
   ChallengeRoundRecord,
+  ChallengeRoundItemRecord,
   CreateRoundInput,
   PlayRepository,
 } from './playTypes.ts';
 
 const CHALLENGE_EVENT_SOURCE = 'challenge-play';
 const CHALLENGE_EVENT_SOURCE_VERSION = 'challenge-play-v1';
+type ChallengeReadTiming = Pick<RequestTiming, 'measureStage'>;
+
+function measureStage<T>(timing: ChallengeReadTiming | undefined, stage: TimingStage, work: () => Promise<T> | T): Promise<T> {
+  return timing ? timing.measureStage(stage, work) : Promise.resolve(work());
+}
 
 function failure(code: ChallengeFailure['code'], message: string, reason?: ChallengeFailure['reason']): ChallengeFailure {
   return { ok: false, code, message, ...(reason ? { reason } : {}) };
@@ -78,7 +85,7 @@ export function createChallengePlayService(deps: {
   activeStudentCount: () => Promise<number>;
   idFactory: () => string;
 }): {
-  getToday(studentId: string): Promise<import('../../shared/challenge-contracts.ts').ServiceResult<ChallengeTodayResponse>>;
+  getToday(studentId: string, timing?: ChallengeReadTiming): Promise<import('../../shared/challenge-contracts.ts').ServiceResult<ChallengeTodayResponse>>;
   submitAttempt(studentId: string, itemId: string, input: SubmitChallengeAttemptInput): Promise<import('../../shared/challenge-contracts.ts').ServiceResult<ChallengeAnswerResult>>;
 } {
   const closePreviousRounds = async (roundDate: string): Promise<void> => {
@@ -93,65 +100,72 @@ export function createChallengePlayService(deps: {
     }
   };
 
-  const createOrLoadRound = async (roundDate: string): Promise<ChallengeRoundRecord> => {
-    let round = await deps.play.getRound(roundDate);
-    if (!round) {
-      const target = challengeTarget(await deps.activeStudentCount());
-      const input: CreateRoundInput = {
-        roundDate,
-        timezone: 'Asia/Ho_Chi_Minh',
-        status: 'empty',
-        targetContributions: target,
-        closesAt: closesAtForLocalDate(roundDate),
-        selectionSeedVersion: 'challenge-round-v1',
-      };
-      round = await deps.play.insertRoundIfAbsent(input);
-    }
-
-    let items = await deps.play.listRoundItems(roundDate);
-    if (round.status !== 'closed' && items.length < CHALLENGE_ROUND_QUESTION_LIMIT) {
-      const existingQuestionIds = new Set(items.map((item) => item.questionId));
-      const existingAuthors = new Set(items.map((item) => item.authorId));
-      const candidates = (await deps.authoring.listApprovedCandidates(roundDate))
-        .filter((candidate) => !existingQuestionIds.has(candidate.questionId) && !existingAuthors.has(candidate.authorId));
-      const available: typeof candidates = [];
-      for (const candidate of candidates) {
-        if (!(await deps.play.hasOpenReportForQuestion(candidate.questionId))) available.push(candidate);
-      }
-      const selected = selectDailyQuestions(available, roundDate, CHALLENGE_ROUND_QUESTION_LIMIT - items.length);
-      for (const candidate of selected) {
-        const question = await deps.authoring.findForAuthor(candidate.authorId, candidate.questionId);
-        const author = await deps.authoring.getAuthorView(candidate.authorId);
-        if (!question || question.status !== 'approved' || !author) continue;
-        const featuredAt = deps.clock().toISOString();
-        const inserted = await deps.play.insertRoundItem({
+  const createOrLoadRound = async (roundDate: string, timing?: ChallengeReadTiming): Promise<{ round: ChallengeRoundRecord; items: readonly ChallengeRoundItemRecord[] }> => {
+    return measureStage(timing, 'challenge_prepare', async () => {
+      let round = await deps.play.getRound(roundDate);
+      if (!round) {
+        const target = challengeTarget(await deps.activeStudentCount());
+        const input: CreateRoundInput = {
           roundDate,
-          questionId: question.id,
-          authorId: question.authorId,
-          position: items.length + 1,
-          featuredAt,
-          selectionSeedVersion: round.selectionSeedVersion,
-          selectionMetadata: {
-            source: 'approved-rotation',
-            recentFeatureAvoidance: !candidate.recentRoundDates.includes(roundDate),
-          },
-        });
-        if (inserted) {
-          await deps.authoring.markQuestionFeatured(question.id, featuredAt);
-          items = [...items, inserted];
+          timezone: 'Asia/Ho_Chi_Minh',
+          status: 'empty',
+          targetContributions: target,
+          closesAt: closesAtForLocalDate(roundDate),
+          selectionSeedVersion: 'challenge-round-v1',
+        };
+        round = await deps.play.insertRoundIfAbsent(input);
+      }
+
+      let items = await measureStage(timing, 'challenge_items', () => deps.play.listRoundItems(roundDate));
+      if (round.status !== 'closed' && items.length < CHALLENGE_ROUND_QUESTION_LIMIT) {
+        const existingQuestionIds = new Set(items.map((item) => item.questionId));
+        const existingAuthors = new Set(items.map((item) => item.authorId));
+        const candidates = (await deps.authoring.listApprovedCandidates(roundDate))
+          .filter((candidate) => !existingQuestionIds.has(candidate.questionId) && !existingAuthors.has(candidate.authorId));
+        const available: typeof candidates = [];
+        for (const candidate of candidates) {
+          if (!(await deps.play.hasOpenReportForQuestion(candidate.questionId))) available.push(candidate);
+        }
+        const selected = selectDailyQuestions(available, roundDate, CHALLENGE_ROUND_QUESTION_LIMIT - items.length);
+        for (const candidate of selected) {
+          const question = await deps.authoring.findForAuthor(candidate.authorId, candidate.questionId);
+          const author = await deps.authoring.getAuthorView(candidate.authorId);
+          if (!question || question.status !== 'approved' || !author) continue;
+          const featuredAt = deps.clock().toISOString();
+          const inserted = await deps.play.insertRoundItem({
+            roundDate,
+            questionId: question.id,
+            authorId: question.authorId,
+            position: items.length + 1,
+            featuredAt,
+            selectionSeedVersion: round.selectionSeedVersion,
+            selectionMetadata: {
+              source: 'approved-rotation',
+              recentFeatureAvoidance: !candidate.recentRoundDates.includes(roundDate),
+            },
+          });
+          if (inserted) {
+            await deps.authoring.markQuestionFeatured(question.id, featuredAt);
+            items = [...items, inserted];
+          }
         }
       }
-    }
-    return (await deps.play.getRound(roundDate)) ?? round;
+      return { round: (await deps.play.getRound(roundDate)) ?? round, items };
+    });
   };
 
-  const todayResponse = async (studentId: string, roundDate: string, round: ChallengeRoundRecord): Promise<ChallengeTodayResponse> => {
-    const items = await deps.play.listRoundItems(roundDate);
-    const attempts = await deps.play.listAttemptsForStudent(studentId, roundDate, roundDate);
+  const todayResponse = async (
+    studentId: string,
+    roundDate: string,
+    round: ChallengeRoundRecord,
+    items: readonly ChallengeRoundItemRecord[],
+    timing?: ChallengeReadTiming,
+  ): Promise<ChallengeTodayResponse> => {
+    const attempts = await measureStage(timing, 'challenge_attempts', () => deps.play.listAttemptsForStudent(studentId, roundDate, roundDate));
     const attemptsByItem = new Map(attempts.map((attempt) => [attempt.roundItemId, attempt]));
     const [questionRecords, authors] = await Promise.all([
-      deps.authoring.findQuestionsByIds(items.map((item) => item.questionId)),
-      deps.authoring.getAuthorViewsByIds(items.map((item) => item.authorId)),
+      measureStage(timing, 'challenge_questions', () => deps.authoring.findQuestionsByIds(items.map((item) => item.questionId))),
+      measureStage(timing, 'challenge_authors', () => deps.authoring.getAuthorViewsByIds(items.map((item) => item.authorId))),
     ]);
     const questionsById = new Map(questionRecords.map((question) => [question.id, question]));
     const authorsById = new Map(authors.map((author) => [author.id, author]));
@@ -163,8 +177,8 @@ export function createChallengePlayService(deps: {
       const attempt = attemptsByItem.get(item.id);
       questions.push(publicQuestion(question, item, round, author, Boolean(attempt), Boolean(attempt?.isPractice)));
     }
-    const current = await deps.play.countCorrectContributions(roundDate);
-    const created = await deps.authoring.listMine(studentId, 50);
+    const current = await measureStage(timing, 'challenge_contributions', () => deps.play.countCorrectContributions(roundDate));
+    const created = await measureStage(timing, 'challenge_mine', () => deps.authoring.listMine(studentId, 50));
     return {
       roundDate,
       roundStatus: questions.length === 0 ? 'empty' : round.status,
@@ -178,13 +192,13 @@ export function createChallengePlayService(deps: {
     };
   };
 
-  const getToday = async (studentId: string) => {
-    const preferences = await deps.authoring.getPreferences(studentId);
+  const getToday = async (studentId: string, timing?: ChallengeReadTiming) => {
+    const preferences = await measureStage(timing, 'challenge_preferences', () => deps.authoring.getPreferences(studentId));
     if (!preferences.canParticipate) return failure('locked', 'Thách đố đang được tạm dừng cho tài khoản này.', 'rollout_disabled');
     const roundDate = localChallengeDate(deps.clock());
     await closePreviousRounds(roundDate);
-    const round = await createOrLoadRound(roundDate);
-    return { ok: true as const, ...(await todayResponse(studentId, roundDate, round)) };
+    const prepared = await createOrLoadRound(roundDate, timing);
+    return { ok: true as const, ...(await todayResponse(studentId, roundDate, prepared.round, prepared.items, timing)) };
   };
 
   const submitAttempt = async (studentId: string, itemId: string, input: SubmitChallengeAttemptInput) => {

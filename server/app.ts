@@ -414,7 +414,9 @@ export function createApp(dependencies: AppDependencies) {
       if (!student.ok) return student.response;
       return measureData(request, async () => {
         if (!dependencies.challengePlay) return failure({ ok: false, code: 'unavailable', message: 'Vòng Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
-        const result = await dependencies.challengePlay.getToday(student.studentId);
+        const result = request.timing
+          ? await dependencies.challengePlay.getToday(student.studentId, request.timing)
+          : await dependencies.challengePlay.getToday(student.studentId);
         if (!result.ok) return failure(result);
         const { ok: _ok, ...today } = result;
         return success(today);
@@ -437,7 +439,9 @@ export function createApp(dependencies: AppDependencies) {
       if (!student.ok) return student.response;
       return measureData(request, async () => {
         if (!dependencies.challengeWeekly) return failure({ ok: false, code: 'unavailable', message: 'Bản đồ tuần Thách đố chưa sẵn sàng trên máy chủ.' }, 503);
-        const result = await dependencies.challengeWeekly.getWeekly(student.studentId);
+        const result = request.timing
+          ? await dependencies.challengeWeekly.getWeekly(student.studentId, undefined, request.timing)
+          : await dependencies.challengeWeekly.getWeekly(student.studentId);
         if (!result.ok) return failure(result);
         const { ok: _ok, ...weekly } = result;
         return success(weekly);

@@ -200,6 +200,37 @@ describe('Challenge play service', () => {
     expect(JSON.stringify(result)).not.toContain('explanation');
   });
 
+  it('reuses the round items loaded while preparing today instead of issuing a duplicate read', async () => {
+    const { authoring, play, service } = serviceFixture();
+    await seedCompleteRound(authoring, play);
+    const listRoundItems = vi.spyOn(play, 'listRoundItems');
+
+    const result = await service.getToday('student-reader');
+
+    expect(result.ok).toBe(true);
+    expect(listRoundItems).toHaveBeenCalledOnce();
+  });
+
+  it('reports fixed protected-read stages without exposing data values', async () => {
+    const { authoring, play, service } = serviceFixture();
+    await seedCompleteRound(authoring, play);
+    const stages: string[] = [];
+    const timing = { measureStage: async (stage: string, work: () => Promise<unknown>) => { stages.push(stage); return work(); } };
+
+    await service.getToday('student-reader', timing as never);
+
+    expect(new Set(stages)).toEqual(new Set([
+      'challenge_preferences',
+      'challenge_prepare',
+      'challenge_items',
+      'challenge_attempts',
+      'challenge_questions',
+      'challenge_authors',
+      'challenge_contributions',
+      'challenge_mine',
+    ]));
+  });
+
   it('drops withdrawn, voided, and author-mismatched batch rows before public mapping', async () => {
     const { authoring, play, service } = serviceFixture();
     await seedCompleteRound(authoring, play);

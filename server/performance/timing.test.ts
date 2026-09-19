@@ -29,6 +29,17 @@ describe('request-local server timing', () => {
     expect(second.header()).toContain('total;dur=3');
   });
 
+  it('exposes only fixed challenge stage labels when stage timing is requested', async () => {
+    let tick = 0;
+    const timing = createRequestTiming(() => ++tick);
+    await timing.measureStage('challenge_attempts', async () => undefined);
+    timing.finish();
+
+    expect(timing.header()).toMatch(/challenge_attempts;dur=\d+(?:\.\d+)?$/);
+    expect(timing.header()).not.toContain('student-a');
+    expect(timing.header()).not.toContain('opaque-token');
+  });
+
   it('includes the weekly challenge read in protected timing coverage', () => {
     expect(isTimedReadPath('GET', '/api/me/challenge/week')).toBe(true);
     expect(isTimedReadPath('POST', '/api/me/challenge/week')).toBe(false);
