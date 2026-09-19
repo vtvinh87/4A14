@@ -295,10 +295,12 @@ Commands and evidence from `/Volumes/Pictures/Projects/Hoc_Vui`:
 - `npx --yes firebase-tools@latest hosting:sites:list --project a14-82a69 --json` -> exit 0; sites `a14-82a69` (`https://a14-82a69.web.app`) and `4a14` (`https://4a14.web.app`) are present.
 - `npx --yes supabase@2.117.0 projects list --output json` -> exit 0; project `tvlpabqkternfvsxqovi` (`4A14`), `ACTIVE_HEALTHY`, region `ap-south-1`. The CLI printed a non-fatal local-link warning; no link/config mutation was performed.
 - `npx --yes supabase@2.117.0 functions list --project-ref tvlpabqkternfvsxqovi --output json` -> exit 0; function `api` is `ACTIVE`, version `16`, `verify_jwt=false`.
+- `npx --yes firebase-tools@latest hosting:channel:list --site 4a14 --project a14-82a69 --json` -> exit 0; live rollback version `projects/a14-82a69/sites/4a14/versions/d2fe8f7477a005ba`.
+- `npx --yes firebase-tools@latest hosting:channel:list --site a14-82a69 --project a14-82a69 --json` -> exit 0; live rollback version `projects/a14-82a69/sites/a14-82a69/versions/a481d578c95bf39a`.
 - Read-only live smoke: both Firebase roots returned HTTP 200; allowlisted Edge OPTIONS returned 204 with exact origin/credentials/method/header/max-age behavior; denied origin returned 403; anonymous `/auth/me` returned 401 `expired`. These are target/security smoke checks only, not authenticated fresh-data or latency evidence.
 - Local database preflight: `HOC_VUI_TEST_DATABASE_URL`, `DATABASE_URL`, `DB_URL`, `HOC_VUI_DATABASE_URL`, and `SUPABASE_DB_URL` are unset; no PostgreSQL listener was found; Docker daemon is unavailable. No cloud database was used.
 
-Release blockers remain: no explicitly approved local PostgreSQL target, no approved synthetic authenticated account/dataset, no protected HTTP benchmark token, no browser click-to-fresh walkthrough, and no verified hosting/Edge rollback artifact beyond the current Edge version metadata. No deployment, migration, secret mutation, account creation, or real-child data access was performed.
+Release blockers remain: no explicitly approved local PostgreSQL target, no approved synthetic authenticated account/dataset, no protected HTTP benchmark token, and no browser click-to-fresh walkthrough. Rollback references are now identified above. No deployment, migration, secret mutation, account creation, or real-child data access was performed.
 
 Changed files in this preflight: this ledger only. Next step requires the user-approved synthetic/local test environment to be made available; then run DB integration, protected HTTP samples and authenticated browser smoke before backend/frontend deployment.
 
