@@ -213,7 +213,9 @@ export function createChallengePlayService(deps: {
     const preferences = initialSnapshot?.preferences
       ?? await measureStage(timing, 'challenge_preferences', () => deps.authoring.getPreferences(studentId));
     if (!preferences.canParticipate) return failure('locked', 'Thách đố đang được tạm dừng cho tài khoản này.', 'rollout_disabled');
-    await closePreviousRounds(roundDate, timing);
+    if (!initialSnapshot || initialSnapshot.hasOpenRoundsBefore !== false) {
+      await closePreviousRounds(roundDate, timing);
+    }
     if (initialSnapshot?.round && (initialSnapshot.round.status === 'closed' || initialSnapshot.items.length >= CHALLENGE_ROUND_QUESTION_LIMIT)) {
       return { ok: true as const, ...(await todayResponse(studentId, roundDate, initialSnapshot.round, initialSnapshot.items, timing, initialSnapshot)) };
     }

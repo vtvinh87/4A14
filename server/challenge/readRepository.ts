@@ -12,6 +12,7 @@ type SnapshotRow = {
   contributionCount?: unknown;
   mine?: unknown;
   preferences?: unknown;
+  hasOpenRoundsBefore?: unknown;
   rounds?: unknown;
   contributions?: unknown;
   reactions?: unknown;
@@ -22,6 +23,7 @@ type SnapshotRow = {
 export type ChallengeTodayReadSnapshot = {
   round: ChallengeRoundRecord | null;
   preferences: ChallengePreferences | null;
+  hasOpenRoundsBefore: boolean;
   items: readonly ChallengeRoundItemRecord[];
   attempts: readonly ChallengeAttemptRecord[];
   questions: readonly ChallengeQuestionRecord[];
@@ -337,6 +339,11 @@ export class PostgresChallengeReadRepository implements ChallengeReadRepository 
           )
           from hoc_vui_private.challenge_preferences as preferences
           where preferences.student_id = ${studentId}::uuid limit 1) as preferences,
+        exists (
+          select 1
+          from hoc_vui_private.challenge_rounds as previous_rounds
+          where previous_rounds.round_date < ${roundDate}::date and previous_rounds.status <> 'closed'
+        ) as "hasOpenRoundsBefore",
         coalesce((select jsonb_agg(${this.db.unsafe(itemObject('items'))} order by items.position, items.id)
           from hoc_vui_private.challenge_round_items as items where items.round_date = ${roundDate}::date), '[]'::jsonb) as items,
         coalesce((select jsonb_agg(${this.db.unsafe(attemptObject('attempts'))} order by attempts.answered_at, attempts.id)
@@ -364,6 +371,7 @@ export class PostgresChallengeReadRepository implements ChallengeReadRepository 
     return {
       round: row.round ? mapRound(row.round) : null,
       preferences: mapPreferences(row.preferences),
+      hasOpenRoundsBefore: booleanValue(row.hasOpenRoundsBefore),
       items: arrayOf(row.items).map(mapItem),
       attempts: arrayOf(row.attempts).map(mapAttempt),
       questions: arrayOf(row.questions).map(mapQuestion),

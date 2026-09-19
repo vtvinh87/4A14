@@ -52,11 +52,13 @@ describe('PostgresChallengeReadRepository', () => {
       currentContributions: 2,
       mine: [expect.objectContaining({ quotaUsedOnCreatedDate: 1 })],
       preferences: { studentId: 'student-reader', canCreate: true, canParticipate: true, updatedAt: '2026-09-19T07:00:00.000Z' },
+      hasOpenRoundsBefore: false,
     });
     expect(mock.queries).toHaveLength(1);
     expect(mock.queries[0]).toContain('jsonb_build_object');
     expect(mock.queries[0]).toContain('challenge_round_items');
     expect(mock.queries[0]).toContain('challenge_questions');
+    expect(mock.queries[0]).toContain('previous_rounds');
   });
 
   it('loads weekly arrays and contribution map with one SQL statement', async () => {

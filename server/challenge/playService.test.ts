@@ -240,7 +240,7 @@ describe('Challenge play service', () => {
     if (!round) throw new Error('missing round');
     const getPreferences = vi.spyOn(authoring, 'getPreferences');
     const read = {
-      loadToday: vi.fn(async () => ({ round, items, attempts: [], questions: await authoring.findQuestionsByIds(items.map((item) => item.questionId)), authors: await authoring.getAuthorViewsByIds(items.map((item) => item.authorId)), currentContributions: 0, mine: [], preferences: { studentId: 'student-reader', canCreate: true, canParticipate: true, updatedAt: '2026-09-17T08:00:00.000Z' } })),
+      loadToday: vi.fn(async () => ({ round, items, attempts: [], questions: await authoring.findQuestionsByIds(items.map((item) => item.questionId)), authors: await authoring.getAuthorViewsByIds(items.map((item) => item.authorId)), currentContributions: 0, mine: [], preferences: { studentId: 'student-reader', canCreate: true, canParticipate: true, updatedAt: '2026-09-17T08:00:00.000Z' }, hasOpenRoundsBefore: false })),
       loadWeekly: vi.fn(),
     };
     const listRoundItems = vi.spyOn(play, 'listRoundItems');
@@ -252,6 +252,44 @@ describe('Challenge play service', () => {
     expect(read.loadToday).toHaveBeenCalledOnce();
     expect(getPreferences).not.toHaveBeenCalled();
     expect(listRoundItems).not.toHaveBeenCalled();
+  });
+
+  it('does not repeat the previous-round probe when the today snapshot proves none are open', async () => {
+    const { authoring, play } = serviceFixture();
+    await seedCompleteRound(authoring, play);
+    const round = await play.getRound('2026-09-17');
+    const items = await play.listRoundItems('2026-09-17');
+    if (!round) throw new Error('missing round');
+    const listOpenRoundsBefore = vi.spyOn(play, 'listOpenRoundsBefore');
+    const read = {
+      loadToday: vi.fn(async () => ({ round, items, attempts: [], questions: await authoring.findQuestionsByIds(items.map((item) => item.questionId)), authors: await authoring.getAuthorViewsByIds(items.map((item) => item.authorId)), currentContributions: 0, mine: [], preferences: { studentId: 'student-reader', canCreate: true, canParticipate: true, updatedAt: '2026-09-17T08:00:00.000Z' }, hasOpenRoundsBefore: false })),
+      loadWeekly: vi.fn(),
+    };
+    const service = createChallengePlayService({ authoring, play, clock: () => START, activeStudentCount: async () => 3, idFactory: () => 'snapshot-id', read: read as never } as never);
+
+    const result = await service.getToday('student-reader');
+
+    expect(result.ok).toBe(true);
+    expect(listOpenRoundsBefore).not.toHaveBeenCalled();
+  });
+
+  it('keeps previous-round cleanup when the today snapshot reports an open prior round', async () => {
+    const { authoring, play } = serviceFixture();
+    await seedCompleteRound(authoring, play);
+    const round = await play.getRound('2026-09-17');
+    const items = await play.listRoundItems('2026-09-17');
+    if (!round) throw new Error('missing round');
+    const listOpenRoundsBefore = vi.spyOn(play, 'listOpenRoundsBefore');
+    const read = {
+      loadToday: vi.fn(async () => ({ round, items, attempts: [], questions: await authoring.findQuestionsByIds(items.map((item) => item.questionId)), authors: await authoring.getAuthorViewsByIds(items.map((item) => item.authorId)), currentContributions: 0, mine: [], preferences: { studentId: 'student-reader', canCreate: true, canParticipate: true, updatedAt: '2026-09-17T08:00:00.000Z' }, hasOpenRoundsBefore: true })),
+      loadWeekly: vi.fn(),
+    };
+    const service = createChallengePlayService({ authoring, play, clock: () => START, activeStudentCount: async () => 3, idFactory: () => 'snapshot-id', read: read as never } as never);
+
+    const result = await service.getToday('student-reader');
+
+    expect(result.ok).toBe(true);
+    expect(listOpenRoundsBefore).toHaveBeenCalledOnce();
   });
 
   it('keeps the authoritative preference fallback when the today snapshot has no preference row', async () => {
