@@ -106,7 +106,7 @@ export function createChallengePlayService(deps: {
     roundDate: string,
     timing?: ChallengeReadTiming,
     initialSnapshot?: ChallengeTodayReadSnapshot | null,
-  ): Promise<{ round: ChallengeRoundRecord; items: readonly ChallengeRoundItemRecord[] }> => {
+  ): Promise<{ round: ChallengeRoundRecord; items: readonly ChallengeRoundItemRecord[]; changed: boolean }> => {
     return measureStage(timing, 'challenge_prepare', async () => {
       let round = initialSnapshot?.round ?? await deps.play.getRound(roundDate);
       if (!round) {
@@ -158,7 +158,7 @@ export function createChallengePlayService(deps: {
           }
         }
       }
-      return { round: changed ? ((await deps.play.getRound(roundDate)) ?? round) : round, items };
+      return { round: changed ? ((await deps.play.getRound(roundDate)) ?? round) : round, items, changed };
     });
   };
 
@@ -215,6 +215,10 @@ export function createChallengePlayService(deps: {
       return { ok: true as const, ...(await todayResponse(studentId, roundDate, initialSnapshot.round, initialSnapshot.items, timing, initialSnapshot)) };
     }
     const prepared = await createOrLoadRound(roundDate, timing, initialSnapshot);
+    if (initialSnapshot && !prepared.changed) {
+      const snapshot = { ...initialSnapshot, round: prepared.round, items: prepared.items };
+      return { ok: true as const, ...(await todayResponse(studentId, roundDate, prepared.round, prepared.items, timing, snapshot)) };
+    }
     if (deps.read) {
       const snapshot = await measureStage(timing, 'challenge_snapshot', () => deps.read!.loadToday(studentId, roundDate));
       if (snapshot.round) {
