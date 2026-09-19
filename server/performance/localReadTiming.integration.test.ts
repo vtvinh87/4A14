@@ -4,6 +4,7 @@ import { createDbClient, type DatabaseClient } from '../db/client';
 import { PostgresAuthRepository } from '../auth/postgresRepository';
 import { PostgresAuthoringRepository } from '../challenge/postgresAuthoringRepository';
 import { PostgresPlayRepository } from '../challenge/postgresPlayRepository';
+import { PostgresChallengeReadRepository } from '../challenge/readRepository';
 import { createChallengePlayService } from '../challenge/playService';
 import { createChallengeWeeklyService } from '../challenge/weeklyService';
 
@@ -73,12 +74,14 @@ describeLocalDatabase('local protected read timing', () => {
       const todayDb = timedDatabase(base, todayTimings);
       const todayAuthoring = new PostgresAuthoringRepository(todayDb);
       const todayPlay = new PostgresPlayRepository(todayDb);
+      const todayRead = new PostgresChallengeReadRepository(todayDb);
       const today = createChallengePlayService({
         authoring: todayAuthoring,
         play: todayPlay,
         clock: () => new Date('2026-09-19T08:00:00.000Z'),
         activeStudentCount: async () => 0,
         idFactory: () => 'local-timing-id',
+        read: todayRead,
       });
       const todayResult = await today.getToday(selected.id);
       expect(todayResult.ok).toBe(true);
@@ -87,11 +90,13 @@ describeLocalDatabase('local protected read timing', () => {
       const weekDb = timedDatabase(base, weekTimings);
       const weekAuthoring = new PostgresAuthoringRepository(weekDb);
       const weekPlay = new PostgresPlayRepository(weekDb);
+      const weekRead = new PostgresChallengeReadRepository(weekDb);
       const week = createChallengeWeeklyService({
         play: weekPlay,
         authoring: weekAuthoring,
         now: () => new Date('2026-09-19T08:00:00.000Z'),
         activeStudentIds: () => new PostgresAuthRepository(weekDb).listActiveStudentIds(),
+        read: weekRead,
       });
       const weekResult = await week.getWeekly(selected.id);
       expect(weekResult.ok).toBe(true);

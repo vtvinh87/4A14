@@ -9,6 +9,7 @@ import { CHALLENGE_ROUND_QUESTION_LIMIT } from '../../shared/challenge-contracts
 import { challengeTarget, localChallengeDate, selectDailyQuestions } from './roundRules.ts';
 import type { TimingStage, RequestTiming } from '../performance/timing.ts';
 import type { AuthoringRepository } from './authoringTypes.ts';
+import type { ChallengeReadRepository, ChallengeTodayReadSnapshot } from './readRepository.ts';
 import type {
   ChallengeAttemptRecord,
   ChallengeRoundRecord,
@@ -84,6 +85,7 @@ export function createChallengePlayService(deps: {
   clock: () => Date;
   activeStudentCount: () => Promise<number>;
   idFactory: () => string;
+  read?: ChallengeReadRepository;
 }): {
   getToday(studentId: string, timing?: ChallengeReadTiming): Promise<import('../../shared/challenge-contracts.ts').ServiceResult<ChallengeTodayResponse>>;
   submitAttempt(studentId: string, itemId: string, input: SubmitChallengeAttemptInput): Promise<import('../../shared/challenge-contracts.ts').ServiceResult<ChallengeAnswerResult>>;
@@ -160,13 +162,16 @@ export function createChallengePlayService(deps: {
     round: ChallengeRoundRecord,
     items: readonly ChallengeRoundItemRecord[],
     timing?: ChallengeReadTiming,
+    snapshot?: ChallengeTodayReadSnapshot,
   ): Promise<ChallengeTodayResponse> => {
-    const attempts = await measureStage(timing, 'challenge_attempts', () => deps.play.listAttemptsForStudent(studentId, roundDate, roundDate));
+    const attempts = snapshot?.attempts ?? await measureStage(timing, 'challenge_attempts', () => deps.play.listAttemptsForStudent(studentId, roundDate, roundDate));
     const attemptsByItem = new Map(attempts.map((attempt) => [attempt.roundItemId, attempt]));
-    const [questionRecords, authors] = await Promise.all([
-      measureStage(timing, 'challenge_questions', () => deps.authoring.findQuestionsByIds(items.map((item) => item.questionId))),
-      measureStage(timing, 'challenge_authors', () => deps.authoring.getAuthorViewsByIds(items.map((item) => item.authorId))),
-    ]);
+    const [questionRecords, authors] = snapshot
+      ? [snapshot.questions, snapshot.authors] as const
+      : await Promise.all([
+        measureStage(timing, 'challenge_questions', () => deps.authoring.findQuestionsByIds(items.map((item) => item.questionId))),
+        measureStage(timing, 'challenge_authors', () => deps.authoring.getAuthorViewsByIds(items.map((item) => item.authorId))),
+      ]);
     const questionsById = new Map(questionRecords.map((question) => [question.id, question]));
     const authorsById = new Map(authors.map((author) => [author.id, author]));
     const questions: ChallengeQuestionView[] = [];
@@ -177,8 +182,8 @@ export function createChallengePlayService(deps: {
       const attempt = attemptsByItem.get(item.id);
       questions.push(publicQuestion(question, item, round, author, Boolean(attempt), Boolean(attempt?.isPractice)));
     }
-    const current = await measureStage(timing, 'challenge_contributions', () => deps.play.countCorrectContributions(roundDate));
-    const created = await measureStage(timing, 'challenge_mine', () => deps.authoring.listMine(studentId, 50));
+    const current = snapshot?.currentContributions ?? await measureStage(timing, 'challenge_contributions', () => deps.play.countCorrectContributions(roundDate));
+    const created = snapshot?.mine ?? await measureStage(timing, 'challenge_mine', () => deps.authoring.listMine(studentId, 50));
     return {
       roundDate,
       roundStatus: questions.length === 0 ? 'empty' : round.status,
@@ -197,6 +202,12 @@ export function createChallengePlayService(deps: {
     if (!preferences.canParticipate) return failure('locked', 'Thách đố đang được tạm dừng cho tài khoản này.', 'rollout_disabled');
     const roundDate = localChallengeDate(deps.clock());
     await closePreviousRounds(roundDate);
+    if (deps.read) {
+      const snapshot = await measureStage(timing, 'challenge_snapshot', () => deps.read!.loadToday(studentId, roundDate));
+      if (snapshot.round && (snapshot.round.status === 'closed' || snapshot.items.length >= CHALLENGE_ROUND_QUESTION_LIMIT)) {
+        return { ok: true as const, ...(await todayResponse(studentId, roundDate, snapshot.round, snapshot.items, timing, snapshot)) };
+      }
+    }
     const prepared = await createOrLoadRound(roundDate, timing);
     return { ok: true as const, ...(await todayResponse(studentId, roundDate, prepared.round, prepared.items, timing)) };
   };

@@ -14,6 +14,7 @@ import { PostgresAuthoringRepository } from './challenge/postgresAuthoringReposi
 import { createChallengeAuthoringService } from './challenge/authoringService.ts';
 import { createChallengeReviewService, type ChallengeReviewRequest } from './challenge/reviewService.ts';
 import { PostgresPlayRepository } from './challenge/postgresPlayRepository.ts';
+import { PostgresChallengeReadRepository } from './challenge/readRepository.ts';
 import { createChallengePlayService } from './challenge/playService.ts';
 import { createChallengeSocialService } from './challenge/socialService.ts';
 import { createChallengeWeeklyService } from './challenge/weeklyService.ts';
@@ -789,9 +790,11 @@ export async function getDefaultApp(): Promise<{ app: ReturnType<typeof createAp
       });
       const challengeReview = createChallengeReviewService({ repository: challengeAuthoringRepository, clock: () => new Date() });
       const challengePlayRepository = new PostgresPlayRepository(db);
+      const challengeReadRepository = new PostgresChallengeReadRepository(db);
       const challengePlay = createChallengePlayService({
         authoring: challengeAuthoringRepository,
         play: challengePlayRepository,
+        read: challengeReadRepository,
         clock: () => new Date(),
         activeStudentCount: () => authRepository.countActiveStudents(),
         idFactory: randomUUID,
@@ -802,6 +805,7 @@ export async function getDefaultApp(): Promise<{ app: ReturnType<typeof createAp
         play: challengePlayRepository,
         now: () => new Date(),
         activeStudentIds: () => authRepository.listActiveStudentIds(),
+        read: challengeReadRepository,
       });
       return { app: createApp({ auth, learning, classroom, challengeAuthoring, challengeReview, challengePlay, challengeSocial, challengeWeekly }), db };
     }).catch((error) => {

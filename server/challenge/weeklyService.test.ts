@@ -172,4 +172,17 @@ describe('Challenge weekly class map service', () => {
       'challenge_mine',
     ]));
   });
+
+  it('uses the bounded weekly snapshot when the production read repository is available', async () => {
+    const read = {
+      loadToday: vi.fn(),
+      loadWeekly: vi.fn(async () => ({ rounds: [], items: [], contributionByDate: new Map(), questions: [], attempts: [], reactions: [], roster: [], itemQuestions: [], mine: [] })),
+    };
+    const service = createChallengeWeeklyService({ play: new MemoryPlayRepository(), authoring: new MemoryAuthoringRepository(), now: () => NOW, read: read as never } as never);
+
+    const result = await service.getWeekly('student-a', NOW);
+
+    expect(result).toMatchObject({ ok: true, days: expect.any(Array) });
+    expect(read.loadWeekly).toHaveBeenCalledOnce();
+  });
 });

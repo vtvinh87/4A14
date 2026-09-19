@@ -231,6 +231,26 @@ describe('Challenge play service', () => {
     ]));
   });
 
+  it('uses the bounded today snapshot when the production read repository is available', async () => {
+    const { authoring, play } = serviceFixture();
+    await seedCompleteRound(authoring, play);
+    const round = await play.getRound('2026-09-17');
+    const items = await play.listRoundItems('2026-09-17');
+    if (!round) throw new Error('missing round');
+    const read = {
+      loadToday: vi.fn(async () => ({ round, items, attempts: [], questions: await authoring.findQuestionsByIds(items.map((item) => item.questionId)), authors: await authoring.getAuthorViewsByIds(items.map((item) => item.authorId)), currentContributions: 0, mine: [] })),
+      loadWeekly: vi.fn(),
+    };
+    const listRoundItems = vi.spyOn(play, 'listRoundItems');
+    const service = createChallengePlayService({ authoring, play, clock: () => START, activeStudentCount: async () => 3, idFactory: () => 'snapshot-id', read: read as never } as never);
+
+    const result = await service.getToday('student-reader');
+
+    expect(result.ok).toBe(true);
+    expect(read.loadToday).toHaveBeenCalledOnce();
+    expect(listRoundItems).not.toHaveBeenCalled();
+  });
+
   it('drops withdrawn, voided, and author-mismatched batch rows before public mapping', async () => {
     const { authoring, play, service } = serviceFixture();
     await seedCompleteRound(authoring, play);

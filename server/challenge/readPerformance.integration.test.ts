@@ -4,6 +4,8 @@ import { createDbClient, type DatabaseClient } from '../db/client';
 import { PostgresAuthRepository } from '../auth/postgresRepository';
 import { PostgresAuthoringRepository } from './postgresAuthoringRepository';
 import { PostgresPlayRepository } from './postgresPlayRepository';
+import { PostgresChallengeReadRepository } from './readRepository';
+import { createChallengePlayService } from './playService';
 import { createChallengeWeeklyService } from './weeklyService';
 
 const databaseUrl = process.env.HOC_VUI_TEST_DATABASE_URL;
@@ -93,15 +95,54 @@ describeLocalDatabase('PostgreSQL challenge batch read boundary', () => {
       const auth = new PostgresAuthRepository(counted);
       const authoring = new PostgresAuthoringRepository(counted);
       const play = new PostgresPlayRepository(counted);
+      const read = new PostgresChallengeReadRepository(counted);
       const service = createChallengeWeeklyService({
         play,
         authoring,
         now: () => new Date('2026-09-17T08:00:00.000Z'),
         activeStudentIds: () => auth.listActiveStudentIds(),
+        read,
       });
       await expect(service.getWeekly(randomUUID())).resolves.toMatchObject({ ok: true });
-      expect(statements.length).toBeLessThanOrEqual(10);
+      expect(statements.length).toBe(1);
       expect(statements.join(' ').toLowerCase()).not.toContain('credentials');
+    } finally {
+      await db.end({ timeout: 5 });
+    }
+  });
+
+  it('keeps optimized today and week response parity with the legacy read path', async () => {
+    const db = createDbClient(databaseUrl!);
+    try {
+      const identity = await db<{ id: string }[]>`
+        select accounts.id
+        from hoc_vui_private.accounts as accounts
+        join hoc_vui_private.challenge_preferences as preferences on preferences.student_id = accounts.id
+        where accounts.role = 'student' and accounts.active = true
+        order by accounts.id
+        limit 1
+      `;
+      const studentId = identity[0]?.id;
+      if (!studentId) throw new Error('local_synthetic_identity_missing');
+      const now = () => new Date('2026-09-19T08:00:00.000Z');
+      const makeToday = (read?: PostgresChallengeReadRepository) => {
+        const authoring = new PostgresAuthoringRepository(db);
+        const play = new PostgresPlayRepository(db);
+        return createChallengePlayService({ authoring, play, clock: now, activeStudentCount: async () => 0, idFactory: randomUUID, ...(read ? { read } : {}) });
+      };
+      const optimizedToday = await makeToday(new PostgresChallengeReadRepository(db)).getToday(studentId);
+      const legacyToday = await makeToday().getToday(studentId);
+      expect(optimizedToday).toEqual(legacyToday);
+
+      const makeWeek = (read?: PostgresChallengeReadRepository) => {
+        const authoring = new PostgresAuthoringRepository(db);
+        const play = new PostgresPlayRepository(db);
+        const auth = new PostgresAuthRepository(db);
+        return createChallengeWeeklyService({ authoring, play, now, activeStudentIds: () => auth.listActiveStudentIds(), ...(read ? { read } : {}) });
+      };
+      const optimizedWeek = await makeWeek(new PostgresChallengeReadRepository(db)).getWeekly(studentId);
+      const legacyWeek = await makeWeek().getWeekly(studentId);
+      expect(optimizedWeek).toEqual(legacyWeek);
     } finally {
       await db.end({ timeout: 5 });
     }

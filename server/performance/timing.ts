@@ -1,5 +1,6 @@
 export type TimingSpan = 'auth' | 'data';
 export type TimingStage =
+  | 'challenge_snapshot'
   | 'challenge_preferences'
   | 'challenge_prepare'
   | 'challenge_rounds'

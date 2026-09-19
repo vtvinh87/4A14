@@ -10,6 +10,7 @@ import { challengeWeekBounds } from './roundRules.ts';
 import type { TimingStage, RequestTiming } from '../performance/timing.ts';
 import type { AuthoringRepository } from './authoringTypes.ts';
 import type { ChallengeAttemptRecord, ChallengeRoundRecord, ChallengeRoundItemRecord, ChallengeReactionRecord, PlayRepository } from './playTypes.ts';
+import type { ChallengeReadRepository } from './readRepository.ts';
 
 type ChallengeReadTiming = Pick<RequestTiming, 'measureStage'>;
 
@@ -80,16 +81,18 @@ export function createChallengeWeeklyService(deps: {
   authoring: AuthoringRepository;
   now: () => Date;
   activeStudentIds?: () => Promise<readonly string[]>;
+  read?: ChallengeReadRepository;
 }) {
   async function getWeekly(studentId: string, now = deps.now(), timing?: ChallengeReadTiming): Promise<ServiceResult<ChallengeWeeklyResponse>> {
     const { start, end } = challengeWeekBounds(now);
-    const rounds = await measureStage(timing, 'challenge_rounds', () => deps.play.listRoundsBetween(start, end));
+    const snapshot = deps.read ? await measureStage(timing, 'challenge_snapshot', () => deps.read!.loadWeekly(studentId, start, end)) : null;
+    const rounds = snapshot?.rounds ?? await measureStage(timing, 'challenge_rounds', () => deps.play.listRoundsBetween(start, end));
     const roundsByDate = new Map(rounds.map((round) => [round.roundDate, round]));
     // Keep the bounded reads serial on the shared database client. The default
     // pool is one connection, and concurrent full-range reads can otherwise
     // contend with unrelated requests on a constrained production database.
-    const allItems = await measureStage(timing, 'challenge_items', () => deps.play.listRoundItemsBetween(start, end));
-    const contributionByDate = await measureStage(timing, 'challenge_contributions', () => deps.play.countCorrectContributionsBetween(start, end));
+    const allItems = snapshot?.items ?? await measureStage(timing, 'challenge_items', () => deps.play.listRoundItemsBetween(start, end));
+    const contributionByDate = snapshot?.contributionByDate ?? await measureStage(timing, 'challenge_contributions', () => deps.play.countCorrectContributionsBetween(start, end));
     const itemsByDate = new Map<string, ChallengeRoundItemRecord[]>();
     for (const item of allItems) {
       const items = itemsByDate.get(item.roundDate) ?? [];
@@ -120,11 +123,11 @@ export function createChallengeWeeklyService(deps: {
       if (completed) completedDays += 1;
     }
 
-    const questions = await measureStage(timing, 'challenge_questions', () => deps.authoring.listQuestionsBetween(start, end));
-    const attempts = await measureStage(timing, 'challenge_attempts', () => deps.play.listAttemptsBetween(start, end));
-    const reactions = await measureStage(timing, 'challenge_reactions', () => deps.play.listReactionsBetween(start, end));
-    const roster = deps.activeStudentIds ? await measureStage(timing, 'challenge_roster', () => deps.activeStudentIds!()) : [] as readonly string[];
-    const itemQuestions = await measureStage(timing, 'challenge_item_questions', () => deps.authoring.findQuestionsByIds(allItems.map((item) => item.questionId)));
+    const questions = snapshot?.questions ?? await measureStage(timing, 'challenge_questions', () => deps.authoring.listQuestionsBetween(start, end));
+    const attempts = snapshot?.attempts ?? await measureStage(timing, 'challenge_attempts', () => deps.play.listAttemptsBetween(start, end));
+    const reactions = snapshot?.reactions ?? await measureStage(timing, 'challenge_reactions', () => deps.play.listReactionsBetween(start, end));
+    const roster = snapshot?.roster ?? (deps.activeStudentIds ? await measureStage(timing, 'challenge_roster', () => deps.activeStudentIds!()) : [] as readonly string[]);
+    const itemQuestions = snapshot?.itemQuestions ?? await measureStage(timing, 'challenge_item_questions', () => deps.authoring.findQuestionsByIds(allItems.map((item) => item.questionId)));
     const itemQuestionsById = new Map(itemQuestions.map((question) => [question.id, question]));
     const discoveredIds = new Set<string>([
       ...questions.map((question) => question.authorId),
@@ -143,7 +146,7 @@ export function createChallengeWeeklyService(deps: {
     }
 
     const studentAttempts = attempts.filter((attempt) => attempt.studentId === studentId && !attempt.isVoided);
-    const mineQuestions = await measureStage(timing, 'challenge_mine', () => deps.authoring.listMine(studentId, 50));
+    const mineQuestions = snapshot?.mine ?? await measureStage(timing, 'challenge_mine', () => deps.authoring.listMine(studentId, 50));
     const mineQuestionsInWeek = mineQuestions.filter((question) => question.createdLocalDate >= start && question.createdLocalDate <= end);
     return {
       ok: true,
