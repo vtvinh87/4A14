@@ -1,15 +1,15 @@
 {
-  "schemaVersion": 3,
-  "capturedAt": "2026-09-19T01:05:34Z",
+  "schemaVersion": 4,
+  "capturedAt": "2026-09-19T02:13:00Z",
   "status": "READY_FOR_REVIEW_WITH_GAPS_PERFORMANCE_NOT_ACCEPTED",
   "source": "/Volumes/Pictures/Projects/Hoc_Vui",
-  "codeCommit": "2f2ac390ab29ad02d9b0b01cd5fdf8b5ed5f9b49",
+  "codeCommit": "49117e6896c6a64a0de097bab45a088cc3e07634",
   "edge": {
-    "version": 21,
+    "version": 25,
     "status": "ACTIVE",
-    "bundleSha": "8f1f542ce0cdbb7822bdf2c0f0db25d5d8abb00647482cfbbacb5d469345735f"
+    "bundleSha": "08239101969dc70cb1d6d7326b5022a5684579d19c6a34046d4b4e16ce7557b4"
   },
-  "localDatabaseValidation": "PASSED_607_TESTS_ZERO_SKIPS",
+  "localDatabaseValidation": "PASSED_617_TESTS_ZERO_SKIPS",
   "flowOrder": [
     "friends",
     "board",
@@ -26,9 +26,16 @@
       12,
       10
     ],
-    "sqlCountEvidence": "Unit/mock contract counts only; no live SQL trace was captured.",
+    "sqlCountEvidence": "Earlier local-http-sql.json counts are auth-inclusive. The latest final-code service-only trace recorded auth 1 query, Today 3 queries and Week 1 query; production SQL was not measured.",
     "sqlBeforeMeasured": null,
-    "sqlProductionMeasured": null,
+    "sqlProductionMeasured": false,
+    "latestServiceTrace": {
+      "environment": "isolated PostgreSQL 17.11 at 127.0.0.1:55432/hoc_vui_load_test",
+      "auth": { "queryCount": 1, "totalMs": 4.003 },
+      "today": { "queryCount": 3, "totalMs": 13.4 },
+      "week": { "queryCount": 1, "totalMs": 10.477 },
+      "note": "Service-only query counts are not directly comparable to the earlier auth-inclusive HTTP route counts; friends/board were not retraced after the snapshot change."
+    },
     "httpWarmP95MsRounded": [
       4.2,
       4.12,
@@ -41,7 +48,7 @@
       143.9,
       47.6
     ],
-    "warning": "Local Node/PostgreSQL + Chrome/Vite dev only; fixture retries left extra synthetic accounts."
+    "warning": "Local Node/PostgreSQL + Chrome/Vite dev only; fixture retries left extra synthetic accounts. Local SQL is not production SQL."
   },
   "productionBefore": {
     "artifact": "cloud-before.json",
@@ -108,5 +115,47 @@
       "qaCleanup": "628b36e5c40a97db98c011dafdf3d883b67eed40c9a64270bf1b89453806ee64"
     }
   },
-  "interpretation": "Weekly timeout regression resolved by serialized bounded reads; global <3s warm target remains unmet for Today and Week. HTTP and browser evidence are separate; click-to-fresh data is not inferred from anonymous or skeleton timing."
+  "productionSnapshotV25": {
+    "httpArtifact": "cloud-snapshot-v25-http.json",
+    "browserArtifact": "cloud-snapshot-v25-browser.json",
+    "smokeArtifact": "cloud-snapshot-v25-smoke.json",
+    "qaCleanupArtifact": "cloud-snapshot-v25-qa-cleanup.json",
+    "httpWarmSamplesPerFlow": 30,
+    "browserWarmSamplesPerFlow": 30,
+    "httpWarmP95MsRounded": [
+      2662.116,
+      2661.983,
+      3308.316,
+      2560.538
+    ],
+    "browserClickToFreshWarmP95MsRounded": [
+      2613.9,
+      2596.9,
+      3312.9,
+      2528.9
+    ],
+    "httpFirstOpenMsRounded": [
+      1829.606,
+      2514.355,
+      3244.931,
+      2448.42
+    ],
+    "browserFirstOpenMsRounded": [
+      2641.8,
+      2646.4,
+      3628.6,
+      2662.8
+    ],
+    "errors": 0,
+    "coldEdge": "NOT_ESTABLISHED",
+    "sqlProductionMeasured": false,
+    "accepted": false,
+    "artifactSha256": {
+      "smoke": "260e3781ce38f3f364937609db4d6b4801e8325bf20fdb2fade1cb39b291dacd",
+      "http": "ab670c6860494a0ecfbd12d3028dbc174ebea5c95a38beaa2d78acad8849951f",
+      "browser": "f6039f440f193d23e20126918ecbd71358cf783c4dd08cb5bce74ca299355241",
+      "qaCleanup": "ffb6cef2565b714b8081a7e3cd193002e469deef06eed7e042dd3adf9c14aa39"
+    }
+  },
+  "interpretation": "The bounded challenge snapshot release resolved the weekly timeout/read fan-out and brought Week below the warm target. Today remains above 3 seconds in both protected HTTP and click-to-fresh browser p95. HTTP, browser, local SQL and Server-Timing evidence are separate; cold Edge is not established and no production SQL count was captured."
 }

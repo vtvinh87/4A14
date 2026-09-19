@@ -1,0 +1,2350 @@
+{
+  "schemaVersion": 2,
+  "environment": "host to Supabase Edge v25, synthetic account, sequential HTTP response-body-complete timing",
+  "target": "https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api",
+  "edgeVersion": 25,
+  "edgeBundleSha256": "08239101969dc70cb1d6d7326b5022a5684579d19c6a34046d4b4e16ce7557b4",
+  "measuredAt": "2026-09-19T01:57:38.905Z",
+  "sampleCountPerRoute": 31,
+  "warmDefinition": "samples 2-31; first sample reported separately",
+  "coldEdge": "NOT_ESTABLISHED",
+  "violations": [],
+  "reports": [
+    {
+      "route": "/me/friends",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 1829.606,
+        "status": 200,
+        "noStore": true,
+        "serverTiming": {
+          "auth": 1334.25,
+          "data": 260.83,
+          "total": 1595.36
+        },
+        "stageNames": [
+          "auth",
+          "data",
+          "total"
+        ]
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 2662.116,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 1829.606,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1334.25,
+            "data": 260.83,
+            "total": 1595.36
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 1,
+          "totalMs": 2371.369,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1884.08,
+            "data": 267.34,
+            "total": 2156.68
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 2,
+          "totalMs": 2383.989,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1901.98,
+            "data": 266.52,
+            "total": 2174.43
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 3,
+          "totalMs": 2327.765,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1859.01,
+            "data": 260.83,
+            "total": 2124.99
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 4,
+          "totalMs": 2436.911,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1866.22,
+            "data": 261.07,
+            "total": 2132.52
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 5,
+          "totalMs": 2362.834,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1895.62,
+            "data": 262.95,
+            "total": 2163.75
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 6,
+          "totalMs": 2377.836,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1899.55,
+            "data": 266.89,
+            "total": 2171.95
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 7,
+          "totalMs": 2428.326,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1891.87,
+            "data": 267.27,
+            "total": 2164.49
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 8,
+          "totalMs": 2662.116,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1920.81,
+            "data": 278.71,
+            "total": 2205.5
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 9,
+          "totalMs": 2457.535,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1891.2,
+            "data": 264.22,
+            "total": 2160.59
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 10,
+          "totalMs": 2457.617,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1905.49,
+            "data": 265.5,
+            "total": 2176.3
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 11,
+          "totalMs": 2311.873,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1843.68,
+            "data": 257.35,
+            "total": 2106
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 12,
+          "totalMs": 2389.825,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1911.76,
+            "data": 268.41,
+            "total": 2185.57
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 13,
+          "totalMs": 2356.64,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1885.67,
+            "data": 263.99,
+            "total": 2155.06
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 14,
+          "totalMs": 2334.55,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1867.92,
+            "data": 261.04,
+            "total": 2133.95
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 15,
+          "totalMs": 2355.062,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1889.48,
+            "data": 261.91,
+            "total": 2156.68
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 16,
+          "totalMs": 2381.838,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1877.78,
+            "data": 262.47,
+            "total": 2145.73
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 17,
+          "totalMs": 2764.368,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1871.95,
+            "data": 261.85,
+            "total": 2140.58
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 18,
+          "totalMs": 2593.723,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1923.87,
+            "data": 267.08,
+            "total": 2196.32
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 19,
+          "totalMs": 2424.383,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1874.29,
+            "data": 272.11,
+            "total": 2151.49
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 20,
+          "totalMs": 925.271,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 261.63,
+            "data": 262.05,
+            "total": 523.86
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 21,
+          "totalMs": 2455.598,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1888.49,
+            "data": 264.22,
+            "total": 2158.03
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 22,
+          "totalMs": 2426.62,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1908.36,
+            "data": 264.57,
+            "total": 2178.46
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 23,
+          "totalMs": 2486.937,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1910.89,
+            "data": 268.69,
+            "total": 2185.44
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 24,
+          "totalMs": 2567.703,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1895.49,
+            "data": 265.7,
+            "total": 2166.11
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 25,
+          "totalMs": 2449.573,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1891.36,
+            "data": 263.15,
+            "total": 2160.02
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 26,
+          "totalMs": 2393.103,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1911.43,
+            "data": 267.15,
+            "total": 2183.89
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 27,
+          "totalMs": 2359.336,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1897.48,
+            "data": 261.71,
+            "total": 2164.33
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 28,
+          "totalMs": 2416.82,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1903.03,
+            "data": 267.01,
+            "total": 2175.28
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 29,
+          "totalMs": 2560.142,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1862.71,
+            "data": 260.36,
+            "total": 2129.92
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 30,
+          "totalMs": 2390.81,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1907.49,
+            "data": 265.97,
+            "total": 2179.01
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/me/progress-board",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 2514.355,
+        "status": 200,
+        "noStore": true,
+        "serverTiming": {
+          "auth": 1900.38,
+          "data": 269.12,
+          "total": 2175.59
+        },
+        "stageNames": [
+          "auth",
+          "data",
+          "total"
+        ]
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 2661.983,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 2514.355,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1900.38,
+            "data": 269.12,
+            "total": 2175.59
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 1,
+          "totalMs": 2358.157,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1886.42,
+            "data": 263.48,
+            "total": 2155.25
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 2,
+          "totalMs": 2331.705,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1865.58,
+            "data": 259.5,
+            "total": 2130.84
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 3,
+          "totalMs": 2353.415,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1884.19,
+            "data": 263.65,
+            "total": 2153.14
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 4,
+          "totalMs": 2345.379,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1878.29,
+            "data": 262.24,
+            "total": 2146.07
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 5,
+          "totalMs": 2388.124,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1893.12,
+            "data": 264.02,
+            "total": 2162.67
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 6,
+          "totalMs": 2454.164,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1901.44,
+            "data": 262.74,
+            "total": 2169.67
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 7,
+          "totalMs": 2459.293,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1923.44,
+            "data": 267.33,
+            "total": 2196.14
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 8,
+          "totalMs": 2353.323,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1881.31,
+            "data": 263.14,
+            "total": 2149.68
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 9,
+          "totalMs": 2558.776,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1852.26,
+            "data": 258.29,
+            "total": 2116.23
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 10,
+          "totalMs": 2384.335,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1885.95,
+            "data": 263.36,
+            "total": 2154.92
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 11,
+          "totalMs": 2531.655,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1869.53,
+            "data": 261.55,
+            "total": 2136.66
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 12,
+          "totalMs": 2457.014,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1904.76,
+            "data": 267.79,
+            "total": 2178.31
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 13,
+          "totalMs": 2458.422,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1900.47,
+            "data": 265.53,
+            "total": 2171.51
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 14,
+          "totalMs": 2665.37,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1916.22,
+            "data": 267.21,
+            "total": 2189.05
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 15,
+          "totalMs": 2455.955,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1876.25,
+            "data": 262.56,
+            "total": 2144.24
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 16,
+          "totalMs": 2456.004,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1892.58,
+            "data": 264.14,
+            "total": 2162.3
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 17,
+          "totalMs": 2457.63,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1888.78,
+            "data": 263.65,
+            "total": 2157.98
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 18,
+          "totalMs": 2459.811,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1893.4,
+            "data": 263.71,
+            "total": 2163.84
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 19,
+          "totalMs": 2459.993,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1877.8,
+            "data": 261.95,
+            "total": 2145.58
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 20,
+          "totalMs": 2355.775,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1879.65,
+            "data": 261.61,
+            "total": 2147.1
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 21,
+          "totalMs": 2393.494,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1919.68,
+            "data": 268.02,
+            "total": 2193.07
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 22,
+          "totalMs": 2338.221,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1876.62,
+            "data": 261.24,
+            "total": 2143.35
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 23,
+          "totalMs": 2432.266,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1911.33,
+            "data": 267.18,
+            "total": 2184.33
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 24,
+          "totalMs": 2661.983,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1892.77,
+            "data": 264.29,
+            "total": 2162.57
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 25,
+          "totalMs": 2661.159,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1880.5,
+            "data": 263.21,
+            "total": 2149.5
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 26,
+          "totalMs": 2335.579,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1869.31,
+            "data": 261.35,
+            "total": 2135.81
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 27,
+          "totalMs": 2362.365,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1892.21,
+            "data": 263.54,
+            "total": 2161.21
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 28,
+          "totalMs": 2380.082,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1900.41,
+            "data": 263.46,
+            "total": 2169.24
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 29,
+          "totalMs": 2344.511,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1870.12,
+            "data": 261.54,
+            "total": 2137
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        },
+        {
+          "iteration": 30,
+          "totalMs": 2582.094,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1913.67,
+            "data": 267.64,
+            "total": 2186.76
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/today",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 3244.931,
+        "status": 200,
+        "noStore": true,
+        "serverTiming": {
+          "auth": 1871.16,
+          "data": 1047.38,
+          "total": 2923.98,
+          "challenge_preferences": 260.1,
+          "challenge_snapshot": 265.25,
+          "challenge_prepare": 260.58
+        },
+        "stageNames": [
+          "auth",
+          "data",
+          "total",
+          "challenge_preferences",
+          "challenge_snapshot",
+          "challenge_prepare"
+        ]
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 3308.316,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 3244.931,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1871.16,
+            "data": 1047.38,
+            "total": 2923.98,
+            "challenge_preferences": 260.1,
+            "challenge_snapshot": 265.25,
+            "challenge_prepare": 260.58
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 1,
+          "totalMs": 3143.8,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1883.51,
+            "data": 1047.31,
+            "total": 2936.28,
+            "challenge_preferences": 261.41,
+            "challenge_snapshot": 261.78,
+            "challenge_prepare": 260.49
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 2,
+          "totalMs": 3308.316,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1919.47,
+            "data": 1071.29,
+            "total": 2996.06,
+            "challenge_preferences": 266.14,
+            "challenge_snapshot": 269.01,
+            "challenge_prepare": 267.57
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 3,
+          "totalMs": 3171.836,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1909.18,
+            "data": 1050.19,
+            "total": 2964.91,
+            "challenge_preferences": 260.8,
+            "challenge_snapshot": 263.53,
+            "challenge_prepare": 261.95
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 4,
+          "totalMs": 3175.687,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1892.12,
+            "data": 1068.79,
+            "total": 2966.33,
+            "challenge_preferences": 269.17,
+            "challenge_snapshot": 265.06,
+            "challenge_prepare": 262.6
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 5,
+          "totalMs": 3148.349,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1885.98,
+            "data": 1053.36,
+            "total": 2945.16,
+            "challenge_preferences": 262.67,
+            "challenge_snapshot": 263.69,
+            "challenge_prepare": 263.42
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 6,
+          "totalMs": 3301.527,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1912.96,
+            "data": 1065.33,
+            "total": 2983.81,
+            "challenge_preferences": 265.35,
+            "challenge_snapshot": 266.58,
+            "challenge_prepare": 265.84
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 7,
+          "totalMs": 3179.569,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1895.75,
+            "data": 1059.01,
+            "total": 2960.41,
+            "challenge_preferences": 264.57,
+            "challenge_snapshot": 265.17,
+            "challenge_prepare": 263.65
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 8,
+          "totalMs": 3171.398,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1874.54,
+            "data": 1029.32,
+            "total": 2909.22,
+            "challenge_preferences": 256.66,
+            "challenge_snapshot": 257.74,
+            "challenge_prepare": 256.81
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 9,
+          "totalMs": 3173.516,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1866.75,
+            "data": 1044.62,
+            "total": 2914.94,
+            "challenge_preferences": 260.82,
+            "challenge_snapshot": 261.74,
+            "challenge_prepare": 260.07
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 10,
+          "totalMs": 3147.879,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1883.33,
+            "data": 1049.5,
+            "total": 2938.6,
+            "challenge_preferences": 261.98,
+            "challenge_snapshot": 261.69,
+            "challenge_prepare": 262.26
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 11,
+          "totalMs": 3200.86,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1903.26,
+            "data": 1063,
+            "total": 2971.81,
+            "challenge_preferences": 264.28,
+            "challenge_snapshot": 266.24,
+            "challenge_prepare": 266
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 12,
+          "totalMs": 3172.929,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1906.28,
+            "data": 1059.38,
+            "total": 2971.11,
+            "challenge_preferences": 263.12,
+            "challenge_snapshot": 263.59,
+            "challenge_prepare": 262.23
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 13,
+          "totalMs": 3133.459,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1867.32,
+            "data": 1048.17,
+            "total": 2920.92,
+            "challenge_preferences": 258.44,
+            "challenge_snapshot": 260.18,
+            "challenge_prepare": 268.59
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 14,
+          "totalMs": 3216.237,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1867.08,
+            "data": 1039.24,
+            "total": 2912.05,
+            "challenge_preferences": 259.19,
+            "challenge_snapshot": 260.05,
+            "challenge_prepare": 259.65
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 15,
+          "totalMs": 3175.679,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1883.87,
+            "data": 1050.39,
+            "total": 2939.36,
+            "challenge_preferences": 261.33,
+            "challenge_snapshot": 263.45,
+            "challenge_prepare": 262.95
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 16,
+          "totalMs": 3171.933,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1891.44,
+            "data": 1052.95,
+            "total": 2949.69,
+            "challenge_preferences": 262.43,
+            "challenge_snapshot": 264.49,
+            "challenge_prepare": 262.56
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 17,
+          "totalMs": 3145.744,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1887.3,
+            "data": 1053.09,
+            "total": 2947.4,
+            "challenge_preferences": 262.99,
+            "challenge_snapshot": 263.8,
+            "challenge_prepare": 263.33
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 18,
+          "totalMs": 3307.985,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1914.22,
+            "data": 1079.53,
+            "total": 2998.92,
+            "challenge_preferences": 286.63,
+            "challenge_snapshot": 263.71,
+            "challenge_prepare": 264.2
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 19,
+          "totalMs": 3174.19,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1874.86,
+            "data": 1043.66,
+            "total": 2923.79,
+            "challenge_preferences": 259.73,
+            "challenge_snapshot": 260.54,
+            "challenge_prepare": 261.24
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 20,
+          "totalMs": 3277.719,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1902.45,
+            "data": 1061.27,
+            "total": 2969.19,
+            "challenge_preferences": 264.37,
+            "challenge_snapshot": 265.93,
+            "challenge_prepare": 265.54
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 21,
+          "totalMs": 3378.431,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1864.73,
+            "data": 1037.54,
+            "total": 2907.79,
+            "challenge_preferences": 257.93,
+            "challenge_snapshot": 259.86,
+            "challenge_prepare": 259.34
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 22,
+          "totalMs": 3159.739,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1893.36,
+            "data": 1055.59,
+            "total": 2954.59,
+            "challenge_preferences": 263.61,
+            "challenge_snapshot": 264.33,
+            "challenge_prepare": 263.87
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 23,
+          "totalMs": 3188.428,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1901.22,
+            "data": 1055.59,
+            "total": 2962.19,
+            "challenge_preferences": 262.3,
+            "challenge_snapshot": 264.44,
+            "challenge_prepare": 263.72
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 24,
+          "totalMs": 3144.029,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1885.92,
+            "data": 1052.9,
+            "total": 2944.13,
+            "challenge_preferences": 262.42,
+            "challenge_snapshot": 263.32,
+            "challenge_prepare": 263.29
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 25,
+          "totalMs": 3141.524,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1886.21,
+            "data": 1052.42,
+            "total": 2944.02,
+            "challenge_preferences": 262.59,
+            "challenge_snapshot": 262.59,
+            "challenge_prepare": 263.16
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 26,
+          "totalMs": 3238.949,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1908.44,
+            "data": 1073.21,
+            "total": 2986.93,
+            "challenge_preferences": 271.52,
+            "challenge_snapshot": 267.13,
+            "challenge_prepare": 266.41
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 27,
+          "totalMs": 3158.936,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1898,
+            "data": 1059.31,
+            "total": 2962.6,
+            "challenge_preferences": 264.41,
+            "challenge_snapshot": 265.08,
+            "challenge_prepare": 264.58
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 28,
+          "totalMs": 3291.049,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1890.46,
+            "data": 1086.45,
+            "total": 2982.17,
+            "challenge_preferences": 262.86,
+            "challenge_snapshot": 262.71,
+            "challenge_prepare": 297.45
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 29,
+          "totalMs": 3174.529,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1870.22,
+            "data": 1046.42,
+            "total": 2921.88,
+            "challenge_preferences": 262.98,
+            "challenge_snapshot": 260.55,
+            "challenge_prepare": 259.88
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        },
+        {
+          "iteration": 30,
+          "totalMs": 3175.182,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1866.42,
+            "data": 1055.03,
+            "total": 2926.98,
+            "challenge_preferences": 265.42,
+            "challenge_snapshot": 259.27,
+            "challenge_prepare": 258.63
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_preferences",
+            "challenge_snapshot",
+            "challenge_prepare"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/week",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 2448.42,
+        "status": 200,
+        "noStore": true,
+        "serverTiming": {
+          "auth": 1872.65,
+          "data": 264.46,
+          "total": 2142.56,
+          "challenge_snapshot": 263.04
+        },
+        "stageNames": [
+          "auth",
+          "data",
+          "total",
+          "challenge_snapshot"
+        ]
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 2560.538,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 2448.42,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1872.65,
+            "data": 264.46,
+            "total": 2142.56,
+            "challenge_snapshot": 263.04
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 1,
+          "totalMs": 2458.56,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1868.53,
+            "data": 262.98,
+            "total": 2136.69,
+            "challenge_snapshot": 261.55
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 2,
+          "totalMs": 2348.234,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1873.73,
+            "data": 265.17,
+            "total": 2144.34,
+            "challenge_snapshot": 263.84
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 3,
+          "totalMs": 2359.481,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1854.34,
+            "data": 262.37,
+            "total": 2122.17,
+            "challenge_snapshot": 261.05
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 4,
+          "totalMs": 2380.561,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1903.13,
+            "data": 270.03,
+            "total": 2178.43,
+            "challenge_snapshot": 268.75
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 5,
+          "totalMs": 2435.891,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1880.21,
+            "data": 270.34,
+            "total": 2156.42,
+            "challenge_snapshot": 264.22
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 6,
+          "totalMs": 2340.67,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1870.5,
+            "data": 265.09,
+            "total": 2140.92,
+            "challenge_snapshot": 263.65
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 7,
+          "totalMs": 2379.632,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1899.37,
+            "data": 267.6,
+            "total": 2173.31,
+            "challenge_snapshot": 266.24
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 8,
+          "totalMs": 2447.034,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1911.25,
+            "data": 270.8,
+            "total": 2187.57,
+            "challenge_snapshot": 269.39
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 9,
+          "totalMs": 2354.342,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1872.63,
+            "data": 266.66,
+            "total": 2143.18,
+            "challenge_snapshot": 265.69
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 10,
+          "totalMs": 2338.949,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1880.97,
+            "data": 265.76,
+            "total": 2150.55,
+            "challenge_snapshot": 264.77
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 11,
+          "totalMs": 2473.975,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1909.81,
+            "data": 270.88,
+            "total": 2186.02,
+            "challenge_snapshot": 269.54
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 12,
+          "totalMs": 2333.138,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1871.13,
+            "data": 265.04,
+            "total": 2141.44,
+            "challenge_snapshot": 263.75
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 13,
+          "totalMs": 2393.755,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1905.02,
+            "data": 269.63,
+            "total": 2180.06,
+            "challenge_snapshot": 268.35
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 14,
+          "totalMs": 2309.63,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1836.95,
+            "data": 260.16,
+            "total": 2102.87,
+            "challenge_snapshot": 258.89
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 15,
+          "totalMs": 2419.672,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1864.78,
+            "data": 263.12,
+            "total": 2141.64,
+            "challenge_snapshot": 261.65
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 16,
+          "totalMs": 2422.39,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1889.68,
+            "data": 270.81,
+            "total": 2165.73,
+            "challenge_snapshot": 269.47
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 17,
+          "totalMs": 2348.332,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1835.58,
+            "data": 260.32,
+            "total": 2102.59,
+            "challenge_snapshot": 258.92
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 18,
+          "totalMs": 2377.516,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1900.11,
+            "data": 268.48,
+            "total": 2173.79,
+            "challenge_snapshot": 267.2
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 19,
+          "totalMs": 2404.98,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1920.91,
+            "data": 271.21,
+            "total": 2198.09,
+            "challenge_snapshot": 269.93
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 20,
+          "totalMs": 2494.294,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1921.4,
+            "data": 268.78,
+            "total": 2195.58,
+            "challenge_snapshot": 267.47
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 21,
+          "totalMs": 2355.884,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1837.77,
+            "data": 261.91,
+            "total": 2105.79,
+            "challenge_snapshot": 259.74
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 22,
+          "totalMs": 2357.814,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1889.63,
+            "data": 264.77,
+            "total": 2159.75,
+            "challenge_snapshot": 263.45
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 23,
+          "totalMs": 2454.78,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1916.45,
+            "data": 271.56,
+            "total": 2193.29,
+            "challenge_snapshot": 270.27
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 24,
+          "totalMs": 2560.538,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1960.45,
+            "data": 270.84,
+            "total": 2237.16,
+            "challenge_snapshot": 269.41
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 25,
+          "totalMs": 2456.178,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1879,
+            "data": 266.58,
+            "total": 2150.95,
+            "challenge_snapshot": 265.16
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 26,
+          "totalMs": 2449.124,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1881.64,
+            "data": 291.95,
+            "total": 2178.97,
+            "challenge_snapshot": 290.69
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 27,
+          "totalMs": 2671.679,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1895.61,
+            "data": 268.79,
+            "total": 2169.83,
+            "challenge_snapshot": 267.52
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 28,
+          "totalMs": 2456.282,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1912.11,
+            "data": 270.51,
+            "total": 2188.05,
+            "challenge_snapshot": 269.25
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 29,
+          "totalMs": 2372.952,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1897.97,
+            "data": 268.11,
+            "total": 2171.5,
+            "challenge_snapshot": 266.84
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        },
+        {
+          "iteration": 30,
+          "totalMs": 2443.68,
+          "status": 200,
+          "noStore": true,
+          "serverTiming": {
+            "auth": 1905.44,
+            "data": 267.25,
+            "total": 2178.28,
+            "challenge_snapshot": 265.96
+          },
+          "stageNames": [
+            "auth",
+            "data",
+            "total",
+            "challenge_snapshot"
+          ]
+        }
+      ]
+    }
+  ]
+}

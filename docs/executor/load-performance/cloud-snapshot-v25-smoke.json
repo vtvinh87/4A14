@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "environment": "Supabase Edge v25, synthetic account, protected HTTP body-complete smoke",
+  "target": "https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api",
+  "edgeVersion": 25,
+  "edgeBundleSha256": "08239101969dc70cb1d6d7326b5022a5684579d19c6a34046d4b4e16ce7557b4",
+  "measuredAt": "2026-09-19T01:51:37.940Z",
+  "loginStatus": 200,
+  "reports": [
+    {
+      "route": "/me/friends",
+      "status": 200,
+      "totalMs": 2372.314,
+      "noStore": true,
+      "serverTiming": {
+        "auth": 1894.74,
+        "data": 265.21,
+        "total": 2165.46
+      },
+      "stageNames": [
+        "auth",
+        "data",
+        "total"
+      ],
+      "answerLeak": false,
+      "accountIsolation": null
+    },
+    {
+      "route": "/me/progress-board",
+      "status": 200,
+      "totalMs": 2404.235,
+      "noStore": true,
+      "serverTiming": {
+        "auth": 1918.49,
+        "data": 266.18,
+        "total": 2192.43
+      },
+      "stageNames": [
+        "auth",
+        "data",
+        "total"
+      ],
+      "answerLeak": false,
+      "accountIsolation": null
+    },
+    {
+      "route": "/me/challenge/today",
+      "status": 200,
+      "totalMs": 3166.616,
+      "noStore": true,
+      "serverTiming": {
+        "auth": 1841.94,
+        "data": 1026.32,
+        "total": 2873.41,
+        "challenge_preferences": 255.48,
+        "challenge_snapshot": 257.18,
+        "challenge_prepare": 256.35
+      },
+      "stageNames": [
+        "auth",
+        "data",
+        "total",
+        "challenge_preferences",
+        "challenge_snapshot",
+        "challenge_prepare"
+      ],
+      "answerLeak": false,
+      "accountIsolation": null
+    },
+    {
+      "route": "/me/challenge/week",
+      "status": 200,
+      "totalMs": 2355.021,
+      "noStore": true,
+      "serverTiming": {
+        "auth": 1854.29,
+        "data": 262.16,
+        "total": 2121.83,
+        "challenge_snapshot": 260.86
+      },
+      "stageNames": [
+        "auth",
+        "data",
+        "total",
+        "challenge_snapshot"
+      ],
+      "answerLeak": false,
+      "accountIsolation": null
+    }
+  ]
+}

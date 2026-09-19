@@ -1,5 +1,17 @@
 # Load performance — verification report
 
+## Current bounded snapshot result — 2026-09-19T02:13Z
+
+`READY_FOR_REVIEW_WITH_GAPS`; Edge v25 is active and protected verification is clean, but Today still misses the warm `<3 s` target. Actual checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`, source `49117e6896c6a64a0de097bab45a088cc3e07634` pushed.
+
+- Edge `api` version 25 is ACTIVE, bundle SHA `08239101969dc70cb1d6d7326b5022a5684579d19c6a34046d4b4e16ce7557b4`; no migration, secret, region or pool mutation.
+- Final local PostgreSQL 17.11 gates: exit 0, **138 files / 617 tests / zero skipped**. Local trace: auth 1 SQL query / 4.003 ms, Today 3 service SQL queries / 13.400 ms, Week 1 service SQL query / 10.477 ms. These are local service/SQL timings; production SQL count is **NOT_MEASURED**.
+- v25 protected smoke: all four routes 200, `no-store`, login 200, no answer leak/account mismatch. Artifact: `cloud-snapshot-v25-smoke.json` (SHA-256 `260e3781ce38f3f364937609db4d6b4801e8325bf20fdb2fade1cb39b291dacd`).
+- v25 HTTP: 31 sequential samples/route, 30 warm, 0 errors. Warm p95 ms (friends/board/today/week): **2662.116 / 2661.983 / 3308.316 / 2560.538**. First-open: **1829.606 / 2514.355 / 3244.931 / 2448.420**. Artifact SHA-256 `ab670c6860494a0ecfbd12d3028dbc174ebea5c95a38beaa2d78acad8849951f`.
+- v25 browser click-to-fresh: 30 warm/flow, 0 errors/page errors. Warm p95 ms: **2613.900 / 2596.900 / 3312.900 / 2528.900**. First-open: **2641.800 / 2646.400 / 3628.600 / 2662.800**. Artifact SHA-256 `f6039f440f193d23e20126918ecbd71358cf783c4dd08cb5bce74ca299355241`. Cold Edge was not established.
+- QA cleanup: disable 200/active false, old token 401, admin logout 200; artifact SHA-256 `ffb6cef2565b714b8081a7e3cd193002e469deef06eed7e042dd3adf9c14aa39`. No real-child data was used.
+- Interpretation: Friends, Board and Week meet the warm target; Today does not in both independent HTTP and browser measurements. This is a real remaining gap, not an anonymous 401, skeleton, cache or Server-Timing-as-SQL claim. The release is reviewable but not performance-accepted.
+
 ## Current fixed-release result — 2026-09-19T01:05Z
 
 `READY_FOR_REVIEW_WITH_GAPS`; L0–L7 implementation/release gates are documented, but the global warm `<3 s` goal is **not achieved**. Actual checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`, source commit `2f2ac390ab29ad02d9b0b01cd5fdf8b5ed5f9b49` pushed.
@@ -14,7 +26,7 @@
 - QA cleanup passed: account disabled 200, old token 401, admin logout 200 (`cloud-fixed-qa-cleanup.json`). No real-child data was used or modified.
 - Acceptance: Friends/Board meet the warm target at browser p95; Today/Week do not. Remaining work is a new bounded optimization packet for auth and Today/Week data; index/region/pool changes require separate evidence/review. No further external action is implied by this report.
 
-## Previous failed-release snapshot — superseded
+## Previous fixed-release v21 snapshot — superseded by v25
 
 `READY_FOR_REVIEW_WITH_BLOCKER`; goal `<3 s` NOT achieved. Checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`, verified implementation commit `6f5927f95450f244b35d9132ef7cb149a779ddd0` pushed.
 

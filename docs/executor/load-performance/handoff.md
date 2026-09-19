@@ -1,6 +1,18 @@
 # Load performance — handoff
 
-Status: `READY_FOR_REVIEW_WITH_GAPS` — fixed backend is active and verified; performance target is not globally achieved.
+Status: `READY_FOR_REVIEW_WITH_GAPS` — Edge v25 is active and verified; Today remains above the warm target.
+
+## Current handoff — bounded challenge snapshot v25, 2026-09-19T02:13Z
+
+- Actual checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`; source `49117e6896c6a64a0de097bab45a088cc3e07634` is pushed. No new task/subagent/worktree. `deno.lock` remains the pre-existing unstaged change; accepted roster lifecycle and baseline manifest are preserved.
+- Source commits in this bounded packet: `90896a0` timing, `0e22b30` snapshot repository, `1a5fcb9` partial snapshot reuse, `49117e6` redundant-refresh guard. No auth credential, parent grant, roster lifecycle, moderation, quota, transaction or frontend behavior was removed or bypassed.
+- Local final gate: PostgreSQL 17.11 at `127.0.0.1:55432/hoc_vui_load_test`, synthetic-only and non-superuser; 138 files / 617 tests / zero skipped, typecheck/server typecheck/Edge check/build/Firebase validation/diff check exit 0. Cluster is stopped and retained.
+- Edge `api` v25 ACTIVE, bundle SHA `08239101969dc70cb1d6d7326b5022a5684579d19c6a34046d4b4e16ce7557b4`. Frontend remains Firebase 4a14 `5a4345d7c6742f03` and a14-82a69 `4acefa21863e4043`; no frontend redeploy was needed.
+- Release evidence: [verification.md](verification.md), [latency-results.json](latency-results.json), [progress.md](progress.md), [baseline.md](baseline.md); artifacts `cloud-snapshot-v25-smoke.json`, `cloud-snapshot-v25-http.json`, `cloud-snapshot-v25-browser.json`, `cloud-snapshot-v25-qa-cleanup.json`.
+- Warm p95 in route/flow order friends, board, today, week: HTTP **2.662 / 2.662 / 3.308 / 2.561 s**; browser click-to-fresh **2.614 / 2.597 / 3.313 / 2.529 s**. First-open and cold are separate; cold Edge is not established. Production SQL count/duration is not measured.
+- QA synthetic account was disabled and old-token revocation verified. No real-child data was used. No cloud migration, secret, region or pool change was made.
+- Acceptance: **not performance-accepted** because Today exceeds 3 seconds in both HTTP and browser p95. Week is now below target after the snapshot packet. Hold v25 for review; do not run another cloud mutation automatically.
+- Proposed next packet: isolate auth overhead and the remaining Today preparation/data path with stage/SQL evidence and TDD RED/GREEN; preserve `no-store`, fresh authorization, account/generation isolation and answer secrecy. If the target is mandatory, deploy only after a new protected smoke plus 30 warm HTTP/browser gate passes. Roll back to the previously verified v21 release/source only for security, correctness or availability regression; a rollback would not by itself satisfy the `<3 s` goal.
 
 ## Current handoff — fixed release, 2026-09-19T01:05Z
 
