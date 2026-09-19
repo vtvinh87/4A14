@@ -102,9 +102,13 @@ export function createChallengePlayService(deps: {
     }
   };
 
-  const createOrLoadRound = async (roundDate: string, timing?: ChallengeReadTiming): Promise<{ round: ChallengeRoundRecord; items: readonly ChallengeRoundItemRecord[] }> => {
+  const createOrLoadRound = async (
+    roundDate: string,
+    timing?: ChallengeReadTiming,
+    initialSnapshot?: ChallengeTodayReadSnapshot | null,
+  ): Promise<{ round: ChallengeRoundRecord; items: readonly ChallengeRoundItemRecord[] }> => {
     return measureStage(timing, 'challenge_prepare', async () => {
-      let round = await deps.play.getRound(roundDate);
+      let round = initialSnapshot?.round ?? await deps.play.getRound(roundDate);
       if (!round) {
         const target = challengeTarget(await deps.activeStudentCount());
         const input: CreateRoundInput = {
@@ -118,7 +122,8 @@ export function createChallengePlayService(deps: {
         round = await deps.play.insertRoundIfAbsent(input);
       }
 
-      let items = await measureStage(timing, 'challenge_items', () => deps.play.listRoundItems(roundDate));
+      let items = initialSnapshot ? [...initialSnapshot.items] : await measureStage(timing, 'challenge_items', () => deps.play.listRoundItems(roundDate));
+      let changed = false;
       if (round.status !== 'closed' && items.length < CHALLENGE_ROUND_QUESTION_LIMIT) {
         const existingQuestionIds = new Set(items.map((item) => item.questionId));
         const existingAuthors = new Set(items.map((item) => item.authorId));
@@ -149,10 +154,11 @@ export function createChallengePlayService(deps: {
           if (inserted) {
             await deps.authoring.markQuestionFeatured(question.id, featuredAt);
             items = [...items, inserted];
+            changed = true;
           }
         }
       }
-      return { round: (await deps.play.getRound(roundDate)) ?? round, items };
+      return { round: changed ? ((await deps.play.getRound(roundDate)) ?? round) : round, items };
     });
   };
 
@@ -202,13 +208,19 @@ export function createChallengePlayService(deps: {
     if (!preferences.canParticipate) return failure('locked', 'Thách đố đang được tạm dừng cho tài khoản này.', 'rollout_disabled');
     const roundDate = localChallengeDate(deps.clock());
     await closePreviousRounds(roundDate);
+    const initialSnapshot = deps.read
+      ? await measureStage(timing, 'challenge_snapshot', () => deps.read!.loadToday(studentId, roundDate))
+      : null;
+    if (initialSnapshot?.round && (initialSnapshot.round.status === 'closed' || initialSnapshot.items.length >= CHALLENGE_ROUND_QUESTION_LIMIT)) {
+      return { ok: true as const, ...(await todayResponse(studentId, roundDate, initialSnapshot.round, initialSnapshot.items, timing, initialSnapshot)) };
+    }
+    const prepared = await createOrLoadRound(roundDate, timing, initialSnapshot);
     if (deps.read) {
       const snapshot = await measureStage(timing, 'challenge_snapshot', () => deps.read!.loadToday(studentId, roundDate));
-      if (snapshot.round && (snapshot.round.status === 'closed' || snapshot.items.length >= CHALLENGE_ROUND_QUESTION_LIMIT)) {
+      if (snapshot.round) {
         return { ok: true as const, ...(await todayResponse(studentId, roundDate, snapshot.round, snapshot.items, timing, snapshot)) };
       }
     }
-    const prepared = await createOrLoadRound(roundDate, timing);
     return { ok: true as const, ...(await todayResponse(studentId, roundDate, prepared.round, prepared.items, timing)) };
   };
 
