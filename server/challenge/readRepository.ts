@@ -1,4 +1,4 @@
-import type { ChallengeAuthorView, ChallengeOptionTuple, ChallengeQuestionMine, ChallengeQuestionRecord } from '../../shared/challenge-contracts.ts';
+import type { ChallengeAuthorView, ChallengeOptionTuple, ChallengePreferences, ChallengeQuestionMine, ChallengeQuestionRecord } from '../../shared/challenge-contracts.ts';
 import type { DatabaseClient } from '../db/client.ts';
 import type { ChallengeAttemptRecord, ChallengeReactionRecord, ChallengeRoundItemRecord, ChallengeRoundRecord } from './playTypes.ts';
 
@@ -11,6 +11,7 @@ type SnapshotRow = {
   authors?: unknown;
   contributionCount?: unknown;
   mine?: unknown;
+  preferences?: unknown;
   rounds?: unknown;
   contributions?: unknown;
   reactions?: unknown;
@@ -20,6 +21,7 @@ type SnapshotRow = {
 
 export type ChallengeTodayReadSnapshot = {
   round: ChallengeRoundRecord | null;
+  preferences: ChallengePreferences | null;
   items: readonly ChallengeRoundItemRecord[];
   attempts: readonly ChallengeAttemptRecord[];
   questions: readonly ChallengeQuestionRecord[];
@@ -192,6 +194,17 @@ function mapAuthor(value: unknown): ChallengeAuthorView {
   return { id: stringValue(row.id), displayName: stringValue(row.displayName), avatarId: stringValue(row.avatarId) };
 }
 
+function mapPreferences(value: unknown): ChallengePreferences | null {
+  if (value === null || value === undefined) return null;
+  const row = record(value);
+  return {
+    studentId: stringValue(row.studentId),
+    canCreate: booleanValue(row.canCreate),
+    canParticipate: booleanValue(row.canParticipate),
+    updatedAt: isoString(row.updatedAt),
+  };
+}
+
 const questionObject = `
   jsonb_build_object(
     'id', questions.id,
@@ -316,6 +329,14 @@ export class PostgresChallengeReadRepository implements ChallengeReadRepository 
         (select ${this.db.unsafe(roundObject('rounds'))}
          from hoc_vui_private.challenge_rounds as rounds
          where rounds.round_date = ${roundDate}::date limit 1) as round,
+        (select jsonb_build_object(
+            'studentId', preferences.student_id,
+            'canCreate', preferences.can_create,
+            'canParticipate', preferences.can_participate,
+            'updatedAt', preferences.updated_at
+          )
+          from hoc_vui_private.challenge_preferences as preferences
+          where preferences.student_id = ${studentId}::uuid limit 1) as preferences,
         coalesce((select jsonb_agg(${this.db.unsafe(itemObject('items'))} order by items.position, items.id)
           from hoc_vui_private.challenge_round_items as items where items.round_date = ${roundDate}::date), '[]'::jsonb) as items,
         coalesce((select jsonb_agg(${this.db.unsafe(attemptObject('attempts'))} order by attempts.answered_at, attempts.id)
@@ -342,6 +363,7 @@ export class PostgresChallengeReadRepository implements ChallengeReadRepository 
     const row = rows[0] ?? {};
     return {
       round: row.round ? mapRound(row.round) : null,
+      preferences: mapPreferences(row.preferences),
       items: arrayOf(row.items).map(mapItem),
       attempts: arrayOf(row.attempts).map(mapAttempt),
       questions: arrayOf(row.questions).map(mapQuestion),

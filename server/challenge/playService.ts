@@ -90,16 +90,18 @@ export function createChallengePlayService(deps: {
   getToday(studentId: string, timing?: ChallengeReadTiming): Promise<import('../../shared/challenge-contracts.ts').ServiceResult<ChallengeTodayResponse>>;
   submitAttempt(studentId: string, itemId: string, input: SubmitChallengeAttemptInput): Promise<import('../../shared/challenge-contracts.ts').ServiceResult<ChallengeAnswerResult>>;
 } {
-  const closePreviousRounds = async (roundDate: string): Promise<void> => {
-    const previousRounds = await deps.play.listOpenRoundsBefore(roundDate);
-    for (const previousRound of previousRounds) {
-      const items = await deps.play.listRoundItems(previousRound.roundDate);
-      await deps.play.closeRound(previousRound.roundDate, deps.clock().toISOString());
-      for (const item of items) {
-        const question = await deps.authoring.findForAuthor(item.authorId, item.questionId);
-        if (question?.status === 'featured') await deps.authoring.markQuestionClosed(question.id, deps.clock().toISOString());
+  const closePreviousRounds = async (roundDate: string, timing?: ChallengeReadTiming): Promise<void> => {
+    await measureStage(timing, 'challenge_close_previous', async () => {
+      const previousRounds = await deps.play.listOpenRoundsBefore(roundDate);
+      for (const previousRound of previousRounds) {
+        const items = await deps.play.listRoundItems(previousRound.roundDate);
+        await deps.play.closeRound(previousRound.roundDate, deps.clock().toISOString());
+        for (const item of items) {
+          const question = await deps.authoring.findForAuthor(item.authorId, item.questionId);
+          if (question?.status === 'featured') await deps.authoring.markQuestionClosed(question.id, deps.clock().toISOString());
+        }
       }
-    }
+    });
   };
 
   const createOrLoadRound = async (
@@ -204,13 +206,14 @@ export function createChallengePlayService(deps: {
   };
 
   const getToday = async (studentId: string, timing?: ChallengeReadTiming) => {
-    const preferences = await measureStage(timing, 'challenge_preferences', () => deps.authoring.getPreferences(studentId));
-    if (!preferences.canParticipate) return failure('locked', 'Thách đố đang được tạm dừng cho tài khoản này.', 'rollout_disabled');
     const roundDate = localChallengeDate(deps.clock());
-    await closePreviousRounds(roundDate);
     const initialSnapshot = deps.read
       ? await measureStage(timing, 'challenge_snapshot', () => deps.read!.loadToday(studentId, roundDate))
       : null;
+    const preferences = initialSnapshot?.preferences
+      ?? await measureStage(timing, 'challenge_preferences', () => deps.authoring.getPreferences(studentId));
+    if (!preferences.canParticipate) return failure('locked', 'Thách đố đang được tạm dừng cho tài khoản này.', 'rollout_disabled');
+    await closePreviousRounds(roundDate, timing);
     if (initialSnapshot?.round && (initialSnapshot.round.status === 'closed' || initialSnapshot.items.length >= CHALLENGE_ROUND_QUESTION_LIMIT)) {
       return { ok: true as const, ...(await todayResponse(studentId, roundDate, initialSnapshot.round, initialSnapshot.items, timing, initialSnapshot)) };
     }

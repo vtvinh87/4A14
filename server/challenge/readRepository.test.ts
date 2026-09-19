@@ -40,6 +40,7 @@ describe('PostgresChallengeReadRepository', () => {
       authors: [{ id: 'student-a', displayName: 'Bạn A', avatarId: 'fox-leaf' }],
       contributionCount: 2,
       mine: [{ ...question, quotaUsedOnCreatedDate: 1 }],
+      preferences: { studentId: 'student-reader', canCreate: true, canParticipate: true, updatedAt: '2026-09-19T07:00:00.000Z' },
     }]);
     const repository = new PostgresChallengeReadRepository(mock.db as never);
 
@@ -50,6 +51,7 @@ describe('PostgresChallengeReadRepository', () => {
       authors: [{ id: 'student-a', displayName: 'Bạn A', avatarId: 'fox-leaf' }],
       currentContributions: 2,
       mine: [expect.objectContaining({ quotaUsedOnCreatedDate: 1 })],
+      preferences: { studentId: 'student-reader', canCreate: true, canParticipate: true, updatedAt: '2026-09-19T07:00:00.000Z' },
     });
     expect(mock.queries).toHaveLength(1);
     expect(mock.queries[0]).toContain('jsonb_build_object');
