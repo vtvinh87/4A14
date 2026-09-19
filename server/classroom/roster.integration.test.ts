@@ -26,7 +26,10 @@ describeLocalDatabase('PostgreSQL classroom roster read boundary', () => {
     }) as unknown as typeof db;
     try {
       const repository = new PostgresClassroomRepository(countedDb);
-      await expect(repository.listRoster(randomUUID())).resolves.toEqual([]);
+      const actorId = randomUUID();
+      const expected = await db`select id from hoc_vui_private.accounts where role = 'student' and active = true and id <> ${actorId}::uuid`;
+      const roster = await repository.listRoster(actorId);
+      expect(roster.map(peer => peer.id).sort()).toEqual(expected.map(peer => String(peer.id)).sort());
       expect(statementCount).toBe(1);
     } finally {
       await db.end({ timeout: 5 });

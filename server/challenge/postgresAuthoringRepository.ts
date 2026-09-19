@@ -164,7 +164,7 @@ export class PostgresAuthoringRepository implements AuthoringRepository {
           correct_option_id, explanation, status, revision, created_local_date, created_at, updated_at, submitted_at
         ) values (
           ${input.id ?? null}::uuid, ${input.authorId}::uuid, ${input.sourceFactId}, ${input.sourceVersion}, ${input.lessonId},
-          ${input.lessonTitle}, ${input.prompt}, ${JSON.stringify(input.options)}::jsonb, ${input.correctOptionId}, ${input.explanation},
+          ${input.lessonTitle}, ${input.prompt}, ${tx.json(input.options as never)}::jsonb, ${input.correctOptionId}, ${input.explanation},
           'pending_parent_review', 1, ${input.createdLocalDate}::date, ${createdAt}, ${input.updatedAt ?? createdAt}, ${createdAt}
         )
         returning id, author_id, source_fact_id, source_version, lesson_id, lesson_title, prompt, options, correct_option_id, explanation,
@@ -214,7 +214,7 @@ export class PostgresAuthoringRepository implements AuthoringRepository {
              status, revision, created_local_date, created_at, updated_at, submitted_at, reviewed_at, featured_at, closed_at,
              review_reason, withdrawn_at, voided_at
       from hoc_vui_private.challenge_questions
-      where id = any(${this.db.array(uniqueIds)}::uuid[])
+      where id = any(${uniqueIds}::uuid[])
     `;
     return rows.map(mapQuestion);
   }
@@ -236,7 +236,7 @@ export class PostgresAuthoringRepository implements AuthoringRepository {
         set source_fact_id = ${input.sourceFactId}, source_version = coalesce(${input.sourceVersion ?? null}, source_version),
             lesson_id = coalesce(${input.lessonId ?? null}, lesson_id), lesson_title = coalesce(${input.lessonTitle ?? null}, lesson_title),
             prompt = ${input.prompt},
-            options = ${JSON.stringify([
+            options = ${tx.json([
               { id: current.correct_option_id, text: input.correctAnswer },
               { id: 'wrong-1', text: input.distractors[0] },
               { id: 'wrong-2', text: input.distractors[1] },
@@ -288,7 +288,7 @@ export class PostgresAuthoringRepository implements AuthoringRepository {
     const rows = await this.db<{ id: string; display_name: string; avatar_id: string }[]>`
       select id, display_name, avatar_id
       from hoc_vui_private.accounts
-      where id = any(${this.db.array(uniqueIds)}::uuid[]) and role = 'student' and active = true
+      where id = any(${uniqueIds}::uuid[]) and role = 'student' and active = true
     `;
     return rows.map((row) => ({ id: row.id, displayName: row.display_name, avatarId: row.avatar_id }));
   }
@@ -355,7 +355,7 @@ export class PostgresAuthoringRepository implements AuthoringRepository {
     const reviewRows = await this.db<ReviewRow[]>`
       select question_id, revision, decision, reason, reviewer_student_id, reviewer_scope, created_at
       from hoc_vui_private.challenge_question_reviews
-      where question_id = any(${this.db.array(ids)}::uuid[])
+      where question_id = any(${ids}::uuid[])
       order by revision asc, created_at asc
     `;
     const reviewsByQuestion = new Map<string, InternalReviewRecord[]>();

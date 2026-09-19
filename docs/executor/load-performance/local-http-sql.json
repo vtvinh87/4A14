@@ -1,0 +1,808 @@
+{
+  "environment": "PostgreSQL 17 localhost / Node HTTP real Edge handler",
+  "database": "hoc_vui_load_test",
+  "fixture": {
+    "studentsCreated": 31,
+    "questions": 35,
+    "rounds": 7
+  },
+  "measuredAt": "2026-09-19T00:15:59.287Z",
+  "reports": [
+    {
+      "route": "/me/friends",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 4.34387500000048,
+        "sql": 2,
+        "status": 200
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 4.19537500000024,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 4.34387500000048,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 1,
+          "totalMs": 3.495625000000473,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 2,
+          "totalMs": 3.2887089999994714,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 3,
+          "totalMs": 2.609958000000006,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 4,
+          "totalMs": 2.3697500000007494,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 5,
+          "totalMs": 2.23450000000048,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 6,
+          "totalMs": 2.5354580000002898,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 7,
+          "totalMs": 5.125458000000435,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 8,
+          "totalMs": 3.0591670000003433,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 9,
+          "totalMs": 2.340084000000388,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 10,
+          "totalMs": 2.292167000000518,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 11,
+          "totalMs": 2.347541000000092,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 12,
+          "totalMs": 2.31512500000008,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 13,
+          "totalMs": 3.488209000000097,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 14,
+          "totalMs": 2.595874999999978,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 15,
+          "totalMs": 2.280083000000559,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 16,
+          "totalMs": 2.2224999999998545,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 17,
+          "totalMs": 2.2327919999997903,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 18,
+          "totalMs": 2.517417000000023,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 19,
+          "totalMs": 4.19537500000024,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 20,
+          "totalMs": 3.845666999999594,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 21,
+          "totalMs": 2.578082999999424,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 22,
+          "totalMs": 2.339125000000422,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 23,
+          "totalMs": 2.233541999999943,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 24,
+          "totalMs": 2.246917000000394,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 25,
+          "totalMs": 3.305083000000195,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 26,
+          "totalMs": 1.7146250000005239,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 27,
+          "totalMs": 2.4493329999995694,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 28,
+          "totalMs": 2.387249999999767,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 29,
+          "totalMs": 2.327041999999892,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 30,
+          "totalMs": 2.348167000000103,
+          "sql": 2,
+          "status": 200
+        }
+      ]
+    },
+    {
+      "route": "/me/progress-board",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 4.551249999999527,
+        "sql": 2,
+        "status": 200
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 4.116541999999754,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 4.551249999999527,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 1,
+          "totalMs": 4.129416000000674,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 2,
+          "totalMs": 3.138958999999886,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 3,
+          "totalMs": 2.644209000000046,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 4,
+          "totalMs": 2.5384589999994205,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 5,
+          "totalMs": 2.5919590000003154,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 6,
+          "totalMs": 3.314875000000029,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 7,
+          "totalMs": 2.7545000000000073,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 8,
+          "totalMs": 1.4706249999999272,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 9,
+          "totalMs": 2.9183750000001965,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 10,
+          "totalMs": 2.6848330000002534,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 11,
+          "totalMs": 2.9544999999998254,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 12,
+          "totalMs": 3.283499999999549,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 13,
+          "totalMs": 3.939292000000023,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 14,
+          "totalMs": 3.414708000000246,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 15,
+          "totalMs": 2.560500000000502,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 16,
+          "totalMs": 2.518500000000131,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 17,
+          "totalMs": 3.7491659999996045,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 18,
+          "totalMs": 2.947832999999264,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 19,
+          "totalMs": 2.6451250000000073,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 20,
+          "totalMs": 2.8049999999993815,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 21,
+          "totalMs": 1.6881659999999101,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 22,
+          "totalMs": 2.7476669999996375,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 23,
+          "totalMs": 3.121874999999818,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 24,
+          "totalMs": 4.116541999999754,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 25,
+          "totalMs": 3.1300830000000133,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 26,
+          "totalMs": 2.6432910000003176,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 27,
+          "totalMs": 2.6114159999997355,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 28,
+          "totalMs": 3.2730830000000424,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 29,
+          "totalMs": 3.255500000000211,
+          "sql": 2,
+          "status": 200
+        },
+        {
+          "iteration": 30,
+          "totalMs": 2.69275000000016,
+          "sql": 2,
+          "status": 200
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/today",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 7.091292000000067,
+        "sql": 14,
+        "status": 200
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 6.068041999999878,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 7.091292000000067,
+          "sql": 14,
+          "status": 200
+        },
+        {
+          "iteration": 1,
+          "totalMs": 5.884082999999919,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 2,
+          "totalMs": 5.1392079999995985,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 3,
+          "totalMs": 5.206583999999566,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 4,
+          "totalMs": 5.595249999999396,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 5,
+          "totalMs": 4.6018749999993815,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 6,
+          "totalMs": 5.707500000000437,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 7,
+          "totalMs": 5.705916999999317,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 8,
+          "totalMs": 6.068041999999878,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 9,
+          "totalMs": 4.55212500000016,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 10,
+          "totalMs": 4.595916999999645,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 11,
+          "totalMs": 5.589708000000428,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 12,
+          "totalMs": 4.598417000000154,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 13,
+          "totalMs": 4.786833999999544,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 14,
+          "totalMs": 5.737167000000227,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 15,
+          "totalMs": 4.861957999999504,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 16,
+          "totalMs": 4.669457999999395,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 17,
+          "totalMs": 5.241917000000285,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 18,
+          "totalMs": 4.942458999999872,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 19,
+          "totalMs": 5.124000000000706,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 20,
+          "totalMs": 5.567915999999968,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 21,
+          "totalMs": 5.932458000000224,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 22,
+          "totalMs": 4.854000000000269,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 23,
+          "totalMs": 4.93920799999978,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 24,
+          "totalMs": 5.258375000000342,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 25,
+          "totalMs": 4.662709000000177,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 26,
+          "totalMs": 5.4479160000000775,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 27,
+          "totalMs": 6.572000000000116,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 28,
+          "totalMs": 3.790041000000201,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 29,
+          "totalMs": 4.518874999999753,
+          "sql": 12,
+          "status": 200
+        },
+        {
+          "iteration": 30,
+          "totalMs": 5.274207999999817,
+          "sql": 12,
+          "status": 200
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/week",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 6.477291999999579,
+        "sql": 10,
+        "status": 200
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 7.530166000000463,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 6.477291999999579,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 1,
+          "totalMs": 5.504542000000583,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 2,
+          "totalMs": 6.727458999999726,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 3,
+          "totalMs": 6.281583999999384,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 4,
+          "totalMs": 5.7224999999998545,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 5,
+          "totalMs": 5.800459000000046,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 6,
+          "totalMs": 3.8119159999996555,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 7,
+          "totalMs": 4.950292000000445,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 8,
+          "totalMs": 6.242917000000489,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 9,
+          "totalMs": 4.0173750000003565,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 10,
+          "totalMs": 5.335667000000285,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 11,
+          "totalMs": 6.42016700000022,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 12,
+          "totalMs": 5.606958000000304,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 13,
+          "totalMs": 5.299792000000707,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 14,
+          "totalMs": 5.929082999999991,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 15,
+          "totalMs": 5.933667000000241,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 16,
+          "totalMs": 8.264458999999988,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 17,
+          "totalMs": 7.530166000000463,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 18,
+          "totalMs": 5.0953329999993,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 19,
+          "totalMs": 6.022167000000081,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 20,
+          "totalMs": 5.23162499999944,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 21,
+          "totalMs": 5.300042000000758,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 22,
+          "totalMs": 6.690708000000086,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 23,
+          "totalMs": 5.531874999999673,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 24,
+          "totalMs": 4.630666999999448,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 25,
+          "totalMs": 5.505083999999442,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 26,
+          "totalMs": 4.814124999999876,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 27,
+          "totalMs": 5.098833000000013,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 28,
+          "totalMs": 6.420792000000802,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 29,
+          "totalMs": 5.332042000000001,
+          "sql": 10,
+          "status": 200
+        },
+        {
+          "iteration": 30,
+          "totalMs": 4.7094999999999345,
+          "sql": 10,
+          "status": 200
+        }
+      ]
+    }
+  ]
+}

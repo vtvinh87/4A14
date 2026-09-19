@@ -337,7 +337,7 @@ export class PostgresPlayRepository implements PlayRepository {
           selection_seed_version, selection_metadata
         ) values (
           coalesce(${input.id ?? null}::uuid, gen_random_uuid()), ${input.roundDate}::date, ${input.questionId}::uuid, ${input.authorId}::uuid,
-          ${input.position}, ${input.featuredAt}, ${input.selectionSeedVersion}, ${JSON.stringify(input.selectionMetadata ?? {})}::jsonb
+          ${input.position}, ${input.featuredAt}, ${input.selectionSeedVersion}, ${tx.json((input.selectionMetadata ?? {}) as never)}::jsonb
         )
         on conflict do nothing
         returning ${tx.unsafe(itemColumns)}
@@ -475,7 +475,7 @@ export class PostgresPlayRepository implements PlayRepository {
       insert into hoc_vui_private.challenge_events
         (event_id, student_id, event_type, payload, occurred_at, local_date, source, source_version, created_at)
       values (
-        ${input.eventId}::uuid, ${input.studentId}::uuid, ${input.eventType}, ${JSON.stringify(input.payload)}::jsonb,
+        ${input.eventId}::uuid, ${input.studentId}::uuid, ${input.eventType}, ${this.db.json(input.payload as never)}::jsonb,
         ${input.occurredAt}, ${input.localDate}::date, ${input.source}, ${input.sourceVersion}, ${input.createdAt ?? new Date().toISOString()}
       )
       on conflict (event_id) do nothing

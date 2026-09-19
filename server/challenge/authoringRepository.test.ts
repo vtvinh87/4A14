@@ -259,7 +259,7 @@ describe('MemoryAuthoringRepository', () => {
       expect.objectContaining({ id: 'q-batch-1' }),
     ]);
     expect(questionMock.callable).toHaveBeenCalledOnce();
-    expect(questionMock.array).toHaveBeenCalledWith(['q-batch-1', 'q-batch-2']);
+    expect(questionMock.callable.mock.calls[0]?.[1]).toEqual(['q-batch-1', 'q-batch-2']);
     expect(String(questionMock.callable.mock.calls[0]?.[0])).toContain('any');
 
     const authorMock = mockedDatabase([
@@ -272,7 +272,7 @@ describe('MemoryAuthoringRepository', () => {
       { id: 'student-b', displayName: 'Bạn B', avatarId: 'fox-sun' },
     ]);
     expect(authorMock.callable).toHaveBeenCalledOnce();
-    expect(authorMock.array).toHaveBeenCalledWith(['student-b', 'student-a']);
+    expect(authorMock.callable.mock.calls[0]?.[1]).toEqual(['student-b', 'student-a']);
 
     const emptyMock = mockedDatabase([]);
     const emptyRepository = new PostgresAuthoringRepository(emptyMock.db);

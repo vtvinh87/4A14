@@ -19,6 +19,37 @@ const isLocalTarget = (() => {
 const describeLocalDatabase = databaseUrl && isLocalTarget ? describe : describe.skip;
 
 describeLocalDatabase('PostgreSQL challenge batch read boundary', () => {
+  it('round-trips question options as a JSON array on the real driver', async () => {
+    const db = createDbClient(databaseUrl!);
+    const authorId = randomUUID();
+    try {
+      await db`insert into hoc_vui_private.accounts (id, username, display_name, role) values (${authorId}, ${`qa${authorId.replaceAll('-', '').slice(0, 10)}`}, 'Synthetic QA', 'student')`;
+      const repository = new PostgresAuthoringRepository(db);
+      const question = await repository.insertPendingQuestion({ id: randomUUID(), authorId,
+        sourceFactId: 'map', sourceVersion: 'challenge-facts-v1', lessonId: 'lesson-01', lessonTitle: 'Synthetic QA',
+        prompt: 'Synthetic QA: Bản đồ biểu diễn điều gì?',
+        options: [{ id: 'a', text: 'Khu vực thu nhỏ' }, { id: 'b', text: 'Bài hát' }, { id: 'c', text: 'Món ăn' }, { id: 'd', text: 'Trò chơi' }],
+        correctOptionId: 'a', explanation: 'Đây là dữ liệu giả lập để kiểm tra PostgreSQL.', createdLocalDate: '2026-09-19' });
+      expect(question).toMatchObject({ options: expect.any(Array), correctOptionId: 'a' });
+      if (question === 'quota_exceeded') throw new Error('fixture quota');
+      await repository.reviewQuestion(authorId, question.id, 1, { decision: 'request_revision', reason: 'Synthetic QA revision' });
+      const revised = await repository.updateDraftRevision(authorId, question.id, 1, {
+        revision: 1, sourceFactId: 'map', prompt: 'Synthetic QA: Bản đồ biểu diễn điều gì mới?',
+        correctAnswer: 'Khu vực thu nhỏ', distractors: ['Bài hát', 'Món ăn', 'Trò chơi'], explanation: 'Đây là dữ liệu giả lập kiểm tra sửa câu hỏi.' });
+      expect(revised).toMatchObject({ revision: 2, options: expect.any(Array) });
+      const play = new PostgresPlayRepository(db);
+      const eventId = randomUUID();
+      await play.appendEvent({ eventId, studentId: authorId, eventType: 'challenge.question_created', payload: { questionId: question.id },
+        occurredAt: '2026-09-19T00:00:00Z', localDate: '2026-09-19', source: 'synthetic-qa', sourceVersion: 'v1' });
+      const event = await db`select payload from hoc_vui_private.challenge_events where event_id = ${eventId}::uuid`;
+      expect(event[0].payload).toEqual({ questionId: question.id });
+    } finally {
+      await db`delete from hoc_vui_private.challenge_events where student_id = ${authorId}`;
+      await db`delete from hoc_vui_private.accounts where id = ${authorId}`;
+      await db.end({ timeout: 5 });
+    }
+  });
+
   it('uses one question statement and one active-author statement for a fixed item set', async () => {
     const db = createDbClient(databaseUrl!);
     const statements: string[] = [];
@@ -28,7 +59,7 @@ describeLocalDatabase('PostgreSQL challenge batch read boundary', () => {
       return execute(strings, ...values);
     }) as unknown as DatabaseClient;
     Object.assign(counted, {
-      array: (values: readonly string[]) => db.array([...values]),
+      array: db.array.bind(db),
       unsafe: (value: string) => db.unsafe(value),
     });
     try {
@@ -55,7 +86,7 @@ describeLocalDatabase('PostgreSQL challenge batch read boundary', () => {
       return execute(strings, ...values);
     }) as unknown as DatabaseClient;
     Object.assign(counted, {
-      array: (values: readonly string[]) => db.array([...values]),
+      array: db.array.bind(db),
       unsafe: (value: string) => db.unsafe(value),
     });
     try {

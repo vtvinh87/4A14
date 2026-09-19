@@ -306,4 +306,20 @@ Changed files in this preflight: this ledger only. Next step requires the user-a
 
 ## Continuation rule
 
+### Approved release continuation — 2026-09-19
+
+User explicitly approved isolated local DB/schema/fixtures and a synthetic cloud account for verification/deployment. Resume after quota from files, not a new execution packet.
+
+- Installed PostgreSQL 17.11 with Homebrew; dedicated cluster `/tmp/hoc-vui-load-db.wdmwtV/data`, localhost `127.0.0.1:55432`, database `hoc_vui_load_test`. Six existing migrations applied ONLY there, exit 0. Test runtime role is non-superuser `hoc_vui_runtime`; no cloud migration/secret/region/pool changes.
+- First real integration run: exit 1, 6/7 passed; caught UUID-array encoding failure on a fresh `postgres` connection with `prepare:false`. Driver reproduction confirmed `db.array(ids)` failed while parameterized `ids::uuid[]` succeeded. Fixed three affected authoring read paths.
+- Real fixture insertion also exposed double JSON encoding in challenge question/options/metadata/event writes. Added real PostgreSQL regression (RED constraint violation, then GREEN) and used driver `json()` parameters. Existing transaction order retained. Test cleanup fixed to remove only its own synthetic event before its account.
+- Six integration suites: exit 0, 8/8 tests; full suite with explicit local runtime DB: exit 0, 136 files, 605 tests, NO skips. `npm run typecheck`, `typecheck:server`, `check:edge-runtime`, `build`, `validate:firebase`, `git diff --check`: exit 0. Existing chunk warning remains.
+- `local-http-sql.json`: actual Node HTTP through Edge handler plus PostgreSQL; 30 warm + 1 first-open samples per flow. Warm SQL auth-inclusive friends=2, board=2, today=12, week=10. Today first-open=14 due to missing preference insertion. No live before SQL trace exists.
+- `local-browser.json`: isolated Chrome headless desktop, click -> fresh response/body -> ready DOM -> two animation frames; 30 warm samples per flow. p95 friends 48.2 ms, board 54.9 ms, today 143.9 ms, week 47.6 ms; first-open separately recorded. Local dev-server results do not establish production/cold performance.
+- Synthetic cloud account `qamu7n18no` created once via existing Admin API and PIN changed. Its secrets/session are only in ignored `data/local/load-release/cloud-session.json`; do not recreate after interruption. No learner body/payload is retained in performance reports.
+- CLI function download refused its deployed multi-directory bundle (`UnsafeFunctionDownloadPathError`); did not bypass that extraction guard. A source rollback archive of accepted pre-optimization commit `00ac8fb` is prepared under `/tmp/hoc-vui-edge-rollback.bgwbyX`; this is not claimed byte-identical to deployed v16. Existing Firebase rollback versions remain as recorded above.
+- Added reproducible local/cloud/browser measurement scripts. Cloud pre-deploy report is in progress (`cloud-before.json`, 5 samples/route); keep that limited sample baseline distinct from 30-sample release results. Production deployment still pending at this checkpoint.
+
+Next: finish cloud baseline, preserve approved scope, commit verified source, deploy Edge, synthetic smoke, deploy Firebase, collect release HTTP/browser samples, disable QA account, record remaining latency gaps.
+
 After an interruption, inspect this ledger, `git status --short`, scoped diff, and actual artifacts before retrying. Do not reset/stash, rerun a completed package without source/test changes, or use the old worktree as a baseline.
