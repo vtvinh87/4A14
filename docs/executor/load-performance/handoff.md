@@ -1,6 +1,18 @@
 # Load performance — handoff
 
-Status: `READY_FOR_REVIEW_WITH_GAPS` — Edge v25 is active and verified; Today remains above the warm target.
+Status: `READY_FOR_REVIEW_WITH_GAPS` — Edge v27 is active and verified; all four warm HTTP/browser p95 gates pass, with first-open/cold and production SQL gaps explicitly retained.
+
+## Current handoff — bounded previous-round probe v27, 2026-09-19T04:29Z
+
+- Actual checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`; source `07de92623c43e08e79bc6e94b1e1cdfd2ae5bd61` is pushed. No new task/subagent/worktree. `deno.lock` remains the pre-existing unstaged change; accepted roster lifecycle and baseline manifest are preserved.
+- Source change is limited to `server/challenge/playService.ts`, `server/challenge/playService.test.ts`, `server/challenge/readRepository.ts` and `server/challenge/readRepository.test.ts`. It adds a snapshot `hasOpenRoundsBefore` boolean and skips only a redundant probe when false; true/unknown still runs existing cleanup. Auth, credentialVersion, parent grant, account/generation isolation, moderation, quota, transactions and frontend remain unchanged.
+- Local evidence: RED focused test exit 1; GREEN focused **19/19**; explicit local PostgreSQL integration **5/5**; full suite **138 files / 620 tests / zero skipped**; typechecks, Edge check, build, Firebase validation, diff and accepted-manifest checks exit 0. Latest service-only local SQL trace auth/today/week = **1/1/1 queries**, **1.266/7.502/3.743 ms**. Production SQL is `NOT_MEASURED`.
+- Edge `api` v27 is ACTIVE, bundle SHA `9506e5f25ee55c2e912beddf0fa2e749ab66edd2ce7e96639df6fe1c024ffffd`; no cloud migration, secret, region or pool mutation. Frontend remains 4a14 `5a4345d7c6742f03` and a14-82a69 `4acefa21863e4043`.
+- v27 protected smoke is clean: login 200, all routes 200/no-store, no answer leak; Today body-complete 2.647 s and no `challenge_close_previous` stage. Artifacts: `cloud-snapshot-v27-smoke.json`, `cloud-snapshot-v27-http.json`, `cloud-snapshot-v27-browser.json`, `cloud-snapshot-v27-qa-cleanup.json`.
+- Warm p95 route/flow order friends, board, today, week: HTTP **2.662 / 2.603 / 2.865 / 2.545 s**; browser click-to-fresh **2.579 / 2.678 / 2.798 / 2.513 s**. First-open HTTP **2.550 / 2.349 / 2.608 / 2.476 s**; browser **2.552 / 2.695 / 3.012 / 2.629 s**. Cold Edge remains `NOT_ESTABLISHED`.
+- QA cleanup passed: disable 200/active false, old student token 401, admin logout 200. No real-child data used. Local database cluster is stopped and retained.
+- Acceptance: **warm target passed**, but overall status remains `READY_FOR_REVIEW_WITH_GAPS` because cold/first-open and production SQL are not fully established. Do not use anonymous 401, skeleton, stale private cache, unit/mock timing or Server-Timing as substitutes.
+- Next step: docs-only commit/push of this evidence checkpoint, then stop before further external actions. For unconditional acceptance, obtain an approved cold/first-open and production SQL measurement path. Roll back v27 only for security, correctness, availability or fresh-data regression; rollback does not prove performance acceptance.
 
 ## Current handoff — bounded challenge snapshot v25, 2026-09-19T02:13Z
 

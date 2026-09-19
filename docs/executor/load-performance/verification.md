@@ -1,5 +1,19 @@
 # Load performance — verification report
 
+## Current bounded result — Edge v27, 2026-09-19T04:29Z
+
+`READY_FOR_REVIEW_WITH_GAPS`; all four warm protected HTTP and click-to-fresh browser p95 gates are below 3 seconds. First-open/cold and production SQL remain separate evidence gaps. Actual checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`, source `07de92623c43e08e79bc6e94b1e1cdfd2ae5bd61` pushed.
+
+- Source packet: `d2440c3` coalesced challenge preferences into the Today snapshot; `07de926` added `hasOpenRoundsBefore` to the same snapshot and skips only the redundant previous-round probe when it is false. The RED test failed with one unexpected `listOpenRoundsBefore` call; focused GREEN was **19/19**. The true/unknown path keeps the existing close behavior.
+- Local PostgreSQL 17.11 integration: exit 0, **2 files / 5 tests**. Latest service-only trace on `127.0.0.1:55432/hoc_vui_load_test`: auth **1 SQL / 1.266 ms**, Today **1 SQL / 7.502 ms**, Week **1 SQL / 3.743 ms**. Production SQL count/duration is **NOT_MEASURED**; earlier auth-inclusive HTTP counts remain non-comparable.
+- Full local suite: exit 0, **138 files / 620 tests / zero skipped**. Client/server typecheck, Edge runtime check, build, Firebase validation, whitespace check and accepted-manifest diff check all exit 0. Existing Vite large-chunk warning only; no app dependency added. Local PostgreSQL was stopped after verification.
+- Edge `api` version **27 ACTIVE**, bundle SHA `9506e5f25ee55c2e912beddf0fa2e749ab66edd2ce7e96639df6fe1c024ffffd`; no migration, secret, region, pool or frontend deployment change.
+- v27 smoke artifact `cloud-snapshot-v27-smoke.json` (SHA-256 `5f0fc0c77922867758103b4703f5d14d3fca7a2feefc8df2215a5f786687e13a`): fresh login 200; all four protected routes 200/no-store; no answer leak. Today sample body-complete 2646.842 ms; Server-Timing auth/data/total 1908.490/537.040/2450.860 ms, snapshot 269.440 ms, prepare 266.650 ms; the redundant close stage is absent.
+- v27 HTTP artifact `cloud-snapshot-v27-http.json` (SHA-256 `c6a117fbf27c60e4f996eb1918a27ad69127a05a8a907a8f49182b33147c86f4`): 31 sequential samples/route, 30 warm, 0 errors. Warm p95 ms friends/board/today/week **2661.521 / 2602.984 / 2864.555 / 2544.836**; first-open **2550.249 / 2348.960 / 2607.873 / 2476.003**. This is host-to-Edge response-body-complete latency.
+- v27 browser artifact `cloud-snapshot-v27-browser.json` (SHA-256 `d58cb3223dc19141a6cc2bc7c8e31978f0d30825ef1c692f4a099f0921df1629`): isolated headless Chrome, 124 samples, 30 warm/flow, 0 errors/page errors. Click-to-fresh warm p95 ms **2579.000 / 2677.700 / 2797.500 / 2512.800**; first-open **2552.400 / 2694.700 / 3011.800 / 2629.000**. This includes click, successful fresh response, ready DOM and two animation frames; cold Edge is not established.
+- QA cleanup artifact `cloud-snapshot-v27-qa-cleanup.json` (SHA-256 `74142bd265c3519d91f2440c4e53578650d3af2abaf043eee8be9f321538ca1d`): account disabled 200/active false, old token 401, admin logout 200. No real-child data used.
+- Acceptance: **warm target passed** for all four flows in both HTTP and browser evidence. The report remains `READY_FOR_REVIEW_WITH_GAPS`, not an unconditional performance acceptance, because cold/first-open are separate (Today browser first-open 3.012 s) and production SQL is not measured.
+
 ## Current bounded snapshot result — 2026-09-19T02:13Z
 
 `READY_FOR_REVIEW_WITH_GAPS`; Edge v25 is active and protected verification is clean, but Today still misses the warm `<3 s` target. Actual checkout `/Volumes/Pictures/Projects/Hoc_Vui`, branch `codex/bang-tien-bo`, source `49117e6896c6a64a0de097bab45a088cc3e07634` pushed.

@@ -1,15 +1,15 @@
 {
   "schemaVersion": 4,
-  "capturedAt": "2026-09-19T02:13:00Z",
-  "status": "READY_FOR_REVIEW_WITH_GAPS_PERFORMANCE_NOT_ACCEPTED",
+  "capturedAt": "2026-09-19T04:29:05Z",
+  "status": "READY_FOR_REVIEW_WITH_GAPS_WARM_TARGET_PASSED",
   "source": "/Volumes/Pictures/Projects/Hoc_Vui",
-  "codeCommit": "49117e6896c6a64a0de097bab45a088cc3e07634",
+  "codeCommit": "07de92623c43e08e79bc6e94b1e1cdfd2ae5bd61",
   "edge": {
-    "version": 25,
+    "version": 27,
     "status": "ACTIVE",
-    "bundleSha": "08239101969dc70cb1d6d7326b5022a5684579d19c6a34046d4b4e16ce7557b4"
+    "bundleSha": "9506e5f25ee55c2e912beddf0fa2e749ab66edd2ce7e96639df6fe1c024ffffd"
   },
-  "localDatabaseValidation": "PASSED_617_TESTS_ZERO_SKIPS",
+  "localDatabaseValidation": "PASSED_620_TESTS_ZERO_SKIPS",
   "flowOrder": [
     "friends",
     "board",
@@ -26,15 +26,15 @@
       12,
       10
     ],
-    "sqlCountEvidence": "Earlier local-http-sql.json counts are auth-inclusive. The latest final-code service-only trace recorded auth 1 query, Today 3 queries and Week 1 query; production SQL was not measured.",
+    "sqlCountEvidence": "Earlier local-http-sql.json counts are auth-inclusive. The latest post-v27 service-only trace recorded auth 1 query, Today 1 query and Week 1 query; production SQL was not measured.",
     "sqlBeforeMeasured": null,
     "sqlProductionMeasured": false,
     "latestServiceTrace": {
       "environment": "isolated PostgreSQL 17.11 at 127.0.0.1:55432/hoc_vui_load_test",
-      "auth": { "queryCount": 1, "totalMs": 4.003 },
-      "today": { "queryCount": 3, "totalMs": 13.4 },
-      "week": { "queryCount": 1, "totalMs": 10.477 },
-      "note": "Service-only query counts are not directly comparable to the earlier auth-inclusive HTTP route counts; friends/board were not retraced after the snapshot change."
+      "auth": { "queryCount": 1, "totalMs": 1.266 },
+      "today": { "queryCount": 1, "totalMs": 7.502 },
+      "week": { "queryCount": 1, "totalMs": 3.743 },
+      "note": "Service-only query counts are not directly comparable to the earlier auth-inclusive HTTP route counts; this trace is isolated local PostgreSQL, not production SQL."
     },
     "httpWarmP95MsRounded": [
       4.2,
@@ -157,5 +157,99 @@
       "qaCleanup": "ffb6cef2565b714b8081a7e3cd193002e469deef06eed7e042dd3adf9c14aa39"
     }
   },
-  "interpretation": "The bounded challenge snapshot release resolved the weekly timeout/read fan-out and brought Week below the warm target. Today remains above 3 seconds in both protected HTTP and click-to-fresh browser p95. HTTP, browser, local SQL and Server-Timing evidence are separate; cold Edge is not established and no production SQL count was captured."
+  "productionSnapshotV26": {
+    "httpArtifact": "cloud-snapshot-v26-http.json",
+    "browserArtifact": "cloud-snapshot-v26-browser.json",
+    "smokeArtifact": "cloud-snapshot-v26-smoke.json",
+    "qaCleanupArtifact": "cloud-snapshot-v26-qa-cleanup.json",
+    "httpWarmSamplesPerFlow": 30,
+    "browserWarmSamplesPerFlow": 30,
+    "httpWarmP95MsRounded": [
+      2526.787,
+      2648.927,
+      3093.056,
+      2559.671
+    ],
+    "browserClickToFreshWarmP95MsRounded": [
+      3395.7,
+      4228.4,
+      3029.8,
+      2512.9
+    ],
+    "httpFirstOpenMsRounded": [
+      2534.401,
+      1787.152,
+      2356.365,
+      2586.477
+    ],
+    "browserFirstOpenMsRounded": [
+      2682.8,
+      2612,
+      3161.4,
+      2578.8
+    ],
+    "errors": 0,
+    "coldEdge": "NOT_ESTABLISHED",
+    "sqlProductionMeasured": false,
+    "accepted": false,
+    "artifactSha256": {
+      "smoke": "e839ab4662582975249f579d32061155171d0d3b9471a5c18e07c10961056738",
+      "http": "af0c08170c86cfb1c03b86d7b5bcfdeddfc1fc034c0d16e9eb1f3c967cfa7b66",
+      "browser": "93943cb54a8d4c8ebb78e1d8c59df3d998f28086c3e548f8eb55a7fba8a20401",
+      "qaCleanup": "94e03b7d911c0f4cfe2062d9aa2e692a60f4e96ae28a9a3be5f6687c267fa27c"
+    }
+  },
+  "productionSnapshotV27": {
+    "httpArtifact": "cloud-snapshot-v27-http.json",
+    "browserArtifact": "cloud-snapshot-v27-browser.json",
+    "smokeArtifact": "cloud-snapshot-v27-smoke.json",
+    "qaCleanupArtifact": "cloud-snapshot-v27-qa-cleanup.json",
+    "httpWarmSamplesPerFlow": 30,
+    "browserWarmSamplesPerFlow": 30,
+    "httpWarmP95MsRounded": [
+      2661.521,
+      2602.984,
+      2864.555,
+      2544.836
+    ],
+    "browserClickToFreshWarmP95MsRounded": [
+      2579,
+      2677.7,
+      2797.5,
+      2512.8
+    ],
+    "httpFirstOpenMsRounded": [
+      2550.249,
+      2348.96,
+      2607.873,
+      2476.003
+    ],
+    "browserFirstOpenMsRounded": [
+      2552.4,
+      2694.7,
+      3011.8,
+      2629
+    ],
+    "errors": 0,
+    "coldEdge": "NOT_ESTABLISHED",
+    "sqlProductionMeasured": false,
+    "warmAccepted": true,
+    "accepted": false,
+    "artifactSha256": {
+      "smoke": "5f0fc0c77922867758103b4703f5d14d3fca7a2feefc8df2215a5f786687e13a",
+      "http": "c6a117fbf27c60e4f996eb1918a27ad69127a05a8a907a8f49182b33147c86f4",
+      "browser": "d58cb3223dc19141a6cc2bc7c8e31978f0d30825ef1c692f4a099f0921df1629",
+      "qaCleanup": "74142bd265c3519d91f2440c4e53578650d3af2abaf043eee8be9f321538ca1d"
+    },
+    "smokeServerTimingMs": {
+      "today": {
+        "auth": 1908.49,
+        "data": 537.04,
+        "total": 2450.86,
+        "challenge_snapshot": 269.44,
+        "challenge_prepare": 266.65
+      }
+    }
+  },
+  "interpretation": "The v27 bounded snapshot/probe release meets the warm <3 s target in both protected HTTP and click-to-fresh browser measurements for friends, board, today and week. First-open is reported separately and Today browser first-open is 3.012 s; cold Edge is not established. Local SQL is synthetic isolated PostgreSQL only and production SQL count/duration was not captured."
 }

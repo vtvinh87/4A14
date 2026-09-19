@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "environment": "Supabase Edge v27 synthetic QA cleanup",
+  "target": "https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api",
+  "edgeVersion": 27,
+  "measuredAt": "2026-09-19T04:29:05.109Z",
+  "studentId": "71a819a5-4bc7-4180-ad3b-8652ea1cd0f2",
+  "disable": {
+    "status": 200,
+    "active": false
+  },
+  "oldStudentTokenAfterDisable": {
+    "status": 401
+  },
+  "adminLogout": {
+    "status": 200
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "edgeVersion": 27,
+  "edgeBundleSha256": "9506e5f25ee55c2e912beddf0fa2e749ab66edd2ce7e96639df6fe1c024ffffd",
+  "environment": "Supabase Edge v27, synthetic account, protected HTTP body-complete smoke",
+  "target": "https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api",
+  "loginStatus": 200,
+  "measuredAt": "2026-09-19T04:17:26.645Z",
+  "reports": [
+    {
+      "route": "/me/friends",
+      "status": 200,
+      "totalMs": 2360.726,
+      "noStore": true,
+      "serverTiming": {
+        "auth": 1858.52,
+        "data": 261.45,
+        "total": 2125.81
+      },
+      "stageNames": [
+        "auth",
+        "data",
+        "total"
+      ],
+      "answerLeak": false,
+      "accountIsolation": null
+    },
+    {
+      "route": "/me/progress-board",
+      "status": 200,
+      "totalMs": 2440.435,
+      "noStore": true,
+      "serverTiming": {
+        "auth": 1899.21,
+        "data": 265.34,
+        "total": 2169.93
+      },
+      "stageNames": [
+        "auth",
+        "data",
+        "total"
+      ],
+      "answerLeak": false,
+      "accountIsolation": null
+    },
+    {
+      "route": "/me/challenge/today",
+      "status": 200,
+      "totalMs": 2646.842,
+      "noStore": true,
+      "serverTiming": {
+        "auth": 1908.49,
+        "data": 537.04,
+        "total": 2450.86,
+        "challenge_snapshot": 269.44,
+        "challenge_prepare": 266.65
+      },
+      "stageNames": [
+        "auth",
+        "data",
+        "total",
+        "challenge_snapshot",
+        "challenge_prepare"
+      ],
+      "answerLeak": false,
+      "accountIsolation": null
+    },
+    {
+      "route": "/me/challenge/week",
+      "status": 200,
+      "totalMs": 2470.313,
+      "noStore": true,
+      "serverTiming": {
+        "auth": 1903.41,
+        "data": 269.98,
+        "total": 2178.97,
+        "challenge_snapshot": 268.68
+      },
+      "stageNames": [
+        "auth",
+        "data",
+        "total",
+        "challenge_snapshot"
+      ],
+      "answerLeak": false,
+      "accountIsolation": null
+    }
+  ]
+}

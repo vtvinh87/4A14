@@ -1,0 +1,1549 @@
+{
+  "schemaVersion": 2,
+  "edgeVersion": 27,
+  "edgeBundleSha256": "9506e5f25ee55c2e912beddf0fa2e749ab66edd2ce7e96639df6fe1c024ffffd",
+  "environment": "host to Supabase Edge v27, synthetic account, sequential HTTP response-body-complete timing",
+  "measuredAt": "2026-09-19T04:22:37.834Z",
+  "target": "https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api",
+  "sampleCountPerRoute": 31,
+  "warmDefinition": "samples 2-31; first sample reported separately",
+  "violations": [],
+  "reports": [
+    {
+      "route": "/me/friends",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 2550.249041,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1904.98,
+          "data": 267.08,
+          "total": 2177.65
+        },
+        "noStore": true
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 2661.5211249999993,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 2550.249041,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1904.98,
+            "data": 267.08,
+            "total": 2177.65
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 1,
+          "totalMs": 2509.0750409999996,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1907.47,
+            "data": 267.32,
+            "total": 2180.15
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 2,
+          "totalMs": 2459.16175,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1880.17,
+            "data": 262.9,
+            "total": 2148.44
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 3,
+          "totalMs": 2388.1593329999996,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1912.14,
+            "data": 267,
+            "total": 2184.41
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 4,
+          "totalMs": 2389.920167,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1916.03,
+            "data": 268.22,
+            "total": 2190.04
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 5,
+          "totalMs": 2594.1915830000016,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1901.3,
+            "data": 264.9,
+            "total": 2171.38
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 6,
+          "totalMs": 2660.5552910000006,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1920.33,
+            "data": 266.58,
+            "total": 2192.22
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 7,
+          "totalMs": 2457.251292000001,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1916.4,
+            "data": 267.29,
+            "total": 2188.9
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 8,
+          "totalMs": 2456.811708000001,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1899.31,
+            "data": 263.67,
+            "total": 2167.84
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 9,
+          "totalMs": 2458.9065840000003,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1884.72,
+            "data": 263.38,
+            "total": 2154.21
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 10,
+          "totalMs": 2376.5892080000012,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1891.3,
+            "data": 265.48,
+            "total": 2162.43
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 11,
+          "totalMs": 2303.1135829999985,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1838.31,
+            "data": 257.44,
+            "total": 2100.75
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 12,
+          "totalMs": 2416.791000000001,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1893.26,
+            "data": 259.71,
+            "total": 2167.02
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 13,
+          "totalMs": 2441.530166999997,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1944.35,
+            "data": 266.01,
+            "total": 2215.91
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 14,
+          "totalMs": 2353.342166000002,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1881.33,
+            "data": 262.06,
+            "total": 2148.84
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 15,
+          "totalMs": 2444.230292,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1949.36,
+            "data": 263.33,
+            "total": 2217.91
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 16,
+          "totalMs": 2458.0647499999977,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1878.34,
+            "data": 263.58,
+            "total": 2147.83
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 17,
+          "totalMs": 2457.3378329999978,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1868.11,
+            "data": 260.55,
+            "total": 2134.25
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 18,
+          "totalMs": 1755.966207999998,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1336.84,
+            "data": 260.69,
+            "total": 1597.81
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 19,
+          "totalMs": 2381.227584,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1902.62,
+            "data": 264.36,
+            "total": 2172.22
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 20,
+          "totalMs": 2415.4143750000003,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1897.17,
+            "data": 265.57,
+            "total": 2168.25
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 21,
+          "totalMs": 2661.5211249999993,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1915.85,
+            "data": 265.53,
+            "total": 2186.84
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 22,
+          "totalMs": 2457.9864579999994,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1871.03,
+            "data": 263.37,
+            "total": 2139.51
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 23,
+          "totalMs": 2868.2834999999977,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1888.19,
+            "data": 262.21,
+            "total": 2155.76
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 24,
+          "totalMs": 2456.6097910000026,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1894.13,
+            "data": 265.64,
+            "total": 2165.8
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 25,
+          "totalMs": 2459.4642499999973,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1916.99,
+            "data": 268.32,
+            "total": 2190.94
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 26,
+          "totalMs": 2461.6492089999956,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1915.15,
+            "data": 265.46,
+            "total": 2185.66
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 27,
+          "totalMs": 2364.0753330000007,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1878.29,
+            "data": 261.82,
+            "total": 2146.62
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 28,
+          "totalMs": 2354.181541999991,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1889.04,
+            "data": 264.52,
+            "total": 2158.83
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 29,
+          "totalMs": 2345.12070900001,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1881.9,
+            "data": 263.27,
+            "total": 2148.79
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 30,
+          "totalMs": 2556.8684159999975,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1878.58,
+            "data": 262.87,
+            "total": 2146.74
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/progress-board",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 2348.960124999998,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1871.43,
+          "data": 261.97,
+          "total": 2138.73
+        },
+        "noStore": true
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 2602.9842079999944,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 2348.960124999998,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1871.43,
+            "data": 261.97,
+            "total": 2138.73
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 1,
+          "totalMs": 2351.8026669999963,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1872.32,
+            "data": 260.12,
+            "total": 2137.95
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 2,
+          "totalMs": 2459.889750000002,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1871.13,
+            "data": 261.73,
+            "total": 2138.45
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 3,
+          "totalMs": 2362.804250000001,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1858.53,
+            "data": 259.24,
+            "total": 2123.55
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 4,
+          "totalMs": 1834.7504590000026,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1350.88,
+            "data": 264.4,
+            "total": 1615.76
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 5,
+          "totalMs": 2458.5534999999945,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1867.4,
+            "data": 260.17,
+            "total": 2132.93
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 6,
+          "totalMs": 2527.44862499999,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1915.99,
+            "data": 271.62,
+            "total": 2203.35
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 7,
+          "totalMs": 2602.9842079999944,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1871.77,
+            "data": 261.86,
+            "total": 2138.92
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 8,
+          "totalMs": 2362.2720409999893,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1888.19,
+            "data": 262.93,
+            "total": 2156.77
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 9,
+          "totalMs": 2361.3943750000035,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1882.58,
+            "data": 261.54,
+            "total": 2149.67
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 10,
+          "totalMs": 2430.106332999989,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1889.46,
+            "data": 263.32,
+            "total": 2158.5
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 11,
+          "totalMs": 2459.852666000006,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1885.94,
+            "data": 262.95,
+            "total": 2154.74
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 12,
+          "totalMs": 2555.636249999996,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1888.28,
+            "data": 263.28,
+            "total": 2158.27
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 13,
+          "totalMs": 2571.0462079999998,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1892.97,
+            "data": 264.34,
+            "total": 2162.62
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 14,
+          "totalMs": 2449.9707079999935,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1885.49,
+            "data": 263.42,
+            "total": 2160.94
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 15,
+          "totalMs": 2405.6772079999937,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1901.01,
+            "data": 263.76,
+            "total": 2170.23
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 16,
+          "totalMs": 2407.5987090000126,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1906.06,
+            "data": 266.37,
+            "total": 2178.53
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 17,
+          "totalMs": 2663.1567499999946,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1908.93,
+            "data": 266.73,
+            "total": 2181.46
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 18,
+          "totalMs": 2560.751416999992,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1874.54,
+            "data": 259.45,
+            "total": 2139.77
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 19,
+          "totalMs": 2460.627542000002,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1908.28,
+            "data": 265.3,
+            "total": 2179.3
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 20,
+          "totalMs": 2453.4588749999966,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1873.87,
+            "data": 261.78,
+            "total": 2141.23
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 21,
+          "totalMs": 2446.0625830000063,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1883.15,
+            "data": 263.38,
+            "total": 2152.12
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 22,
+          "totalMs": 2368.932249999998,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1899.44,
+            "data": 263.47,
+            "total": 2168.93
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 23,
+          "totalMs": 2364.0579579999903,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1875.81,
+            "data": 261.89,
+            "total": 2143.06
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 24,
+          "totalMs": 2446.1073750000214,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1940.14,
+            "data": 267.07,
+            "total": 2213.43
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 25,
+          "totalMs": 816.8918330000015,
+          "status": 200,
+          "serverTiming": {
+            "auth": 264.51,
+            "data": 279.29,
+            "total": 544.26
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 26,
+          "totalMs": 2463.0120419999876,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1874.61,
+            "data": 260.54,
+            "total": 2140.86
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 27,
+          "totalMs": 2349.3920409999846,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1866.12,
+            "data": 259.99,
+            "total": 2131.71
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 28,
+          "totalMs": 2327.587750000006,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1861.42,
+            "data": 259.97,
+            "total": 2127.1
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 29,
+          "totalMs": 2396.621332999988,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1907.9,
+            "data": 266.35,
+            "total": 2180.85
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 30,
+          "totalMs": 2348.238207999995,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1883.56,
+            "data": 258.78,
+            "total": 2147.75
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/today",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 2607.8727500000095,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1875.02,
+          "data": 522.7,
+          "total": 2403.61,
+          "challenge_snapshot": 261.97,
+          "challenge_prepare": 259.69
+        },
+        "noStore": true
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 2864.5549579999933,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 2607.8727500000095,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1875.02,
+            "data": 522.7,
+            "total": 2403.61,
+            "challenge_snapshot": 261.97,
+            "challenge_prepare": 259.69
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 1,
+          "totalMs": 2650.8841250000114,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1901.09,
+            "data": 540.01,
+            "total": 2446.74,
+            "challenge_snapshot": 273.25,
+            "challenge_prepare": 265.86
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 2,
+          "totalMs": 2609.536959000019,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1875.44,
+            "data": 525.68,
+            "total": 2406.07,
+            "challenge_snapshot": 263,
+            "challenge_prepare": 261.82
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 3,
+          "totalMs": 2769.827874999988,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1912.18,
+            "data": 534.47,
+            "total": 2452.48,
+            "challenge_snapshot": 267.78,
+            "challenge_prepare": 265.75
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 4,
+          "totalMs": 2663.0449589999916,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1859.16,
+            "data": 531.91,
+            "total": 2396.72,
+            "challenge_snapshot": 271.51,
+            "challenge_prepare": 259.43
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 5,
+          "totalMs": 2663.3935829999973,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1906.74,
+            "data": 543.53,
+            "total": 2455.82,
+            "challenge_snapshot": 278.06,
+            "challenge_prepare": 264.55
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 6,
+          "totalMs": 2661.4164170000004,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1909.22,
+            "data": 532.87,
+            "total": 2447.5,
+            "challenge_snapshot": 265.95,
+            "challenge_prepare": 266.05
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 7,
+          "totalMs": 2664.6715419999964,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1866.45,
+            "data": 523.44,
+            "total": 2393.54,
+            "challenge_snapshot": 261.27,
+            "challenge_prepare": 261.47
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 8,
+          "totalMs": 2833.9082500000077,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1891.35,
+            "data": 528.81,
+            "total": 2425.56,
+            "challenge_snapshot": 264.9,
+            "challenge_prepare": 262.98
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 9,
+          "totalMs": 2691.7658749999828,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1850.5,
+            "data": 517.63,
+            "total": 2373.42,
+            "challenge_snapshot": 259.61,
+            "challenge_prepare": 257.09
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 10,
+          "totalMs": 2663.9312909999862,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1859.29,
+            "data": 519.98,
+            "total": 2384.32,
+            "challenge_snapshot": 260.03,
+            "challenge_prepare": 259.04
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 11,
+          "totalMs": 2649.885333000013,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1907.57,
+            "data": 541.56,
+            "total": 2454.78,
+            "challenge_snapshot": 274.99,
+            "challenge_prepare": 265.54
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 12,
+          "totalMs": 2674.100665999984,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1879.54,
+            "data": 527.34,
+            "total": 2412.35,
+            "challenge_snapshot": 263.59,
+            "challenge_prepare": 262.79
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 13,
+          "totalMs": 2765.1397080000024,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1911.32,
+            "data": 538.1,
+            "total": 2454.93,
+            "challenge_snapshot": 270.34,
+            "challenge_prepare": 266.76
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 14,
+          "totalMs": 2630.2813749999914,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1868.47,
+            "data": 523.29,
+            "total": 2397.16,
+            "challenge_snapshot": 261.67,
+            "challenge_prepare": 260.66
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 15,
+          "totalMs": 2900.8302079999994,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1874.29,
+            "data": 524.98,
+            "total": 2404.75,
+            "challenge_snapshot": 262.79,
+            "challenge_prepare": 261.25
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 16,
+          "totalMs": 2864.5549579999933,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1904.63,
+            "data": 533.07,
+            "total": 2443.56,
+            "challenge_snapshot": 266.16,
+            "challenge_prepare": 265.79
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 17,
+          "totalMs": 2663.06358300001,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1902.72,
+            "data": 533.05,
+            "total": 2441.11,
+            "challenge_snapshot": 266.89,
+            "challenge_prepare": 265.16
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 18,
+          "totalMs": 2609.551959000004,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1875.12,
+            "data": 526.53,
+            "total": 2406.97,
+            "challenge_snapshot": 263.45,
+            "challenge_prepare": 262.16
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 19,
+          "totalMs": 2657.4768329999933,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1886.25,
+            "data": 528.17,
+            "total": 2421.08,
+            "challenge_snapshot": 264.41,
+            "challenge_prepare": 262.72
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 20,
+          "totalMs": 2795.7896669999755,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1875.27,
+            "data": 518.71,
+            "total": 2399.5,
+            "challenge_snapshot": 259.65,
+            "challenge_prepare": 258.15
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 21,
+          "totalMs": 2596.490833000018,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1864.35,
+            "data": 521.26,
+            "total": 2391.06,
+            "challenge_snapshot": 261.01,
+            "challenge_prepare": 259.34
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 22,
+          "totalMs": 2658.169499999989,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1912.92,
+            "data": 535.47,
+            "total": 2453.67,
+            "challenge_snapshot": 268.44,
+            "challenge_prepare": 266.09
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 23,
+          "totalMs": 2640.076915999991,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1901.78,
+            "data": 531.42,
+            "total": 2438.86,
+            "challenge_snapshot": 263.49,
+            "challenge_prepare": 267.02
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 24,
+          "totalMs": 2679.6370830000087,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1886.68,
+            "data": 527.82,
+            "total": 2419.91,
+            "challenge_snapshot": 264.03,
+            "challenge_prepare": 262.88
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 25,
+          "totalMs": 2662.4560409999976,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1885.82,
+            "data": 528.64,
+            "total": 2420.96,
+            "challenge_snapshot": 264.31,
+            "challenge_prepare": 263.36
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 26,
+          "totalMs": 2646.129707999993,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1907.52,
+            "data": 534.2,
+            "total": 2447.06,
+            "challenge_snapshot": 266.91,
+            "challenge_prepare": 266.33
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 27,
+          "totalMs": 2677.4574999999895,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1858.79,
+            "data": 520.92,
+            "total": 2385.15,
+            "challenge_snapshot": 260.59,
+            "challenge_prepare": 259.38
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 28,
+          "totalMs": 2765.963458000013,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1902.73,
+            "data": 531.94,
+            "total": 2440.79,
+            "challenge_snapshot": 265.96,
+            "challenge_prepare": 265.02
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 29,
+          "totalMs": 2657.106792000006,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1907.44,
+            "data": 545.22,
+            "total": 2458.09,
+            "challenge_snapshot": 266.32,
+            "challenge_prepare": 277.97
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 30,
+          "totalMs": 2747.951375000004,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1938.96,
+            "data": 537.78,
+            "total": 2482.6,
+            "challenge_snapshot": 269.05,
+            "challenge_prepare": 267.6
+          },
+          "noStore": true
+        }
+      ]
+    },
+    {
+      "route": "/me/challenge/week",
+      "firstOpen": {
+        "iteration": 0,
+        "totalMs": 2476.0031250000175,
+        "status": 200,
+        "serverTiming": {
+          "auth": 1896.23,
+          "data": 271.55,
+          "total": 2173.25,
+          "challenge_snapshot": 270.32
+        },
+        "noStore": true
+      },
+      "warmSamples": 30,
+      "warmP95Ms": 2544.836249999993,
+      "errors": 0,
+      "samples": [
+        {
+          "iteration": 0,
+          "totalMs": 2476.0031250000175,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1896.23,
+            "data": 271.55,
+            "total": 2173.25,
+            "challenge_snapshot": 270.32
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 1,
+          "totalMs": 2382.552874999994,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1888.45,
+            "data": 267.95,
+            "total": 2161.83,
+            "challenge_snapshot": 266.67
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 2,
+          "totalMs": 2405.14154099999,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1918.01,
+            "data": 279.99,
+            "total": 2203.56,
+            "challenge_snapshot": 278.37
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 3,
+          "totalMs": 2380.244207999989,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1882.91,
+            "data": 266.5,
+            "total": 2154.99,
+            "challenge_snapshot": 265.01
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 4,
+          "totalMs": 2455.254541000002,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1882,
+            "data": 264.68,
+            "total": 2152.67,
+            "challenge_snapshot": 263.44
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 5,
+          "totalMs": 2460.0758750000095,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1878.61,
+            "data": 264.82,
+            "total": 2149.01,
+            "challenge_snapshot": 263.45
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 6,
+          "totalMs": 2351.3877499999944,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1879.33,
+            "data": 266.51,
+            "total": 2151.34,
+            "challenge_snapshot": 265.28
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 7,
+          "totalMs": 2460.7605420000036,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1902.99,
+            "data": 268.67,
+            "total": 2177.38,
+            "challenge_snapshot": 267.26
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 8,
+          "totalMs": 2353.238584000006,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1863.48,
+            "data": 263.63,
+            "total": 2132.12,
+            "challenge_snapshot": 262.39
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 9,
+          "totalMs": 2458.2790000000095,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1876.07,
+            "data": 265.21,
+            "total": 2146.88,
+            "challenge_snapshot": 263.89
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 10,
+          "totalMs": 2372.5730420000036,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1893.14,
+            "data": 267.45,
+            "total": 2165.9,
+            "challenge_snapshot": 265.92
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 11,
+          "totalMs": 2360.1232080000045,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1877.11,
+            "data": 265.53,
+            "total": 2148.09,
+            "challenge_snapshot": 264.29
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 12,
+          "totalMs": 2436.234166999988,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1862.22,
+            "data": 261.8,
+            "total": 2129.5,
+            "challenge_snapshot": 260.48
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 13,
+          "totalMs": 2458.320208000019,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1905.51,
+            "data": 267.27,
+            "total": 2184.2,
+            "challenge_snapshot": 265.93
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 14,
+          "totalMs": 2383.043874999974,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1909.5,
+            "data": 269.29,
+            "total": 2184.08,
+            "challenge_snapshot": 267.98
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 15,
+          "totalMs": 2371.0484169999836,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1903.84,
+            "data": 270.19,
+            "total": 2179.35,
+            "challenge_snapshot": 268.93
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 16,
+          "totalMs": 2374.512334000028,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1877.54,
+            "data": 265.71,
+            "total": 2150.04,
+            "challenge_snapshot": 263.67
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 17,
+          "totalMs": 2378.901750000019,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1902.87,
+            "data": 269.5,
+            "total": 2177.74,
+            "challenge_snapshot": 268.2
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 18,
+          "totalMs": 2472.0380000000005,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1892.1,
+            "data": 267.14,
+            "total": 2165.11,
+            "challenge_snapshot": 265.83
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 19,
+          "totalMs": 2355.9842910000007,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1876.77,
+            "data": 266.2,
+            "total": 2148.54,
+            "challenge_snapshot": 264.8
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 20,
+          "totalMs": 2408.373249999946,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1850.27,
+            "data": 260.94,
+            "total": 2116.32,
+            "challenge_snapshot": 259.68
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 21,
+          "totalMs": 2405.01241700002,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1882.38,
+            "data": 266.44,
+            "total": 2155.18,
+            "challenge_snapshot": 265.11
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 22,
+          "totalMs": 2317.1158339999965,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1838.92,
+            "data": 260.48,
+            "total": 2104.83,
+            "challenge_snapshot": 259.18
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 23,
+          "totalMs": 2360.392291999946,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1892.12,
+            "data": 267.37,
+            "total": 2165.17,
+            "challenge_snapshot": 266.12
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 24,
+          "totalMs": 2387.6952499999898,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1871.53,
+            "data": 264.79,
+            "total": 2141.73,
+            "challenge_snapshot": 263.31
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 25,
+          "totalMs": 2594.245500000019,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1881.86,
+            "data": 270.36,
+            "total": 2157.92,
+            "challenge_snapshot": 269
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 26,
+          "totalMs": 2423.58133299998,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1885.05,
+            "data": 266.92,
+            "total": 2157.44,
+            "challenge_snapshot": 265.58
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 27,
+          "totalMs": 2544.836249999993,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1864.37,
+            "data": 264.06,
+            "total": 2134.02,
+            "challenge_snapshot": 262.74
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 28,
+          "totalMs": 2476.347791999986,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1910.51,
+            "data": 270.65,
+            "total": 2186.68,
+            "challenge_snapshot": 269.33
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 29,
+          "totalMs": 2453.792208000028,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1938.95,
+            "data": 271.65,
+            "total": 2216.11,
+            "challenge_snapshot": 270.15
+          },
+          "noStore": true
+        },
+        {
+          "iteration": 30,
+          "totalMs": 2354.5680000000284,
+          "status": 200,
+          "serverTiming": {
+            "auth": 1877.13,
+            "data": 265.11,
+            "total": 2147.67,
+            "challenge_snapshot": 263.85
+          },
+          "noStore": true
+        }
+      ]
+    }
+  ]
+}
