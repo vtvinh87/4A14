@@ -14,8 +14,8 @@ export const AUDIO_PREFERENCES_KEY = 'hoc-vui-audio-preferences-v1';
 export const DEFAULT_AUDIO_PREFERENCES: AudioPreferences = {
   version: 1,
   music: false,
-  ambience: false,
-  notifications: false,
+  ambience: true,
+  notifications: true,
   masterVolume: 0.65,
   sfxVolume: 0.65,
   musicVolume: 0.28,

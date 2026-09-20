@@ -12,8 +12,8 @@ describe('audio preferences', () => {
     expect(DEFAULT_AUDIO_PREFERENCES).toEqual({
       version: 1,
       music: false,
-      ambience: false,
-      notifications: false,
+      ambience: true,
+      notifications: true,
       masterVolume: 0.65,
       sfxVolume: 0.65,
       musicVolume: 0.28,
@@ -31,7 +31,7 @@ describe('audio preferences', () => {
       sfxVolume: -1,
       musicVolume: 2,
       ambienceVolume: 0.4,
-    })).toEqual({ ...DEFAULT_AUDIO_PREFERENCES, music: true, notifications: true, masterVolume: 1, sfxVolume: 0, musicVolume: 1, ambienceVolume: 0.4 });
+    })).toEqual({ ...DEFAULT_AUDIO_PREFERENCES, music: true, ambience: false, notifications: true, masterVolume: 1, sfxVolume: 0, musicVolume: 1, ambienceVolume: 0.4 });
     expect(sanitizeAudioPreferences({ version: 1 })).toEqual(DEFAULT_AUDIO_PREFERENCES);
     expect(sanitizeAudioPreferences({ ...DEFAULT_AUDIO_PREFERENCES, version: 2 })).toEqual(DEFAULT_AUDIO_PREFERENCES);
   });
