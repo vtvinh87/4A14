@@ -12,7 +12,7 @@
 - [x] Parent: audit remaining old-branch changes and classify each as integrated, superseded or required. Add remember checkbox CSS; verify audio assets/provenance are publishable and release includes real MP3s.
 - [x] Parent: configure production local frontend on 8888 with PWA enabled and established Edge API/realtime. Verify explicit origin allowlist, deployment project/ref and cloud feature flags using read-only probes before mutations.
 - [x] Parent: run full tests, client/server typecheck, Edge runtime check, Firebase/audio validation and production build; independently review auth diff.
-- [ ] Parent: commit only reviewed app/assets/docs, push current branch, deploy Edge then both Firebase Hosting sites, verify deployed hashes, protected unauthorized behavior, PWA assets and runtime version.
+- [x] Parent: commit only reviewed app/assets/docs, push current branch, deploy Edge then both Firebase Hosting sites, verify deployed hashes, protected unauthorized behavior, PWA assets and runtime version.
 - [x] Parent: restart the existing localhost service onto the production preview; verify login UI, service-worker/cache behavior where tools permit, audio and feature readiness. Record gaps rather than claim unsupported device tests.
 
 ### Fresh recovery verification (2026-09-20)
@@ -22,6 +22,14 @@
 - Local production preview: launchd service restarted with the production build on `127.0.0.1:8888`; all `221` precache URLs, including `67` MP3s, returned `200` and matched `dist` bytes. Browser smoke reached Hành trình, Bài học, Nhận dấu, Pet, Bộ sưu tập, Thách đố, Bạn bè and Settings; captured console errors/warnings were empty. Existing inactive QA account was not reactivated, so fresh authenticated login/logout remains unclaimed.
 - Agent recovery: Darwin's auth/audio changes and Pascal's review findings were verified from the working tree and focused tests; no duplicate agent or regeneration was started. The audio cross-bed cancellation and remembered-session-through-parent-PIN fixes are included.
 - Release status at checkpoint: commit/push/Edge deploy/Firebase Hosting deploy remain the next release actions. Unrelated untracked load-performance evidence and `tmp/` remain untouched.
+
+### Release evidence (2026-09-20)
+
+- Commit `166dce7` was pushed to `origin/codex/bang-tien-bo` (`5c31403..166dce7`). The release includes the full sourced-audio provenance/candidate set and `67` runtime MP3s; no file larger than the repository upload limit was introduced.
+- Supabase Edge function `api` deployed to project `tvlpabqkternfvsxqovi`. Firebase Hosting released both `a14-82a69` (`https://a14-82a69.web.app`) and `4a14` (`https://4a14.web.app`) from the same `dist` build.
+- Live verification: both sites returned index, deep-link `/challenge`, SW and sampled MP3 `200`; the served bundle `index-8BQF_8ed.js` matched local `dist` SHA-256 `b83580b5a3db033d40ac7bbb1c5d54846573d6bfce659b432350d92a53654d93`; SW returned `no-cache, no-store, must-revalidate`.
+- Live Edge verification: the four configured origins returned CORS `204` and allowed `Authorization,Content-Type,X-Parent-Grant,Idempotency-Key`; an invalid origin returned `403`; unauthenticated `/auth/me` returned `401`.
+- A follow-up ledger-only commit/push is still required to persist this post-deploy evidence. No learner data, progress-map work, unrelated load-performance evidence or `tmp/` files were changed.
 
 ## Recovery identity
 
