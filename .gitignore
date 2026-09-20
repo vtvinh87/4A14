@@ -4,6 +4,8 @@ dist/
 .netlify/
 .firebase/
 *.tsbuildinfo
+__pycache__/
+*.pyc
 
 # Local configuration and secrets
 .env

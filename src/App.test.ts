@@ -1,4 +1,4 @@
-import { act, createElement } from 'react';
+import { act, createElement, StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -12,10 +12,12 @@ import { createAccountProgressSnapshot, saveAccountProgressSnapshot } from './pr
 import { createDefaultProgress } from './progress/storage';
 import { getCalendarDateInTimeZone } from './profile/birthday';
 import { App } from './App';
+import { AudioManager } from './audio/manager';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const apiMocks = vi.hoisted(() => ({
+  loginStudent: vi.fn(),
   getCurrentAuthSession: vi.fn(),
   getStudentProfile: vi.fn(),
   getAccountProgress: vi.fn(),
@@ -191,6 +193,22 @@ describe('App cross-feature account flow', () => {
     document.body.style.overflow = '';
   });
 
+  it.each([true, false])('passes the selected remember choice from login to the API (%s)', async (remember) => {
+    apiMocks.getCurrentAuthSession.mockResolvedValue({ ok: true, session: null });
+    apiMocks.loginStudent.mockResolvedValue({ ok: true, session });
+    act(() => root.render(createElement(App)));
+    await settle();
+    act(() => {
+      setInputValue(mount.querySelector<HTMLInputElement>('#auth-username')!, 'BEBAO');
+      setInputValue(mount.querySelector<HTMLInputElement>('#auth-pin')!, '246810');
+    });
+    if (!remember) act(() => mount.querySelector<HTMLInputElement>('#remember-device')?.click());
+    act(() => mount.querySelector('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    await settle();
+    expect(apiMocks.loginStudent).toHaveBeenCalledWith('bebao', '246810', remember);
+    expect(mount.querySelector('#auth-title')).toBeNull();
+  });
+
   it('keeps the account flow coherent and clears owned UI after a failed network logout', async () => {
     act(() => root.render(createElement(App)));
     await settle();
@@ -258,6 +276,64 @@ describe('App cross-feature account flow', () => {
     await act(async () => { progressRequest.resolve({ ok: true, snapshot }); await Promise.resolve(); });
     await settle();
     expect(mount.querySelector('#journey-title')?.textContent).toBe('Ba lô thám hiểm');
+  });
+
+  it('starts the selected home music pilot only after music is enabled in settings', async () => {
+    const setBed = vi.spyOn(AudioManager.prototype, 'setBed');
+    try {
+      act(() => root.render(createElement(App)));
+      await settle();
+      act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Đóng lời chúc sinh nhật"]')?.click());
+
+      act(() => mount.querySelector<HTMLButtonElement>('[aria-label="Mở cài đặt"]')?.click());
+      const musicToggle = mount.querySelector<HTMLInputElement>('.audio-preference-toggle input');
+      expect(musicToggle).not.toBeNull();
+      act(() => musicToggle?.click());
+      await settle();
+
+      expect(setBed).toHaveBeenCalledWith('music', 'music-home');
+
+      act(() => musicToggle?.click());
+      await settle();
+      expect(setBed).toHaveBeenLastCalledWith('music', null);
+    } finally {
+      setBed.mockRestore();
+    }
+  });
+
+  it('keeps the audio manager live through React StrictMode effect replay', async () => {
+    const dispose = vi.spyOn(AudioManager.prototype, 'dispose');
+    try {
+      act(() => root.render(createElement(StrictMode, null, createElement(App))));
+      await settle();
+      expect(dispose).not.toHaveBeenCalled();
+    } finally {
+      dispose.mockRestore();
+    }
+  });
+
+  it('suspends audio for bfcache pagehide, restores visibility on pageshow, and disposes only on final pagehide', async () => {
+    const dispose = vi.spyOn(AudioManager.prototype, 'dispose');
+    const visibility = vi.spyOn(AudioManager.prototype, 'setDocumentHidden');
+    const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+    try {
+      act(() => root.render(createElement(App)));
+      await settle();
+      const audio = visibility.mock.contexts[0] as AudioManager;
+      expect(audio.isDocumentHidden()).toBe(false);
+      act(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })));
+      expect(dispose).not.toHaveBeenCalled();
+      expect(audio.isDocumentHidden()).toBe(true);
+      act(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
+      expect(audio.isDocumentHidden()).toBe(false);
+      expect(dispose).not.toHaveBeenCalled();
+      act(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false })));
+      expect(dispose).toHaveBeenCalledOnce();
+    } finally {
+      dispose.mockRestore();
+      visibility.mockRestore();
+      hidden.mockRestore();
+    }
   });
 
   it('opens the classroom friends dialog for a full student session and closes it on logout', async () => {

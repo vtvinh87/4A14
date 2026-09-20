@@ -6,11 +6,17 @@
 [build.environment]
   HOC_VUI_PROGRESS_BOARD_ENABLED = "true"
 
+# Local final-review environment; production rollout remains separately configured.
+[context.dev.environment]
+  HOC_VUI_CHALLENGE_MODE = "on"
+  HOC_VUI_PROGRESS_BOARD_ENABLED = "true"
+  VITE_API_BASE_URL = ""
+
 [dev]
-  command = "npm run dev -- --host 127.0.0.1 --port 4173"
+  command = "npm run preview -- --host 127.0.0.1 --port 4173 --strictPort"
   targetPort = 4173
   port = 8888
-  framework = "vite"
+  framework = "#custom"
 
 [[redirects]]
   from = "/api/*"

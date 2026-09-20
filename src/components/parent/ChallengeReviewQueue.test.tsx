@@ -89,13 +89,13 @@ describe('ChallengeReviewQueue', () => {
 
     await act(async () => { mount.querySelector<HTMLButtonElement>('[data-challenge-review-approve="q-queue"]')?.click(); await Promise.resolve(); });
     expect(props.onApprove).not.toHaveBeenCalled();
-    expect(mount.querySelector('[data-challenge-approval-modal]')).not.toBeNull();
-    expect(mount.textContent).toMatch(/phụ huynh chịu trách nhiệm/i);
-    act(() => mount.querySelector<HTMLButtonElement>('[data-challenge-approval-review]')?.click());
-    expect(mount.querySelector('[data-challenge-approval-modal]')).toBeNull();
+    expect(document.body.querySelector('[data-challenge-approval-modal]')?.parentElement).toBe(document.body);
+    expect(document.body.textContent).toMatch(/phụ huynh chịu trách nhiệm/i);
+    act(() => document.body.querySelector<HTMLButtonElement>('[data-challenge-approval-review]')?.click());
+    expect(document.body.querySelector('[data-challenge-approval-modal]')).toBeNull();
     expect(props.onApprove).not.toHaveBeenCalled();
     await act(async () => { mount.querySelector<HTMLButtonElement>('[data-challenge-review-approve="q-queue"]')?.click(); await Promise.resolve(); });
-    await act(async () => { mount.querySelector<HTMLButtonElement>('[data-challenge-approval-confirm]')?.click(); await Promise.resolve(); });
+    await act(async () => { document.body.querySelector<HTMLButtonElement>('[data-challenge-approval-confirm]')?.click(); await Promise.resolve(); });
     expect(props.onApprove).toHaveBeenCalledWith('q-queue', 2);
   });
 

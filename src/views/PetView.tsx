@@ -8,7 +8,7 @@ import { DEFAULT_PET_ID, getPetById, isPetUnlocked, PETS, type PetId } from '../
 type PetViewProps = {
   petMood: PetMood;
   reducedMotion: boolean;
-  onPetTap: () => void;
+  onPetTap: (petId: PetId) => void;
   onOpenSettings: () => void;
   stamps: readonly string[];
 };
@@ -38,7 +38,7 @@ export function PetView({ petMood, reducedMotion, onPetTap, onOpenSettings, stam
 
   const handlePetTap = () => {
     chooseHomeDialogue();
-    onPetTap();
+    onPetTap(activePet.id);
   };
 
   const activeImageFallback = (event: SyntheticEvent<HTMLImageElement>) => {

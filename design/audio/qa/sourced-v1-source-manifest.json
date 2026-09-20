@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "revision": "sourced-v1",
+  "generatedAt": "2026-09-20T01:39:34.777680Z",
+  "status": "downloaded-and-license-audited",
+  "costUsd": 0,
+  "packs": [
+    {
+      "id": "dustyroom-free-casual-game-sounds",
+      "provider": "Dustyroom",
+      "pack": "Free Casual Game Sounds",
+      "archivePath": "design/audio/sourced-v1/source-packs/dustyroom/DM-CGS.zip",
+      "downloadUrl": "https://dustyroom.com/casualgamesounds/DM-CGS.zip",
+      "sourcePage": "https://dustyroom.com/free-casual-game-sounds/",
+      "license": "CC0",
+      "licenseEvidenceUrl": "https://dustyroom.com/free-casual-game-sounds/",
+      "licenseEvidenceLocal": "design/audio/sourced-v1/source-packs/dustyroom/unpacked/DM-CGS/license.pdf",
+      "costUsd": 0,
+      "credit": "Dustyroom (credit appreciated, not mandatory)",
+      "sha256": "7ffc649a641a8b8ee0136d431b5dd69bcf9eeabc250a18285ad984ad09bd4a4f",
+      "bytes": 8891352,
+      "downloaded": true
+    },
+    {
+      "id": "kenney-interface-sounds",
+      "provider": "Kenney",
+      "pack": "Interface Sounds",
+      "archivePath": "design/audio/sourced-v1/source-packs/kenney/kenney_interface-sounds.zip",
+      "downloadUrl": "https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip",
+      "sourcePage": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0",
+      "licenseEvidenceUrl": "https://kenney.nl/assets/interface-sounds",
+      "licenseEvidenceLocal": "design/audio/sourced-v1/source-packs/kenney/unpacked/License.txt",
+      "costUsd": 0,
+      "credit": "Kenney (credit optional)",
+      "sha256": "f2193d072726d6758a5f7871b2dcc54dcce0d5c35c6f0a62f92549b327c81232",
+      "bytes": 834536,
+      "downloaded": true
+    },
+    {
+      "id": "opengameart-robin-lamb-ui",
+      "provider": "OpenGameArt",
+      "pack": "UI Sound Effects (Button Clicks, User Feedback, Notifications)",
+      "archivePath": "design/audio/sourced-v1/source-packs/opengameart/ui_wav.zip",
+      "downloadUrl": "https://opengameart.org/sites/default/files/ui_wav.zip",
+      "sourcePage": "https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications",
+      "license": "CC0",
+      "licenseEvidenceUrl": "https://opengameart.org/content/ui-sound-effects-button-clicks-user-feedback-notifications",
+      "licenseEvidenceLocal": null,
+      "costUsd": 0,
+      "credit": "Robin Lamb / OpenGameArt.org; source libraries credited on source page",
+      "sha256": "8e4e23dd4ec501776dab1428c5f1e405b5065e296518feb04816f2892d163053",
+      "bytes": 1364100,
+      "downloaded": true
+    },
+    {
+      "id": "opengameart-calm-theme",
+      "provider": "OpenGameArt",
+      "pack": "calm theme",
+      "archivePath": "design/audio/sourced-v1/source-packs/opengameart/calm_theme.ogg",
+      "downloadUrl": "https://opengameart.org/sites/default/files/calm_theme.ogg",
+      "sourcePage": "https://opengameart.org/content/calm-theme",
+      "license": "CC0",
+      "licenseEvidenceUrl": "https://opengameart.org/content/calm-theme",
+      "licenseEvidenceLocal": null,
+      "costUsd": 0,
+      "credit": "pebonius / OpenGameArt.org; credit link recommended on source page",
+      "sha256": "8a701a803f365c8fe1257b2e18276a7fa8b0d62a9af601f973d43ccf4e354705",
+      "bytes": 1271470,
+      "downloaded": true
+    },
+    {
+      "id": "opengameart-simple-loop",
+      "provider": "OpenGameArt",
+      "pack": "Simple menu/background music loop",
+      "archivePath": "design/audio/sourced-v1/source-packs/opengameart/simple_loop.ogg",
+      "downloadUrl": "https://opengameart.org/sites/default/files/simple_loop.ogg",
+      "sourcePage": "https://opengameart.org/content/simple-menubackground-music-loop",
+      "license": "CC0",
+      "licenseEvidenceUrl": "https://opengameart.org/content/simple-menubackground-music-loop",
+      "licenseEvidenceLocal": null,
+      "costUsd": 0,
+      "credit": "polosik / OpenGameArt.org",
+      "sha256": "31ffea0b986eaba7f3f5c3ddf50dc2f68f51085a7a232cc346af6af722b72550",
+      "bytes": 2885847,
+      "downloaded": true
+    },
+    {
+      "id": "opengameart-calm-track",
+      "provider": "OpenGameArt",
+      "pack": "Calm track",
+      "archivePath": "design/audio/sourced-v1/source-packs/opengameart/calm_track-loop.ogg",
+      "downloadUrl": "https://opengameart.org/sites/default/files/calm_track-loop.ogg",
+      "sourcePage": "https://opengameart.org/content/calm-track",
+      "license": "CC0",
+      "licenseEvidenceUrl": "https://opengameart.org/content/calm-track",
+      "licenseEvidenceLocal": null,
+      "costUsd": 0,
+      "credit": "pmiller / OpenGameArt.org",
+      "sha256": "8c49a37fb9ee5994c919d0e43cf397dd990cb7f2c6c1200b9710a8fe942ad969",
+      "bytes": 3415564,
+      "downloaded": true
+    }
+  ],
+  "notUsed": [
+    {
+      "provider": "Sonniss",
+      "reason": "researched as a high-quality lead, but the archive is too large for this focused pilot and no files were downloaded",
+      "licensePage": "https://sonniss.com/gdc-bundle-license/"
+    },
+    {
+      "provider": "Freesound",
+      "reason": "not selected because license/attribution is per sound and the first pilot can be audited with CC0 packs",
+      "licensePage": "https://freesound.org/help/faq/"
+    }
+  ]
+}

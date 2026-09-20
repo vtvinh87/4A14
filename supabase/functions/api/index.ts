@@ -3,7 +3,7 @@ import { getEnv } from '../../../server/runtime/env.ts';
 import { createRequestTiming, isTimedReadPath, type RequestTiming } from '../../../server/performance/timing.ts';
 
 const ALLOWED_METHODS = 'GET,POST,PATCH,PUT,DELETE,OPTIONS';
-const ALLOWED_HEADERS = 'Authorization,Content-Type,X-Parent-Grant';
+const ALLOWED_HEADERS = 'Authorization,Content-Type,X-Parent-Grant,Idempotency-Key';
 
 type EdgeApp = { handle: (request: AppRequest) => Promise<AppResponse> };
 export type LoadedEdgeApp = {

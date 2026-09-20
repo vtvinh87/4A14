@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { FriendSummary } from '../../shared/classroom-contracts';
+import type { ClassroomMessage, FriendSummary } from '../../shared/classroom-contracts';
 import { getFocusableElements, getNextFocusIndex } from './SettingsDialog';
 import { FriendConversationPanel } from './FriendConversationPanel';
 
@@ -10,10 +10,12 @@ export type FriendListDialogProps = {
   messageRevision?: number;
   onRefresh: () => Promise<void> | void;
   onFriendsChanged: (friendId: string) => Promise<void> | void;
+  onMessageSent?: (message: ClassroomMessage) => void;
+  onMessageReceived?: (message: ClassroomMessage) => void;
   onClose: () => void;
 };
 
-export function FriendListDialog({ friends, loading, error, messageRevision = 0, onRefresh, onFriendsChanged, onClose }: FriendListDialogProps) {
+export function FriendListDialog({ friends, loading, error, messageRevision = 0, onRefresh, onFriendsChanged, onMessageSent, onMessageReceived, onClose }: FriendListDialogProps) {
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -70,7 +72,7 @@ export function FriendListDialog({ friends, loading, error, messageRevision = 0,
   return (
     <div className="dialog-backdrop feature-dialog-backdrop" role="presentation" onMouseDown={onClose}>
       <section ref={dialogRef} className="feature-dialog" data-friend-list-dialog role="dialog" tabIndex={-1} aria-modal="true" aria-labelledby="friend-dialog-title" onMouseDown={(event) => event.stopPropagation()}>
-        {selectedFriend ? <FriendConversationPanel friend={selectedFriend} messageRevision={messageRevision} onBack={() => setSelectedFriendId(null)} onClose={onClose} onFriendsChanged={onFriendsChanged} /> : (
+        {selectedFriend ? <FriendConversationPanel friend={selectedFriend} messageRevision={messageRevision} onBack={() => setSelectedFriendId(null)} onClose={onClose} onFriendsChanged={onFriendsChanged} onMessageSent={onMessageSent} onMessageReceived={onMessageReceived} /> : (
           <>
             <div className="feature-dialog-heading">
               <div>

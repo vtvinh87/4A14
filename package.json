@@ -10,6 +10,7 @@
     "build:progress-map-art": "node scripts/build-progress-map-art.mjs",
     "generate:fox": "node scripts/generate-fox-glb.mjs",
     "preview": "vite preview",
+    "preview:full": "npm run build && npm run dev:netlify -- --offline",
     "typecheck": "tsc -b --pretty false",
     "typecheck:server": "tsc -p tsconfig.server.json --pretty false",
     "test": "vitest run",
@@ -18,6 +19,9 @@
     "test:db:cloud": "vitest run --run server/db server/auth/postgresRepository.integration.test.ts server/app.integration.test.ts --testTimeout=60000",
     "validate:fox": "node scripts/validate-fox-glb.mjs",
     "validate:progress-map": "node scripts/validate-progress-map-asset.mjs",
+    "build:audio-manifest": "node scripts/build-audio-manifest.mjs",
+    "build:audio-pilot-runtime": "node scripts/build-audio-pilot-runtime.mjs",
+    "validate:audio": "node scripts/validate-audio-assets.mjs",
     "validate:firebase": "node scripts/validate-firebase-hosting.mjs",
     "test:watch": "vitest"
   },

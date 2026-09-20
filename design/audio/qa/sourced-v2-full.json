@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "revision": "sourced-v2-full",
+  "status": "gap-locked",
+  "generatedAt": "2026-09-20T08:16:28.203Z",
+  "sourcePolicy": "free CC0/public-domain sources only; no account, payment, donation, API, or new credential",
+  "catalogTargetCount": 67,
+  "currentRuntimeCount": 6,
+  "missingTargetCount": 61,
+  "missingTargets": [
+    {
+      "id": "ui-tap",
+      "variant": 2
+    },
+    {
+      "id": "ui-tap",
+      "variant": 3
+    },
+    {
+      "id": "ui-confirm",
+      "variant": 1
+    },
+    {
+      "id": "ui-confirm",
+      "variant": 2
+    },
+    {
+      "id": "ui-back",
+      "variant": 1
+    },
+    {
+      "id": "ui-back",
+      "variant": 2
+    },
+    {
+      "id": "page-turn",
+      "variant": 1
+    },
+    {
+      "id": "page-turn",
+      "variant": 2
+    },
+    {
+      "id": "page-turn",
+      "variant": 3
+    },
+    {
+      "id": "map-unfold",
+      "variant": 1
+    },
+    {
+      "id": "map-select",
+      "variant": 1
+    },
+    {
+      "id": "map-select",
+      "variant": 2
+    },
+    {
+      "id": "landmark-open",
+      "variant": 1
+    },
+    {
+      "id": "landmark-open",
+      "variant": 2
+    },
+    {
+      "id": "answer-select",
+      "variant": 1
+    },
+    {
+      "id": "answer-select",
+      "variant": 2
+    },
+    {
+      "id": "answer-select",
+      "variant": 3
+    },
+    {
+      "id": "answer-correct",
+      "variant": 2
+    },
+    {
+      "id": "answer-correct",
+      "variant": 3
+    },
+    {
+      "id": "answer-retry",
+      "variant": 2
+    },
+    {
+      "id": "learning-hint",
+      "variant": 1
+    },
+    {
+      "id": "learning-hint",
+      "variant": 2
+    },
+    {
+      "id": "match-connect",
+      "variant": 1
+    },
+    {
+      "id": "match-connect",
+      "variant": 2
+    },
+    {
+      "id": "match-connect",
+      "variant": 3
+    },
+    {
+      "id": "lesson-complete",
+      "variant": 1
+    },
+    {
+      "id": "stamp-press",
+      "variant": 2
+    },
+    {
+      "id": "collection-open",
+      "variant": 1
+    },
+    {
+      "id": "item-unlock",
+      "variant": 1
+    },
+    {
+      "id": "challenge-submit",
+      "variant": 1
+    },
+    {
+      "id": "class-milestone",
+      "variant": 1
+    },
+    {
+      "id": "reaction-positive",
+      "variant": 1
+    },
+    {
+      "id": "reaction-positive",
+      "variant": 2
+    },
+    {
+      "id": "message-send",
+      "variant": 1
+    },
+    {
+      "id": "message-send",
+      "variant": 2
+    },
+    {
+      "id": "message-receive",
+      "variant": 1
+    },
+    {
+      "id": "message-receive",
+      "variant": 2
+    },
+    {
+      "id": "pet-fox",
+      "variant": 2
+    },
+    {
+      "id": "pet-fox",
+      "variant": 3
+    },
+    {
+      "id": "pet-elephant",
+      "variant": 1
+    },
+    {
+      "id": "pet-elephant",
+      "variant": 2
+    },
+    {
+      "id": "pet-elephant",
+      "variant": 3
+    },
+    {
+      "id": "pet-owl",
+      "variant": 1
+    },
+    {
+      "id": "pet-owl",
+      "variant": 2
+    },
+    {
+      "id": "pet-owl",
+      "variant": 3
+    },
+    {
+      "id": "pet-dragon",
+      "variant": 1
+    },
+    {
+      "id": "pet-dragon",
+      "variant": 2
+    },
+    {
+      "id": "pet-dragon",
+      "variant": 3
+    },
+    {
+      "id": "birthday",
+      "variant": 1
+    },
+    {
+      "id": "lesson-start",
+      "variant": 1
+    },
+    {
+      "id": "ui-toggle",
+      "variant": 1
+    },
+    {
+      "id": "ui-toggle",
+      "variant": 2
+    },
+    {
+      "id": "music-map",
+      "variant": 1
+    },
+    {
+      "id": "music-focus",
+      "variant": 1
+    },
+    {
+      "id": "music-cooperate",
+      "variant": 1
+    },
+    {
+      "id": "ambience-garden",
+      "variant": 1
+    },
+    {
+      "id": "ambience-mountain",
+      "variant": 1
+    },
+    {
+      "id": "ambience-coast",
+      "variant": 1
+    },
+    {
+      "id": "ambience-forest",
+      "variant": 1
+    },
+    {
+      "id": "ambience-river",
+      "variant": 1
+    },
+    {
+      "id": "ambience-evening",
+      "variant": 1
+    }
+  ],
+  "laneCounts": {
+    "core-ui-learning": 25,
+    "reward-social-pet": 19,
+    "music-ambience": 9,
+    "existing-pilot-variants": 8
+  },
+  "laneCues": {
+    "core-ui-learning": [
+      "ui-confirm",
+      "ui-back",
+      "page-turn",
+      "map-unfold",
+      "map-select",
+      "landmark-open",
+      "answer-select",
+      "learning-hint",
+      "match-connect",
+      "lesson-complete",
+      "collection-open",
+      "lesson-start",
+      "ui-toggle"
+    ],
+    "reward-social-pet": [
+      "item-unlock",
+      "challenge-submit",
+      "class-milestone",
+      "reaction-positive",
+      "message-send",
+      "message-receive",
+      "pet-elephant",
+      "pet-owl",
+      "pet-dragon",
+      "birthday"
+    ],
+    "music-ambience": [
+      "music-map",
+      "music-focus",
+      "music-cooperate",
+      "ambience-garden",
+      "ambience-mountain",
+      "ambience-coast",
+      "ambience-forest",
+      "ambience-river",
+      "ambience-evening"
+    ],
+    "existing-pilot-variants": [
+      "ui-tap",
+      "answer-correct",
+      "answer-retry",
+      "stamp-press",
+      "pet-fox",
+      "music-home"
+    ]
+  },
+  "activeRuntimeCount": 67,
+  "activeRuntimeStatus": "full-local-pilot",
+  "deferredEvents": [
+    "landmark-open",
+    "item-unlock",
+    "class-milestone",
+    "ambience-evening"
+  ],
+  "runtimePromotion": false,
+  "productionAcceptedEntries": 0
+}

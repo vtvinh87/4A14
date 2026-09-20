@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ChallengeQuestionMine, ChallengeWeeklyResponse } from '../../shared/challenge-contracts';
+import type { ChallengeAnswerResult, ChallengeQuestionMine, ChallengeReactionType, ChallengeWeeklyResponse } from '../../shared/challenge-contracts';
 import type { ChallengeSourceFact } from '../../shared/challenge-source';
 import { getMyChallengeQuestions, getWeeklyChallenge } from '../auth/apiClient';
 import { useChallenge } from '../challenge/useChallenge';
@@ -18,6 +18,9 @@ export type ChallengeDialogProps = {
   studentId?: string;
   canCreate?: boolean;
   canParticipate?: boolean;
+  onChallengeSubmitted?: (question: ChallengeQuestionMine) => void;
+  onChallengeAttemptResult?: (itemId: string, result: ChallengeAnswerResult) => void;
+  onReactionConfirmed?: (itemId: string, reactionType: ChallengeReactionType) => void;
   onClose: () => void;
 };
 
@@ -41,7 +44,7 @@ function statusLabel(status: ChallengeQuestionMine['status']): string {
   return labels[status];
 }
 
-export function ChallengeDialog({ sourceFacts, studentId, canCreate = true, canParticipate = true, onClose }: ChallengeDialogProps) {
+export function ChallengeDialog({ sourceFacts, studentId, canCreate = true, canParticipate = true, onChallengeSubmitted, onChallengeAttemptResult, onReactionConfirmed, onClose }: ChallengeDialogProps) {
   const [tab, setTab] = useState<ChallengeTab>('today');
   const [mine, setMine] = useState<ChallengeQuestionMine[]>([]);
   const [mineLoading, setMineLoading] = useState(false);
@@ -243,7 +246,11 @@ export function ChallengeDialog({ sourceFacts, studentId, canCreate = true, canP
                       isSubmitting={daily.isSubmitting}
                       readOnly={isOwnQuestion}
                       offline={!isOnline}
-                      onSubmit={(input) => daily.submit(question.roundItemId, input)}
+                        onSubmit={async (input) => {
+                          const result = await daily.submit(question.roundItemId, input);
+                          if (result) onChallengeAttemptResult?.(question.roundItemId, result);
+                          return result;
+                        }}
                     />
                     {!isOwnQuestion && <>
                       <ChallengeReactionBar
@@ -251,7 +258,11 @@ export function ChallengeDialog({ sourceFacts, studentId, canCreate = true, canP
                         selected={social.reactions[question.roundItemId] ?? []}
                         pendingKey={social.pendingReactionKey}
                         disabled={isReported || !isOnline}
-                        onReact={(reactionType) => social.addReaction(question.roundItemId, reactionType)}
+                        onReact={(reactionType) => {
+                          void social.addReaction(question.roundItemId, reactionType).then((confirmed) => {
+                            if (confirmed) onReactionConfirmed?.(question.roundItemId, reactionType);
+                          });
+                        }}
                       />
                       <div className="challenge-question-report-action">
                         {isReported ? <span className="challenge-question-reported" data-challenge-reported="true">Đã báo cho người lớn kiểm tra</span> : <button className="challenge-question-report-button" type="button" data-challenge-open-report={question.roundItemId} disabled={!isOnline} onClick={() => setReportItemId(question.roundItemId)}>Báo cho người lớn kiểm tra</button>}
@@ -279,7 +290,7 @@ export function ChallengeDialog({ sourceFacts, studentId, canCreate = true, canP
                 sourceFacts={sourceFacts}
                 quotaUsedOnCreatedDate={today?.myContribution.questionsCreated ?? 0}
                 canCreate={canCreate}
-                onSaved={async () => { await refreshMine(); await daily.refresh(); }}
+                onSaved={async (question: ChallengeQuestionMine) => { await refreshMine(); await daily.refresh(); onChallengeSubmitted?.(question); }}
               />
             </section>
           )}

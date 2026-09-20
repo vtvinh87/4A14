@@ -9,10 +9,15 @@ import { SettingsDialog } from './components/SettingsDialog';
 import { TopHud } from './components/TopHud';
 import { WorldScene } from './components/WorldScene';
 import { AudioManager } from './audio/manager';
+import { loadAudioPreferences, saveAudioPreferences, sanitizeAudioPreferences, type AudioPreferences } from './audio/preferences';
+import { AUDIO_RUNTIME_MANIFEST } from './audio/runtime-manifest.generated';
+import type { AudioId } from './audio/catalog';
 import { type ViewId } from './app/navigation';
 import { getLessonPackage } from './content/packages';
 import { MVP_LESSONS, type MvpLessonId } from './content/catalog';
 import { type PetMood } from './motion/pet';
+import type { ClassroomMessage } from '../shared/classroom-contracts';
+import type { ChallengeAnswerResult, ChallengeQuestionMine, ChallengeReactionType } from '../shared/challenge-contracts';
 import { grantReward } from './game/rewards';
 import { type SessionEvent, transition } from './game/session';
 import {
@@ -51,8 +56,16 @@ import { useParentChallengeReview } from './challenge/useParentChallengeReview';
 import { ChallengeDialog } from './components/ChallengeDialog';
 import { CHALLENGE_SOURCE_FACTS } from '../shared/challenge-source';
 import { ProgressBoardDialog } from './components/progress/ProgressBoardDialog';
+import { DEFAULT_PET_ID, type PetId } from './content/pets';
 
 export const NAVIGATION_STATE_KEY = 'hoc-vui-navigation-v1';
+
+const PET_AUDIO_IDS: Record<PetId, AudioId> = {
+  'fox-orange': 'pet-fox',
+  'elephant-blue': 'pet-elephant',
+  'owl-purple': 'pet-owl',
+  'dragon-jade': 'pet-dragon',
+};
 
 export type NavigationSnapshot = {
   activeView: ViewId;
@@ -171,6 +184,7 @@ export function App() {
   const [activeView, setActiveView] = useState<ViewId>('journey');
   const [selectedLessonId, setSelectedLessonId] = useState<MvpLessonId>('lesson-01');
   const [settings, setSettings] = useState<AppSettings>(() => createDefaultProgress().settings);
+  const [audioPreferences, setAudioPreferences] = useState<AudioPreferences>(() => loadAudioPreferences());
   const [storageRecovery, setStorageRecovery] = useState(false);
   const [storageWriteWarning, setStorageWriteWarning] = useState(false);
   const [legacyMigrationPreview, setLegacyMigrationPreview] = useState<LocalMigrationPreview | null>(null);
@@ -192,7 +206,7 @@ export function App() {
   const [offlineStatus, setOfflineStatus] = useState<OfflineStatus>(() => getInitialOfflineStatus(import.meta.env.PROD));
   const [documentHidden, setDocumentHidden] = useState(() => typeof document !== 'undefined' && document.hidden);
   const [osReducedMotion, setOsReducedMotion] = useState(() => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const audio = useMemo(() => new AudioManager(settings.sound), []);
+  const audio = useMemo(() => new AudioManager(settings.sound, { manifest: AUDIO_RUNTIME_MANIFEST }), []);
   const moodTimer = useRef<number | null>(null);
   const toastTimer = useRef<number | null>(null);
   const effectiveReducedMotion = settings.reducedMotion || osReducedMotion || documentHidden;
@@ -243,6 +257,19 @@ export function App() {
   }, [audio, effectiveReducedMotion, settings.sound]);
 
   useEffect(() => {
+    audio.setPreferences(audioPreferences);
+  }, [audio, audioPreferences]);
+
+  useEffect(() => {
+    const shouldPlayHomeMusic = Boolean(authSession)
+      && activeView === 'journey'
+      && settings.sound
+      && audioPreferences.music
+      && !documentHidden;
+    audio.setBed('music', shouldPlayHomeMusic ? 'music-home' : null);
+  }, [activeView, audio, audioPreferences.music, authSession, documentHidden, settings.sound]);
+
+  useEffect(() => {
     const modalOpen = settingsOpen || profileDialogOpen || friendsDialogOpen || challengeDialogOpen || progressBoardDialogOpen || Boolean(birthdayCelebration) || parentGateOpen || parentPinChangeDialogOpen;
     const previousOverflow = document.body.style.overflow;
     if (modalOpen) document.body.style.overflow = 'hidden';
@@ -285,9 +312,24 @@ export function App() {
 
   useEffect(() => registerOfflineWorker(import.meta.env.PROD, setOfflineStatus), []);
 
-  useEffect(() => () => {
-    audio.dispose();
-    if (moodTimer.current) window.clearTimeout(moodTimer.current);
+  useEffect(() => {
+    const disposeOnPageHide = (event: PageTransitionEvent) => {
+      if (event.persisted) audio.setDocumentHidden(true);
+      else audio.dispose();
+    };
+    const restoreOnPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) audio.setDocumentHidden(document.hidden);
+    };
+    window.addEventListener('pagehide', disposeOnPageHide);
+    window.addEventListener('pageshow', restoreOnPageShow);
+    return () => {
+      // React StrictMode replays effect cleanup while this component remains mounted.
+      // Stop active voices there, but keep the manager reusable for the replayed effects.
+      audio.stopAll();
+      window.removeEventListener('pagehide', disposeOnPageHide);
+      window.removeEventListener('pageshow', restoreOnPageShow);
+      if (moodTimer.current) window.clearTimeout(moodTimer.current);
+    };
   }, [audio]);
 
   useEffect(() => () => {
@@ -488,14 +530,41 @@ export function App() {
     return true;
   };
 
-  const setMood = (mood: PetMood, feedback: 'tap' | 'success' | 'hint' = 'tap') => {
+  const setMood = (mood: PetMood, feedback?: 'tap' | 'success' | 'hint') => {
     setPetMood(mood);
-    audio.play(feedback);
+    if (feedback) audio.play(feedback);
     if (moodTimer.current) window.clearTimeout(moodTimer.current);
     moodTimer.current = window.setTimeout(() => setPetMood('idle'), effectiveReducedMotion ? 650 : 1800);
   };
 
+  const playPetGreeting = (petId: PetId = DEFAULT_PET_ID) => {
+    setMood('greet');
+    audio.playCue(PET_AUDIO_IDS[petId], { eventKey: `pet-tap:${petId}:${Date.now()}` });
+  };
+
+  const handleMessageSent = useMemo(() => (message: ClassroomMessage) => {
+    audio.playCue('message-send', { eventKey: `message-send:${message.id}` });
+  }, [audio]);
+
+  const handleMessageReceived = useMemo(() => (message: ClassroomMessage) => {
+    audio.playCue('message-receive', { eventKey: `message-receive:${message.id}` });
+  }, [audio]);
+
+  const handleChallengeSubmitted = useMemo(() => (question: ChallengeQuestionMine) => {
+    audio.playCue('challenge-submit', { eventKey: `challenge-submit:${question.id}:${question.updatedAt}` });
+  }, [audio]);
+
+  const handleChallengeAttemptResult = useMemo(() => (itemId: string, result: ChallengeAnswerResult) => {
+    if (result.duplicate || result.practiceOnly || result.voided) return;
+    audio.playCue(result.correct ? 'answer-correct' : 'answer-retry', { eventKey: `challenge-answer:${itemId}:${result.questionId}:${result.selectedOptionId}` });
+  }, [audio]);
+
+  const handleReactionConfirmed = useMemo(() => (itemId: string, reactionType: ChallengeReactionType) => {
+    audio.playCue('reaction-positive', { eventKey: `challenge-reaction:${itemId}:${reactionType}` });
+  }, [audio]);
+
   const navigate = (view: ViewId) => {
+    if (view === activeView) return;
     setActiveView(view);
     audio.play('tap');
   };
@@ -504,7 +573,8 @@ export function App() {
     if (!isLessonUnlocked(lessonId, progress.completedMissions)) { setActiveView('lessons'); return; }
     setSelectedLessonId(lessonId);
     setActiveView('lesson');
-    audio.play('tap');
+    void audio.unlockFromGesture();
+    audio.playCue('lesson-start', { eventKey: `lesson-start:${lessonId}` });
   };
 
   const updateSettings = (key: keyof AppSettings, value: boolean) => {
@@ -514,6 +584,13 @@ export function App() {
     audio.play(key === 'sound' && value ? 'success' : 'tap');
     const saved = persistProgress(nextProgress, 'Đã lưu cài đặt trên thiết bị này.');
     if (saved && !storageRecovery) saveSettings(nextSettings);
+  };
+
+  const updateAudioPreferences = (next: AudioPreferences) => {
+    const sanitized = sanitizeAudioPreferences(next);
+    setAudioPreferences(sanitized);
+    if (sanitized.music) void audio.unlockFromGesture();
+    if (!saveAudioPreferences(sanitized)) showToast('Cài đặt âm thanh chỉ giữ trong phiên này.');
   };
 
   const syncQueuedProgress = async (ownerId = progressOwnerId): Promise<void> => {
@@ -572,10 +649,10 @@ export function App() {
     };
   }, [activeView, authSession, progressOwnerId]);
 
-  const handleStudentLogin = async (username: string, pin: string) => {
+  const handleStudentLogin = async (username: string, pin: string, rememberDevice: boolean) => {
     setAuthBusy(true);
     setAuthError('');
-    const result = await loginStudent(username, pin);
+    const result = await loginStudent(username, pin, rememberDevice);
     setAuthBusy(false);
     if (!result.ok) { setAuthError(result.message); return; }
     loadedOwnerId.current = null;
@@ -845,11 +922,23 @@ export function App() {
     const localEvent = event.type === 'START' ? { ...event, sessionId: run.runId } : event;
     const nextSession = transition(currentSession, localEvent, lesson);
     let nextProgress: Progress = { ...progress, session: nextSession };
+    let newStampId: string | null = null;
 
     if (event.type === 'NEXT' && currentSession?.stage === 'feedback' && nextSession.stage === 'missionComplete') {
       const mission = lesson.missions[currentSession.missionIndex];
-      if (mission) nextProgress = grantReward(nextProgress, mission.id);
+      if (mission) {
+        nextProgress = grantReward(nextProgress, mission.id);
+        newStampId = nextProgress.stamps.find((stamp) => !progress.stamps.includes(stamp)) ?? null;
+      }
     }
+
+    const eventKey = `lesson:${lesson.id}:${run.runId}:${learningEvent.sequence}`;
+    if (event.type === 'ANSWER' && nextSession !== currentSession && nextSession.stage === 'feedback') {
+      audio.playCue(nextSession.lastEvaluation?.correct && !nextSession.lastEvaluation.invalid ? 'answer-correct' : 'answer-retry', { eventKey });
+    }
+    if (event.type === 'HINT' && nextSession !== currentSession) audio.playCue('learning-hint', { eventKey });
+    if (newStampId) audio.playCue('stamp-press', { eventKey: `stamp:${lesson.id}:${newStampId}` });
+    if (event.type === 'NEXT' && nextSession.stage === 'lessonComplete' && currentSession?.stage === 'missionComplete') audio.playCue('lesson-complete', { eventKey });
 
     if (nextSession === currentSession && nextProgress.completedMissions === progress.completedMissions) return;
     const message = event.type === 'ANSWER' ? 'Đã lưu câu trả lời.' : 'Đã lưu tiến độ trên thiết bị này.';
@@ -972,16 +1061,16 @@ export function App() {
   const renderView = () => {
     switch (activeView) {
       case 'journey':
-        return <JourneyView petMood={petMood} reducedMotion={effectiveReducedMotion} onPetTap={() => setMood('greet')} onOpenLessons={() => navigate('lessons')} onOpenFriends={() => setFriendsDialogOpen(true)} onOpenChallenge={challengeRollout?.enabled ? () => setChallengeDialogOpen(true) : undefined} onOpenProgress={() => setProgressBoardDialogOpen(true)} progressBoardEnabled={progressBoardFeatureEnabled} friendsUnreadCount={classroomFriends.unreadCount} />;
+        return <JourneyView petMood={petMood} reducedMotion={effectiveReducedMotion} onPetTap={() => playPetGreeting()} onOpenLessons={() => navigate('lessons')} onOpenFriends={() => setFriendsDialogOpen(true)} onOpenChallenge={challengeRollout?.enabled ? () => setChallengeDialogOpen(true) : undefined} onOpenProgress={() => setProgressBoardDialogOpen(true)} progressBoardEnabled={progressBoardFeatureEnabled} friendsUnreadCount={classroomFriends.unreadCount} />;
       case 'lessons':
         return <LessonsView progress={progress} onOpenLesson={openLesson} onBack={() => navigate('journey')} />;
       case 'lesson':
         if (!isLessonUnlocked(selectedLessonId, progress.completedMissions)) return <LessonsView progress={progress} onOpenLesson={openLesson} onBack={() => navigate('journey')} />;
-        return <LessonView lessonId={selectedLessonId} session={progress.session?.lessonId === selectedLessonId ? progress.session : null} completedMissions={progress.completedMissions} reducedMotion={effectiveReducedMotion} onSessionEvent={handleSessionEvent} onBack={() => navigate('lessons')} onPetThink={() => setMood('think', 'hint')} onPetCelebrate={() => setMood('celebrate', 'success')} />;
+        return <LessonView lessonId={selectedLessonId} session={progress.session?.lessonId === selectedLessonId ? progress.session : null} completedMissions={progress.completedMissions} reducedMotion={effectiveReducedMotion} onSessionEvent={handleSessionEvent} onBack={() => navigate('lessons')} onPetThink={() => setMood('think')} onPetCelebrate={() => setMood('celebrate')} />;
       case 'reward':
-        return <RewardView progress={progress} reducedMotion={effectiveReducedMotion} onPetTap={() => setMood('greet')} onOpenLessons={() => navigate('lessons')} />;
+        return <RewardView progress={progress} reducedMotion={effectiveReducedMotion} onPetTap={() => playPetGreeting()} onOpenLessons={() => navigate('lessons')} />;
       case 'pet':
-        return <PetView petMood={petMood} reducedMotion={effectiveReducedMotion} stamps={progress.stamps} onPetTap={() => setMood('greet')} onOpenSettings={openSettings} />;
+        return <PetView petMood={petMood} reducedMotion={effectiveReducedMotion} stamps={progress.stamps} onPetTap={playPetGreeting} onOpenSettings={openSettings} />;
       case 'collection':
         return <CollectionView progress={progress} />;
       case 'parent':
@@ -1014,12 +1103,12 @@ export function App() {
         </main>
         <BottomDock activeView={activeView} onNavigate={navigate} />
       </div>
-      {settingsOpen && <SettingsDialog settings={settings} saveStatus={storageRecovery ? 'recovery' : storageWriteWarning ? 'warning' : 'saved'} onChange={updateSettings} onClose={() => setSettingsOpen(false)} onLogout={handleLogout} />}
+      {settingsOpen && <SettingsDialog settings={settings} audioPreferences={audioPreferences} saveStatus={storageRecovery ? 'recovery' : storageWriteWarning ? 'warning' : 'saved'} onChange={updateSettings} onAudioPreferencesChange={updateAudioPreferences} onAudioPreview={() => { void audio.unlockFromGesture(); audio.playCue('answer-correct', { eventKey: `audio-preview:${Date.now()}` }); }} onClose={() => setSettingsOpen(false)} onLogout={handleLogout} />}
       {profileDialogOpen && visibleStudentProfile && <ProfileDialog profile={visibleStudentProfile} onSave={handleProfileSave} onChangePin={handleProfilePinChange} onClose={() => setProfileDialogOpen(false)} onLogout={handleLogout} />}
-      {friendsDialogOpen && <FriendListDialog friends={classroomFriends.friends} loading={classroomFriends.loading} error={classroomFriends.error ?? ''} messageRevision={classroomFriends.messageRevision} onRefresh={classroomFriends.refresh} onFriendsChanged={classroomFriends.markFriendRead} onClose={() => setFriendsDialogOpen(false)} />}
-      {challengeDialogOpen && challengeRollout?.enabled && authSession.account.role === 'student' && authSession.mode === 'full' && <ChallengeDialog sourceFacts={CHALLENGE_SOURCE_FACTS} studentId={authSession.account.id} canCreate onClose={() => setChallengeDialogOpen(false)} />}
+      {friendsDialogOpen && <FriendListDialog friends={classroomFriends.friends} loading={classroomFriends.loading} error={classroomFriends.error ?? ''} messageRevision={classroomFriends.messageRevision} onRefresh={classroomFriends.refresh} onFriendsChanged={classroomFriends.markFriendRead} onMessageSent={handleMessageSent} onMessageReceived={handleMessageReceived} onClose={() => setFriendsDialogOpen(false)} />}
+      {challengeDialogOpen && challengeRollout?.enabled && authSession.account.role === 'student' && authSession.mode === 'full' && <ChallengeDialog sourceFacts={CHALLENGE_SOURCE_FACTS} studentId={authSession.account.id} canCreate onChallengeSubmitted={handleChallengeSubmitted} onChallengeAttemptResult={handleChallengeAttemptResult} onReactionConfirmed={handleReactionConfirmed} onClose={() => setChallengeDialogOpen(false)} />}
       {progressBoardDialogOpen && progressBoardFeatureEnabled && <ProgressBoardDialog status={progressBoard.status} data={progressBoard.data} error={progressBoard.error} reducedMotion={effectiveReducedMotion} onRefresh={progressBoard.refresh} onClose={() => setProgressBoardDialogOpen(false)} onOpenLesson={openProgressLesson} lockBodyScroll={false} />}
-      {birthdayCelebration && <BirthdayCelebration displayName={birthdayCelebration.displayName} avatarId={birthdayCelebration.avatarId} reducedMotion={effectiveReducedMotion} soundEnabled={settings.sound} onPlaySound={() => audio.play('success')} onClose={() => setBirthdayCelebration(null)} />}
+      {birthdayCelebration && <BirthdayCelebration displayName={birthdayCelebration.displayName} avatarId={birthdayCelebration.avatarId} reducedMotion={effectiveReducedMotion} soundEnabled={settings.sound} onPlaySound={() => audio.playCue('birthday', { eventKey: `birthday:${birthdayCelebration.accountId}` })} onClose={() => setBirthdayCelebration(null)} />}
       {parentGateOpen && <ParentPinDialog childName={authSession.account.displayName} onSubmit={handleParentUnlock} onCancel={() => setParentGateOpen(false)} error={parentGateError} busy={authBusy} />}
       {parentPinChangeDialogOpen && <ParentPinChangeDialog childName={authSession.account.displayName} onSubmit={handleParentPinChange} onCancel={() => { setParentPinChangeDialogOpen(false); setAuthError(''); }} error={authError} busy={authBusy} />}
       <div className={`app-toast${toast ? ' is-visible' : ''}`} role="status" aria-live="polite">{toast || ' '}</div>

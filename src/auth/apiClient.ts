@@ -21,27 +21,38 @@ export type ProgressBoardResponse = { data: ProgressBoardData };
 export type ProgressBoardRolloutResponse = { config: ProgressBoardRolloutConfig };
 
 const SESSION_TOKEN_KEY = 'hoc_vui_session_token';
+const REMEMBERED_SESSION_TOKEN_KEY = 'hoc_vui_remembered_session_token';
 const PRODUCTION_EDGE_API_BASE_URL = 'https://tvlpabqkternfvsxqovi.supabase.co/functions/v1/api';
 
-function readSessionToken(): string | null {
+function readToken(persistent: boolean): string | null {
   try {
-    return typeof sessionStorage === 'undefined' ? null : sessionStorage.getItem(SESSION_TOKEN_KEY);
+    return persistent ? localStorage.getItem(REMEMBERED_SESSION_TOKEN_KEY) : sessionStorage.getItem(SESSION_TOKEN_KEY);
   } catch {
     return null;
   }
 }
 
-function writeSessionToken(token: string | null): void {
+function writeToken(token: string | null, persistent: boolean): void {
   try {
-    if (typeof sessionStorage === 'undefined') return;
-    if (token) sessionStorage.setItem(SESSION_TOKEN_KEY, token);
-    else sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    const storage = persistent ? localStorage : sessionStorage;
+    const key = persistent ? REMEMBERED_SESSION_TOKEN_KEY : SESSION_TOKEN_KEY;
+    if (token) storage.setItem(key, token);
+    else storage.removeItem(key);
   } catch {
     // Private browsing and restricted embedded contexts can deny storage access.
   }
 }
 
-let sessionToken: string | null = readSessionToken();
+const tabToken = readToken(false);
+const persistentToken = readToken(true);
+let sessionToken: string | null = tabToken ?? persistentToken;
+// A stale token for another account must never enable persistence for this tab.
+let rememberedStudentSession = Boolean(persistentToken && sessionToken === persistentToken);
+
+function writeSessionToken(token: string | null, remember = rememberedStudentSession): void {
+  writeToken(token, false);
+  writeToken(remember ? token : null, true);
+}
 
 // The parent grant is deliberately page-memory only. It is never written to
 // localStorage/sessionStorage and therefore disappears on a reload.
@@ -86,7 +97,9 @@ async function request<T extends Record<string, unknown>>(path: string, init: Re
     }
     if (isRecord(payload) && typeof payload.accessToken === 'string' && payload.accessToken) {
       sessionToken = payload.accessToken;
-      writeSessionToken(sessionToken);
+      const session = isRecord(payload.session) ? payload.session : null;
+      const account = session && isRecord(session.account) ? session.account : null;
+      writeSessionToken(sessionToken, rememberedStudentSession && session?.mode === 'full' && account?.role === 'student');
     }
     return payload as ApiResult<T>;
   } catch {
@@ -103,19 +116,29 @@ export async function getCurrentAuthSession(): Promise<ApiResult<{ session: Clie
   const result = await request<{ session: ClientSession }>('/api/auth/me');
   if (!result.ok && (result.code === 'expired' || result.code === 'forbidden')) {
     sessionToken = null;
+    rememberedStudentSession = false;
     writeSessionToken(null);
     return { ok: true, session: null };
   }
   return result.ok ? { ...result, session: { ...result.session, mustChange: result.session.mode === 'change-only' } } : result;
 }
 
-export async function loginStudent(username: string, pin: string): Promise<ApiResult<{ session: ClientSession; mustChange?: boolean; accessToken?: string }>> {
-  const result = await request<{ session: ClientSession; mustChange?: boolean; accessToken?: string }>('/api/auth/student/login', jsonBody({ username, pin }));
-  if (!result.ok) return result;
+export async function loginStudent(username: string, pin: string, rememberDevice = false): Promise<ApiResult<{ session: ClientSession; mustChange?: boolean; accessToken?: string }>> {
+  parentGrantToken = null;
+  rememberedStudentSession = rememberDevice;
+  writeToken(null, true);
+  const result = await request<{ session: ClientSession; mustChange?: boolean; accessToken?: string }>('/api/auth/student/login', jsonBody({ username, pin, rememberDevice }));
+  if (!result.ok) {
+    rememberedStudentSession = false;
+    return result;
+  }
   return { ...result, session: { ...result.session, mustChange: Boolean(result.mustChange ?? result.session.mode === 'change-only') } };
 }
 
 export async function loginAdmin(username: string, password: string): Promise<ApiResult<{ session: ClientSession; accessToken?: string }>> {
+  parentGrantToken = null;
+  rememberedStudentSession = false;
+  writeToken(null, true);
   const result = await request<{ session: ClientSession; accessToken?: string }>('/api/auth/admin/login', jsonBody({ username, password }));
   if (!result.ok) return result;
   return { ...result, session: { ...result.session, mustChange: false } };
@@ -139,12 +162,14 @@ export async function updateParentProfilePreferences(enabled: boolean): Promise<
 
 export async function changeStudentPin(currentPin: string, newPin: string): Promise<ApiResult<{ session: ClientSession; accessToken?: string }>> {
   parentGrantToken = null;
-  const result = await request<{ session: ClientSession; accessToken?: string }>('/api/auth/student/change-pin', jsonBody({ currentPin, newPin }));
+  const result = await request<{ session: ClientSession; accessToken?: string }>('/api/auth/student/change-pin', jsonBody({ currentPin, newPin, rememberDevice: rememberedStudentSession }));
   return result.ok ? { ...result, session: { ...result.session, mustChange: false } } : result;
 }
 
 export async function changeParentPin(currentPin: string, newPin: string): Promise<ApiResult<{ session: ClientSession; accessToken?: string }>> {
-  const result = await request<{ session: ClientSession; accessToken?: string }>('/api/parent/change-pin', jsonBody({ currentPin, newPin }), true);
+  // Keep the choice in page memory across the 7-day parent provisional session;
+  // the provisional bearer itself is never eligible for persistent storage.
+  const result = await request<{ session: ClientSession; accessToken?: string }>('/api/parent/change-pin', jsonBody({ currentPin, newPin, rememberDevice: rememberedStudentSession }), true);
   parentGrantToken = null;
   return result.ok ? { ...result, session: { ...result.session, mustChange: false } } : result;
 }
@@ -166,6 +191,7 @@ export async function logout(): Promise<ApiResult<Record<string, never>>> {
   const result = await request<Record<string, never>>('/api/auth/logout', jsonBody({}));
   parentGrantToken = null;
   sessionToken = null;
+  rememberedStudentSession = false;
   writeSessionToken(null);
   return result;
 }

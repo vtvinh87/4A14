@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Học Vui · Audio audition</title>
+  <style>
+    :root { color: #173d4e; background: #fbf7e9; font: 16px/1.45 system-ui, sans-serif; }
+    body { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    h1 { margin: 0 0 6px; }
+    .note { color: #5d7480; max-width: 780px; }
+    .toolbar { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding: 12px; margin: 20px 0; border: 1px solid #d9cda8; border-radius: 12px; background: rgba(255, 253, 242, .96); }
+    button { border: 1px solid #5d9a9a; border-radius: 8px; padding: 7px 10px; color: #173d4e; background: #e3f3e9; cursor: pointer; }
+    button:hover, button:focus-visible { background: #c9e7df; }
+    input[type="range"] { accent-color: #247994; vertical-align: middle; }
+    #status { margin-left: auto; color: #6e5a2b; font-size: .9rem; }
+    .cue { margin: 12px 0; padding: 14px; border: 1px solid #ded5bc; border-radius: 12px; background: #fffdf4; }
+    .cue-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+    .cue-name { font-weight: 750; }
+    .cue-meta { color: #6b7d83; font-size: .85rem; }
+    .variant-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+    .variant-row small { color: #6b7d83; }
+    .state { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: .75rem; font-weight: 700; }
+    .state-pending { background: #fff0bd; color: #735b16; }
+    .state-accepted { background: #ccefd6; color: #23643d; }
+    .state-not-selected { background: #e7ecef; color: #566a73; }
+    .state-blocked, .state-missing { background: #f7d3ce; color: #803b35; }
+    code { font-size: .82em; }
+  </style>
+</head>
+<body>
+  <h1>Học Vui · Audio audition</h1>
+  <p class="note">Trang nghe local cho reviewer. Không autoplay, không gửi dữ liệu ra ngoài. Waveform/metadata không thay thế listening review; chỉ chuyển trạng thái sang accepted sau khi người thật nghe và ghi evidence trong <code>qa/listening-review.md</code>. Pilot mới: <code>audition.html?revision=sourced-v1</code> · full sourced: <code>audition.html?revision=sourced-v2-full</code> · organic: <code>audition.html?revision=organic-v2</code>.</p>
+  <div class="toolbar">
+    <button id="stop-all" type="button">Dừng tất cả</button>
+    <label>Âm lượng <input id="volume" type="range" min="0" max="1" step="0.01" value="0.65"></label>
+    <label>Số vòng <input id="loop-count" type="number" min="1" max="10" value="1" style="width:4.5rem"></label>
+    <span id="status">Đang đọc catalog…</span>
+  </div>
+  <main id="catalog" aria-live="polite"></main>
+  <audio id="player" preload="metadata"></audio>
+  <script>
+    const catalogRoot = document.querySelector('#catalog');
+    const player = document.querySelector('#player');
+    const statusRoot = document.querySelector('#status');
+    const volume = document.querySelector('#volume');
+    const loopCount = document.querySelector('#loop-count');
+    let loopTarget = 1;
+    let loopIndex = 0;
+    let currentKey = '';
+    let auditionAssets = {};
+    let manifestByKey = {};
+    const revision = new URLSearchParams(window.location.search).get('revision');
+    const ORGANIC_CANDIDATE_NAMES = ['candidate-a', 'candidate-b', 'candidate-c'];
+
+    const esc = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    const keyOf = (id, variant) => `${id}:${variant}`;
+    const stateLabel = (status) => status === 'accepted' ? 'accepted' : status === 'blocked' ? 'blocked' : status === 'missing' ? 'missing' : 'pending-human-listening';
+
+    async function readJson(path, fallback) {
+      try {
+        const response = await fetch(path, { cache: 'no-store' });
+        return response.ok ? await response.json() : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function urlFor(cue, variant) {
+      const key = keyOf(cue.id, variant);
+      if (auditionAssets[key]) return auditionAssets[key];
+      const entry = manifestByKey[key];
+      return entry?.listeningStatus === 'accepted' ? entry.auditionUrl || entry.relativeUrl : '';
+    }
+
+    function playSource(source, key) {
+      currentKey = key;
+      loopIndex = 0;
+      loopTarget = Math.max(1, Math.min(10, Number(loopCount.value) || 1));
+      player.pause();
+      player.currentTime = 0;
+      if (!source) {
+        statusRoot.textContent = `${key}: chưa có file nghe được`;
+        return;
+      }
+      player.src = source;
+      player.volume = Number(volume.value);
+      player.loop = false;
+      void player.play().then(() => { statusRoot.textContent = `${currentKey}: đang phát vòng ${loopIndex + 1}/${loopTarget}`; }).catch(() => { statusRoot.textContent = `${currentKey}: browser chặn playback; hãy bấm lại`; });
+    }
+
+    function play(cue, variant) {
+      playSource(urlFor(cue, variant), keyOf(cue.id, variant));
+    }
+
+    player.addEventListener('ended', () => {
+      loopIndex += 1;
+      if (loopIndex < loopTarget) {
+        player.currentTime = 0;
+        void player.play();
+        statusRoot.textContent = `${currentKey}: đang phát vòng ${loopIndex + 1}/${loopTarget}`;
+      } else {
+        statusRoot.textContent = `${currentKey}: đã phát ${loopTarget} vòng; vẫn cần ghi listening evidence`;
+      }
+    });
+    volume.addEventListener('input', () => { player.volume = Number(volume.value); });
+    loopCount.addEventListener('change', () => { loopCount.value = String(Math.max(1, Math.min(10, Number(loopCount.value) || 1))); });
+    document.querySelector('#stop-all').addEventListener('click', () => { player.pause(); player.removeAttribute('src'); player.load(); statusRoot.textContent = 'Đã dừng'; });
+
+    function render(catalog) {
+      catalogRoot.innerHTML = catalog.map((cue) => {
+        const variants = Array.from({ length: cue.variants }, (_, index) => index + 1).map((variant) => {
+          const key = keyOf(cue.id, variant);
+          const entry = manifestByKey[key];
+          const status = stateLabel(entry?.listeningStatus || (urlFor(cue, variant) ? 'pending-human-listening' : 'missing'));
+          return `<button type="button" data-play="${esc(cue.id)}" data-variant="${variant}">Play v${String(variant).padStart(2, '0')}</button><span class="state state-${status}">${status}</span>`;
+        }).join(' ');
+        return `<article class="cue"><div class="cue-header"><span class="cue-name">${esc(cue.id)} · ${esc(cue.name || cue.id)}</span><span class="cue-meta">${esc(cue.bus)} · ${cue.loop ? 'loop' : `${cue.durationSeconds}s`} · ${cue.variants} variant(s)</span></div><div class="variant-row">${variants}<small>${esc(cue.trigger || '')}</small></div></article>`;
+      }).join('');
+      catalogRoot.querySelectorAll('[data-play]').forEach((button) => button.addEventListener('click', () => {
+        const cue = catalog.find((item) => item.id === button.dataset.play);
+        if (cue) play(cue, Number(button.dataset.variant));
+      }));
+      statusRoot.textContent = `${catalog.length} cue(s) · trạng thái chỉ là artifact status, không phải pass nghe`;
+    }
+
+    function renderOrganic(pilot) {
+      const cues = pilot.cues || [];
+      catalogRoot.innerHTML = cues.map((cue) => {
+        const candidates = ORGANIC_CANDIDATE_NAMES.map((name) => (cue.candidates || []).find((candidate) => candidate.name === name)).filter(Boolean);
+        const rows = candidates.map((candidate) => {
+          const label = `${cue.id}:${candidate.name}`;
+          return `<button type="button" data-organic-path="${esc(candidate.path)}" data-organic-label="${esc(label)}">Play ${esc(candidate.name)}</button><span class="state state-pending">${esc(candidate.listeningStatus || 'pending-human-listening')}</span>`;
+        }).join(' ');
+        return `<article class="cue"><div class="cue-header"><span class="cue-name">${esc(cue.id)} · organic-v2</span><span class="cue-meta">${esc(cue.bus)} · ${cue.loop ? 'loop' : `${cue.durationSeconds}s`} · ${candidates.length} candidates</span></div><div class="variant-row">${rows}<small>${esc((cue.candidates || []).map((candidate) => (candidate.layers || []).join(', ')).join(' · '))}</small></div></article>`;
+      }).join('');
+      catalogRoot.querySelectorAll('[data-organic-path]').forEach((button) => button.addEventListener('click', () => {
+        playSource(button.dataset.organicPath, button.dataset.organicLabel);
+      }));
+      statusRoot.textContent = `${cues.length} organic-v2 pilot cue(s) · 3 candidates/cue · pending human listening`;
+    }
+
+    function renderSourced(pilot) {
+      const cues = pilot.cues || [];
+      catalogRoot.innerHTML = cues.map((cue) => {
+        const rows = (cue.candidates || []).map((candidate) => {
+          const label = `${cue.id}:${candidate.name}`;
+          const source = `${candidate.sourceProvider || 'source'} · ${candidate.license || 'license pending'} · ${Number(candidate.durationSeconds || 0).toFixed(3)}s`;
+          const decision = candidate.selectionStatus === 'selected-by-user'
+            ? { className: 'accepted', label: 'selected-by-user' }
+            : candidate.selectionStatus === 'not-selected'
+              ? { className: 'not-selected', label: 'not-selected' }
+              : { className: 'pending', label: candidate.listeningStatus || 'pending-human-listening' };
+          const sourceLink = candidate.licenseEvidenceUrl
+            ? `<a href="${esc(candidate.licenseEvidenceUrl)}" target="_blank" rel="noreferrer">license/source</a>`
+            : 'license/source';
+          const masterLabel = candidate.masterRelativeUrl ? ' · pilot master' : '';
+          return `<button type="button" data-sourced-path="${esc(candidate.relativeUrl || candidate.path)}" data-sourced-label="${esc(label)}">Play ${esc(candidate.name)}</button><span class="state state-${decision.className}">${esc(decision.label)}</span><small>${esc(source)}${esc(masterLabel)} · ${sourceLink}</small>`;
+        }).join(' ');
+        return `<article class="cue"><div class="cue-header"><span class="cue-name">${esc(cue.id)} · sourced-v1</span><span class="cue-meta">${esc(cue.bus)} · ${cue.loop ? '48s excerpt / loop seam unverified' : `${cue.targetDurationSeconds}s target`} · ${(cue.candidates || []).length} candidates</span></div><div class="variant-row">${rows}<small>${esc(cue.intent || '')}</small></div></article>`;
+      }).join('');
+      catalogRoot.querySelectorAll('[data-sourced-path]').forEach((button) => button.addEventListener('click', () => {
+        playSource(button.dataset.sourcedPath, button.dataset.sourcedLabel);
+      }));
+      const selected = cues.flatMap((cue) => cue.candidates || []).filter((candidate) => candidate.selectionStatus === 'selected-by-user').length;
+      statusRoot.textContent = `${cues.length} sourced-v1 pilot cue(s) · ${selected} selected by user · runtime promotion off`;
+    }
+
+    function renderSourcedV2(pilot) {
+      const cues = pilot.cues || [];
+      const laneForCue = (id) => {
+        if (['ui-tap', 'ui-confirm', 'ui-back', 'page-turn', 'map-unfold', 'map-select', 'landmark-open', 'answer-select', 'answer-correct', 'answer-retry', 'learning-hint', 'match-connect', 'lesson-complete', 'stamp-press', 'collection-open', 'lesson-start', 'ui-toggle'].includes(id)) return 'core-ui-learning';
+        if (['item-unlock', 'challenge-submit', 'class-milestone', 'reaction-positive', 'message-send', 'message-receive', 'pet-fox', 'pet-elephant', 'pet-owl', 'pet-dragon', 'birthday'].includes(id)) return 'reward-social-pet';
+        if (['music-home', 'music-map', 'music-focus', 'music-cooperate', 'ambience-garden', 'ambience-mountain', 'ambience-coast', 'ambience-forest', 'ambience-river', 'ambience-evening'].includes(id)) return 'music-ambience';
+        return 'other';
+      };
+      const laneLabels = {
+        all: 'Tất cả',
+        'core-ui-learning': 'UI / học tập',
+        'reward-social-pet': 'Thưởng / xã hội / Pet',
+        'music-ambience': 'Nhạc / không gian',
+      };
+      const toolbar = document.querySelector('.toolbar');
+      const oldFilter = document.querySelector('#sourced-v2-lane');
+      if (oldFilter) oldFilter.remove();
+      const filterLabel = document.createElement('label');
+      filterLabel.id = 'sourced-v2-lane';
+      filterLabel.innerHTML = 'Lane <select><option value="all">Tất cả</option><option value="core-ui-learning">UI / học tập</option><option value="reward-social-pet">Thưởng / xã hội / Pet</option><option value="music-ambience">Nhạc / không gian</option></select>';
+      toolbar.insertBefore(filterLabel, statusRoot);
+      const filter = filterLabel.querySelector('select');
+
+      const paint = () => {
+        const visibleCues = cues.filter((cue) => filter.value === 'all' || laneForCue(cue.id) === filter.value);
+        catalogRoot.innerHTML = visibleCues.map((cue) => {
+          const lane = laneForCue(cue.id);
+          const rows = (cue.candidates || []).map((candidate) => {
+            const label = `${cue.id}:${candidate.name}`;
+            const source = `${candidate.sourceProvider || 'source'} · ${candidate.license || 'license pending'} · ${Number(candidate.durationSeconds || 0).toFixed(3)}s`;
+            const sourceLink = candidate.licenseEvidenceUrl
+              ? `<a href="${esc(candidate.licenseEvidenceUrl)}" target="_blank" rel="noreferrer">license/source</a>`
+              : 'license/source';
+            return `<button type="button" data-sourced-v2-path="${esc(candidate.relativeUrl || candidate.path)}" data-sourced-v2-label="${esc(label)}">Play ${esc(candidate.name)}</button><span class="state state-pending">${esc(candidate.listeningStatus || 'pending-human-listening')}</span><small>${esc(source)} · ${sourceLink} · ${esc(candidate.selectionRationale || '')}</small>`;
+          }).join(' ');
+          return `<article class="cue"><div class="cue-header"><span class="cue-name">${esc(cue.id)} · ${esc(cue.name || cue.id)}</span><span class="cue-meta">${esc(laneLabels[lane] || lane)} · ${esc(cue.bus)} · ${cue.loop ? 'loop / seam chưa verified' : `${cue.durationSeconds}s target`} · ${(cue.candidates || []).length} variant(s)</span></div><div class="variant-row">${rows}<small>${esc(cue.prompt || cue.intent || '')}</small></div></article>`;
+        }).join('');
+        catalogRoot.querySelectorAll('[data-sourced-v2-path]').forEach((button) => button.addEventListener('click', () => {
+          playSource(button.dataset.sourcedV2Path, button.dataset.sourcedV2Label);
+        }));
+        const totalCandidates = visibleCues.reduce((sum, cue) => sum + (cue.candidates || []).length, 0);
+        statusRoot.textContent = `${visibleCues.length}/${cues.length} sourced-v2 cue(s) · ${totalCandidates} candidate(s) · pending human listening · runtime promotion off`;
+      };
+      filter.addEventListener('change', paint);
+      paint();
+    }
+
+    if (revision === 'organic-v2') {
+      readJson('./qa/organic-v2-pilot.json', { cues: [] }).then(renderOrganic);
+    } else if (revision === 'sourced-v1') {
+      readJson('./qa/sourced-v1-pilot.json', { cues: [] }).then(renderSourced);
+    } else if (revision === 'sourced-v2-full') {
+      readJson('./qa/sourced-v2-candidates.json', { cues: [] }).then(renderSourcedV2);
+    } else {
+      Promise.all([
+        readJson('./audio-catalog.json', { cues: [] }),
+        readJson('./manifest.json', { entries: [] }),
+        readJson('./qa/audition-assets.json', {}),
+      ]).then(([catalog, manifest, audition]) => {
+        auditionAssets = audition && typeof audition === 'object' ? audition : {};
+        manifestByKey = Object.fromEntries((manifest.entries || []).map((entry) => [keyOf(entry.id, entry.variant), entry]));
+        render(catalog.cues || []);
+      });
+    }
+  </script>
+</body>
+</html>

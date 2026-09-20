@@ -26,7 +26,7 @@ import { getProgressBoardRolloutConfig, isProgressBoardRolloutEnabled, progressB
 import type { RequestTiming } from './performance/timing.ts';
 
 const SESSION_COOKIE = 'hoc_vui_session';
-const LOCAL_SESSION_MAX_AGE = 7 * 24 * 60 * 60;
+const LOCAL_SESSION_MAX_AGE = 30 * 24 * 60 * 60;
 const ADMIN_SESSION_MAX_AGE = 8 * 60 * 60;
 
 export type AppRequest = {
@@ -301,7 +301,7 @@ export function createApp(dependencies: AppDependencies) {
 
     if (method === 'POST' && pathname === '/api/auth/student/login') {
       const body = bodyObject(request);
-      const result = await auth.loginStudent(String(body.username ?? ''), String(body.pin ?? ''));
+      const result = await auth.loginStudent(String(body.username ?? ''), String(body.pin ?? ''), body.rememberDevice === true);
       if (!result.ok) return failure(result);
       return withCookie(success({ accessToken: result.token, session: publicSession(result.session), ...(result.mustChange ? { mustChange: true } : {}) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
     }
@@ -330,7 +330,7 @@ export function createApp(dependencies: AppDependencies) {
       const token = requireToken(request);
       if (typeof token !== 'string') return failure(token, 401);
       const body = bodyObject(request);
-      const result = await auth.changePin(token, String(body.currentPin ?? ''), String(body.newPin ?? ''), 'student');
+      const result = await auth.changePin(token, String(body.currentPin ?? ''), String(body.newPin ?? ''), 'student', body.rememberDevice === true);
       if (!result.ok) return failure(result);
       return withCookie(success({ accessToken: result.token, session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
     }
@@ -522,7 +522,7 @@ export function createApp(dependencies: AppDependencies) {
         const parent = await auth.getParentDashboard(token, parentGrantToken(request));
         if (!parent.ok) return failure(parent);
       }
-      const result = await auth.changePin(token, String(body.currentPin ?? ''), String(body.newPin ?? ''), 'parent');
+      const result = await auth.changePin(token, String(body.currentPin ?? ''), String(body.newPin ?? ''), 'parent', body.rememberDevice === true);
       if (!result.ok) return failure(result);
       return withCookie(success({ accessToken: result.token, session: publicSession(result.session) }), setSessionCookie(result.token, result.session.expiresAt, 'student'));
     }

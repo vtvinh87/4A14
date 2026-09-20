@@ -2,6 +2,14 @@ import { FormEvent, useEffect, useState } from 'react';
 import type { ClientAccount } from '../auth/apiClient';
 import { createStudentAccount, listStudentAccounts, resetStudentPin, updateStudentAccount } from '../auth/apiClient';
 
+function mergeAccount(accounts: ClientAccount[], account: ClientAccount): ClientAccount[] {
+  const index = accounts.findIndex((candidate) => candidate.id === account.id);
+  if (index < 0) return [...accounts, account];
+  const next = accounts.slice();
+  next[index] = account;
+  return next;
+}
+
 export function AdminView({ onLogout }: { onLogout: () => void }) {
   const [students, setStudents] = useState<ClientAccount[]>([]);
   const [username, setUsername] = useState('');
@@ -28,8 +36,11 @@ export function AdminView({ onLogout }: { onLogout: () => void }) {
     const result = await action();
     setBusy(false);
     if (!result.ok) { setError(result.message); return false; }
+    if ('account' in result && result.account && typeof result.account === 'object') {
+      setStudents((current) => mergeAccount(current, result.account as ClientAccount));
+    }
     setMessage(successMessage);
-    await refresh();
+    void refresh();
     return true;
   };
 
@@ -61,7 +72,7 @@ export function AdminView({ onLogout }: { onLogout: () => void }) {
       <section className="admin-card">
         <div className="admin-heading"><div><p className="eyebrow">KHU VỰC QUẢN TRỊ</p><h1 id="admin-title">Danh sách nhà thám hiểm</h1><p>Tạo và quản lý từng tài khoản học sinh. PIN hiện tại không bao giờ hiển thị.</p></div><button className="secondary-button" type="button" onClick={onLogout}>Đăng xuất</button></div>
         <form className="admin-create-form" onSubmit={(event) => void submit(event)}>
-          <label className="auth-field" htmlFor="student-username"><span>Tên tài khoản</span><input id="student-username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="ví dụ: bao04" autoComplete="off" /></label>
+          <label className="auth-field" htmlFor="student-username"><span>Tên tài khoản</span><input id="student-username" value={username} onChange={(event) => setUsername(event.target.value.toLocaleLowerCase('en-US'))} placeholder="ví dụ: bao04" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} /></label>
           <label className="auth-field" htmlFor="student-display-name"><span>Tên hiển thị</span><input id="student-display-name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="ví dụ: Bé Bảo" /></label>
           <button className="primary-small-button" type="submit" disabled={busy}>Tạo tài khoản →</button>
         </form>

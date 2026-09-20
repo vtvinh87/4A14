@@ -42,6 +42,41 @@ function expectNoAccessToken(response: AppResponse): void {
 }
 
 describe('same-origin account API', () => {
+  it.each([true, false, 'true'])('roundtrips parent provisional remember intent with strict boolean validation (%s)', async (rememberDevice) => {
+    const app = createApp({ auth: createAuthService(new MemoryAuthRepository(), () => new Date('2026-09-20T00:00:00Z')) });
+    const admin = await request(app, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'admin', password: '123456@' } });
+    await request(app, { method: 'POST', path: '/api/admin/students', cookie: cookieValue(admin), body: { username: 'parentremember', displayName: 'Parent' } });
+    const initial = await request(app, { method: 'POST', path: '/api/auth/student/login', body: { username: 'parentremember', pin: '123456', rememberDevice: true } });
+    const full = await request(app, { method: 'POST', path: '/api/auth/student/change-pin', cookie: cookieValue(initial), body: { currentPin: '123456', newPin: '246810', rememberDevice: true } });
+    const provisional = await request(app, { method: 'POST', path: '/api/parent/unlock', cookie: cookieValue(full), body: { pin: '123456' } });
+    expect(provisional.body.session).toMatchObject({ mode: 'change-only', expiresAt: '2026-09-27T00:00:00.000Z' });
+    const changed = await request(app, { method: 'POST', path: '/api/parent/change-pin', cookie: cookieValue(provisional), body: { currentPin: '123456', newPin: '864208', rememberDevice } });
+    expect(changed.statusCode).toBe(200);
+    expect(changed.body.session).toMatchObject({ mode: 'full', expiresAt: rememberDevice === true ? '2026-10-20T00:00:00.000Z' : '2026-09-27T00:00:00.000Z' });
+    expect(changed.body).not.toHaveProperty('parentGrantToken');
+    expect(changed.body.session).not.toHaveProperty('parentGrantUntil');
+    const dashboard = await request(app, { method: 'GET', path: '/api/parent/dashboard', cookie: cookieValue(changed) });
+    expect(dashboard.statusCode).toBe(403);
+    const me = await request(app, { method: 'GET', path: '/api/auth/me', cookie: cookieValue(changed) });
+    expect(me.statusCode).toBe(200);
+    expectPublicSession(me);
+  });
+
+  it('accepts only boolean rememberDevice and bounds the cookie by the server session', async () => {
+    const app = createApp({ auth: createAuthService(new MemoryAuthRepository()) });
+    const admin = await request(app, { method: 'POST', path: '/api/auth/admin/login', body: { username: 'admin', password: '123456@', rememberDevice: true } });
+    expect(admin.headers['Set-Cookie']).toContain('Max-Age=28800');
+    await request(app, { method: 'POST', path: '/api/admin/students', cookie: cookieValue(admin), body: { username: 'remember02', displayName: 'Remember' } });
+    const provisional = await request(app, { method: 'POST', path: '/api/auth/student/login', body: { username: 'remember02', pin: '123456', rememberDevice: true } });
+    const full = await request(app, { method: 'POST', path: '/api/auth/student/change-pin', cookie: cookieValue(provisional), body: { currentPin: '123456', newPin: '246810', rememberDevice: true } });
+    expect(full.statusCode).toBe(200);
+    expect(full.headers['Set-Cookie']).toContain('Max-Age=2592000');
+    expectPublicSession(full);
+    const legacy = await request(app, { method: 'POST', path: '/api/auth/student/login', body: { username: 'remember02', pin: '246810', rememberDevice: 'true' } });
+    const value = legacy.body.session as { createdAt: string; expiresAt: string };
+    expect(Date.parse(value.expiresAt) - Date.parse(value.createdAt)).toBe(7 * 86400000);
+  });
+
   it('emits request-local auth/data/total timing for protected roster reads and preserves no-store', async () => {
     const now = new Date('2026-09-19T08:00:00.000Z');
     const repository = new MemoryAuthRepository();

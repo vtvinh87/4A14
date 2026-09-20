@@ -214,6 +214,23 @@ export class PostgresAuthRepository implements AuthRepository {
     return Promise.all(rows.map(async (row) => mapAccount(row, await loadCredentials(this.db, row.id))));
   }
 
+  async listStudentSummaries(): Promise<SessionAccountView[]> {
+    const rows = await this.db<Pick<AccountRow, 'id' | 'username' | 'display_name' | 'role' | 'active' | 'credential_version'>[]>`
+      select id, username, display_name, role, active, credential_version
+      from hoc_vui_private.accounts
+      where role = 'student'
+      order by lower(display_name), username
+    `;
+    return rows.map((row) => ({
+      id: row.id,
+      username: row.username,
+      displayName: row.display_name,
+      role: row.role,
+      active: row.active,
+      credentialVersion: Number(row.credential_version),
+    }));
+  }
+
   async listActiveStudentIds(): Promise<string[]> {
     const rows = await this.db<{ id: string }[]>`
       select id

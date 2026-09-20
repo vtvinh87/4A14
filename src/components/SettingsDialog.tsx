@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import type { AudioPreferences } from '../audio/preferences';
 import type { AppSettings } from '../progress/storage';
 import { CheckIcon, SettingsIcon, SoundIcon } from './icons';
 import { PwaInstallCard } from './PwaInstallCard';
@@ -17,13 +18,16 @@ export function getNextFocusIndex(index: number, count: number, backward: boolea
 
 type SettingsDialogProps = {
   settings: AppSettings;
+  audioPreferences: AudioPreferences;
   saveStatus?: 'saved' | 'recovery' | 'warning';
   onChange: (key: keyof AppSettings, value: boolean) => void;
+  onAudioPreferencesChange: (next: AudioPreferences) => void;
+  onAudioPreview?: () => void;
   onClose: () => void;
   onLogout?: () => void;
 };
 
-export function SettingsDialog({ settings, saveStatus = 'saved', onChange, onClose, onLogout }: SettingsDialogProps) {
+export function SettingsDialog({ settings, audioPreferences, saveStatus = 'saved', onChange, onAudioPreferencesChange, onAudioPreview, onClose, onLogout }: SettingsDialogProps) {
   const dialogRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -88,7 +92,7 @@ export function SettingsDialog({ settings, saveStatus = 'saved', onChange, onClo
         <div className="settings-list">
           <button className="settings-row" type="button" onClick={() => onChange('sound', !settings.sound)} aria-pressed={settings.sound}>
             <span className="settings-row-icon"><SoundIcon size={22} /></span>
-            <span className="settings-row-copy"><strong>Âm thanh phản hồi</strong><small>Âm chạm và âm chúc mừng do app tạo</small></span>
+            <span className="settings-row-copy"><strong>Âm thanh phản hồi</strong><small>Âm chạm và âm khám phá</small></span>
             <span className={`toggle${settings.sound ? ' is-on' : ''}`} aria-hidden="true"><span /></span>
           </button>
           <button className="settings-row" type="button" onClick={() => onChange('reducedMotion', !settings.reducedMotion)} aria-pressed={settings.reducedMotion}>
@@ -97,6 +101,21 @@ export function SettingsDialog({ settings, saveStatus = 'saved', onChange, onClo
             <span className={`toggle${settings.reducedMotion ? ' is-on' : ''}`} aria-hidden="true"><span /></span>
           </button>
         </div>
+
+        <section className="audio-preferences" aria-labelledby="audio-preferences-title">
+          <div className="audio-preferences-heading">
+            <strong id="audio-preferences-title">Âm thanh khám phá</strong>
+            <small>Cài đặt này chỉ lưu trên thiết bị.</small>
+          </div>
+          <label className="audio-preference-toggle"><span>Nhạc nền</span><input type="checkbox" checked={audioPreferences.music} onChange={(event) => onAudioPreferencesChange({ ...audioPreferences, music: event.target.checked })} /></label>
+          <label className="audio-preference-toggle"><span>Không gian</span><input type="checkbox" checked={audioPreferences.ambience} onChange={(event) => onAudioPreferencesChange({ ...audioPreferences, ambience: event.target.checked })} /></label>
+          <label className="audio-preference-toggle"><span>Báo tin nhắn</span><input type="checkbox" checked={audioPreferences.notifications} onChange={(event) => onAudioPreferencesChange({ ...audioPreferences, notifications: event.target.checked })} /></label>
+          <label className="audio-preference-range"><span>Âm lượng tổng <output>{Math.round(audioPreferences.masterVolume * 100)}%</output></span><input aria-label="Âm lượng tổng" type="range" min="0" max="1" step="0.01" value={audioPreferences.masterVolume} onChange={(event) => onAudioPreferencesChange({ ...audioPreferences, masterVolume: Number(event.target.value) })} /></label>
+          <label className="audio-preference-range"><span>Hiệu ứng <output>{Math.round(audioPreferences.sfxVolume * 100)}%</output></span><input aria-label="Âm lượng hiệu ứng" type="range" min="0" max="1" step="0.01" value={audioPreferences.sfxVolume} onChange={(event) => onAudioPreferencesChange({ ...audioPreferences, sfxVolume: Number(event.target.value) })} /></label>
+          <label className="audio-preference-range"><span>Nhạc <output>{Math.round(audioPreferences.musicVolume * 100)}%</output></span><input aria-label="Âm lượng nhạc" type="range" min="0" max="1" step="0.01" value={audioPreferences.musicVolume} onChange={(event) => onAudioPreferencesChange({ ...audioPreferences, musicVolume: Number(event.target.value) })} /></label>
+          <label className="audio-preference-range"><span>Không gian <output>{Math.round(audioPreferences.ambienceVolume * 100)}%</output></span><input aria-label="Âm lượng không gian" type="range" min="0" max="1" step="0.01" value={audioPreferences.ambienceVolume} onChange={(event) => onAudioPreferencesChange({ ...audioPreferences, ambienceVolume: Number(event.target.value) })} /></label>
+          <button className="secondary-button audio-preview-button" type="button" onClick={onAudioPreview}>Nghe thử âm đã chọn</button>
+        </section>
 
         <p className={`saved-note is-${saveStatus}`} role="status"><span className="saved-dot" /> {saveStatus === 'recovery' ? 'Dữ liệu cũ chưa bị ghi đè; cài đặt mới chỉ giữ trong phiên này.' : saveStatus === 'warning' ? 'Cài đặt chưa được ghi; thay đổi hiện chỉ giữ trong phiên này.' : 'Cài đặt được lưu trên thiết bị này.'}</p>
         <PwaInstallCard />

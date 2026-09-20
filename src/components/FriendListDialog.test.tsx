@@ -124,22 +124,26 @@ describe('FriendListDialog', () => {
 
   it('reloads the open conversation when the classroom message revision changes', async () => {
     const onFriendsChanged = vi.fn();
-    renderDialog({ friends: [friend('online', true)], messageRevision: 0, onFriendsChanged });
+    const onMessageReceived = vi.fn();
+    renderDialog({ friends: [friend('online', true)], messageRevision: 0, onFriendsChanged, onMessageReceived });
     await act(async () => {
       mount.querySelector<HTMLButtonElement>('[data-friend-row="online"]')?.click();
       await Promise.resolve();
     });
     mockedGetFriendMessages.mockResolvedValueOnce({ ok: true, messages: [{ id: 'incoming-1', senderId: 'online', recipientId: 'me', body: 'Tin mới', createdAt: '2026-09-16T08:00:00.000Z', readAt: null }] });
 
-    renderDialog({ friends: [friend('online', true)], messageRevision: 1, onFriendsChanged });
+    renderDialog({ friends: [friend('online', true)], messageRevision: 1, onFriendsChanged, onMessageReceived });
     await act(async () => { await Promise.resolve(); });
 
     expect(mockedGetFriendMessages).toHaveBeenCalledTimes(2);
     expect(mount.textContent).toContain('Tin mới');
+    expect(onMessageReceived).toHaveBeenCalledOnce();
+    expect(onMessageReceived).toHaveBeenCalledWith(expect.objectContaining({ id: 'incoming-1', senderId: 'online' }));
   });
 
   it('sends a trimmed message and rejects empty or too-long drafts locally', async () => {
-    renderDialog();
+    const onMessageSent = vi.fn();
+    renderDialog({ onMessageSent });
     await act(async () => {
       mount.querySelector<HTMLButtonElement>('[data-friend-row="online"]')?.click();
       await Promise.resolve();
@@ -155,6 +159,8 @@ describe('FriendListDialog', () => {
     });
     expect(mockedSendFriendMessage).toHaveBeenCalledWith('online', 'Lời chào mới');
     expect(mount.textContent).toContain('Lời chào mới');
+    expect(onMessageSent).toHaveBeenCalledOnce();
+    expect(onMessageSent).toHaveBeenCalledWith(expect.objectContaining({ id: 'sent-trimmed', senderId: 'me' }));
 
     act(() => setInputValue(input, '   '));
     act(() => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));

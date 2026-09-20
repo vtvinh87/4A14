@@ -1,0 +1,458 @@
+{
+  "acceptedEntries": 0,
+  "cues": [
+    {
+      "bus": "sfx",
+      "candidates": [
+        {
+          "bitsPerSample": 24,
+          "bytes": 14444,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.1,
+          "encodedPeakDbFS": -7.999998953539694,
+          "layers": [
+            "contact",
+            "felt",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/ui-tap__v01.wav",
+          "name": "candidate-a",
+          "path": "candidates/organic-v2/sfx/ui-tap__v01__candidate-a.wav",
+          "sampleRate": 48000,
+          "sha256": "3daba796f965e915f9809fb4ed85bb7489cce427761a38a56af5dd6a68234977"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 14444,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.1,
+          "encodedPeakDbFS": -7.999998953539694,
+          "layers": [
+            "contact",
+            "felt",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/ui-tap__v01.wav",
+          "name": "candidate-b",
+          "path": "candidates/organic-v2/sfx/ui-tap__v01__candidate-b.wav",
+          "sampleRate": 48000,
+          "sha256": "18c62f9565881847ce175929a589987e64575cc1e62014ca124db0fef5e8ab99"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 14444,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.1,
+          "encodedPeakDbFS": -7.999998953539694,
+          "layers": [
+            "contact",
+            "felt",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/ui-tap__v01.wav",
+          "name": "candidate-c",
+          "path": "candidates/organic-v2/sfx/ui-tap__v01__candidate-c.wav",
+          "sampleRate": 48000,
+          "sha256": "b4a79847282fe96e04e948dbec08084fc167a0a1350ab7172a2c912c424b3838"
+        }
+      ],
+      "catalogVariants": 3,
+      "durationSeconds": 0.1,
+      "id": "ui-tap",
+      "loop": false,
+      "masterPath": "design/audio/masters/organic-v2/sfx/ui-tap__v01.wav",
+      "name": "Chạm nút",
+      "prompt": "Create one original organic-modern audio asset for a warm illustrated primary-school learning game. Build the sound from tactile material contact, softly inharmonic resonance, restrained air, and a small dry room. The identity must feel contemporary and natural under repeated listening, never like 8-bit or a 1990s game. No vocals, speech, breath close to the ear, copyrighted melody, branded notification, harsh attack, punitive buzzer, metallic glitter, exaggerated bass, or dramatic rise. This is a local deterministic procedural synthesis reference, not a claim of recorded foley.\nSpecific cue identity: Tiny rounded wood-and-felt contact: one intimate touch, almost no defined pitch, soft body from 15–45 ms, clean tail by 100 ms.",
+      "trigger": "Nút thông thường chưa có cue ngữ nghĩa.",
+      "variants": 1
+    },
+    {
+      "bus": "sfx",
+      "candidates": [
+        {
+          "bitsPerSample": 24,
+          "bytes": 103724,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.72,
+          "encodedPeakDbFS": -7.999998953539694,
+          "layers": [
+            "felt",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/answer-correct__v01.wav",
+          "name": "candidate-a",
+          "path": "candidates/organic-v2/sfx/answer-correct__v01__candidate-a.wav",
+          "sampleRate": 48000,
+          "sha256": "0616d1a995bbe7d02691665adf0855be4c461b18d528287b26dbc9a07f6aa47f"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 103724,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.72,
+          "encodedPeakDbFS": -7.999998953539694,
+          "layers": [
+            "felt",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/answer-correct__v01.wav",
+          "name": "candidate-b",
+          "path": "candidates/organic-v2/sfx/answer-correct__v01__candidate-b.wav",
+          "sampleRate": 48000,
+          "sha256": "03ea87e9269db518f4fccc7beef1e328a12c75a921c2ec91d3d642900e5c9e60"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 103724,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.72,
+          "encodedPeakDbFS": -7.999998953539694,
+          "layers": [
+            "felt",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/answer-correct__v01.wav",
+          "name": "candidate-c",
+          "path": "candidates/organic-v2/sfx/answer-correct__v01__candidate-c.wav",
+          "sampleRate": 48000,
+          "sha256": "a3cf6decf37e7113c6a8314e00c25ff1e5c4e5443af78a81ebc87efaea9642d1"
+        }
+      ],
+      "catalogVariants": 3,
+      "durationSeconds": 0.72,
+      "id": "answer-correct",
+      "loop": false,
+      "masterPath": "design/audio/masters/organic-v2/sfx/answer-correct__v01.wav",
+      "name": "Trả lời đúng",
+      "prompt": "Create one original organic-modern audio asset for a warm illustrated primary-school learning game. Build the sound from tactile material contact, softly inharmonic resonance, restrained air, and a small dry room. The identity must feel contemporary and natural under repeated listening, never like 8-bit or a 1990s game. No vocals, speech, breath close to the ear, copyrighted melody, branded notification, harsh attack, punitive buzzer, metallic glitter, exaggerated bass, or dramatic rise. This is a local deterministic procedural synthesis reference, not a claim of recorded foley.\nSpecific cue identity: Two calm tactile confirmation gestures, each a felted resonant bloom with a small natural room return. Friendly smile, not a three-note ascending jingle or jackpot.",
+      "trigger": "Kết quả đúng đã được logic xác nhận; không cùng lesson-complete.",
+      "variants": 1
+    },
+    {
+      "bus": "sfx",
+      "candidates": [
+        {
+          "bitsPerSample": 24,
+          "bytes": 54764,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.38,
+          "encodedPeakDbFS": -10.500000532301211,
+          "layers": [
+            "felt",
+            "paper",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/answer-retry__v01.wav",
+          "name": "candidate-a",
+          "path": "candidates/organic-v2/sfx/answer-retry__v01__candidate-a.wav",
+          "sampleRate": 48000,
+          "sha256": "edd14f56695c1f904c3b9726b9b55ccf47a9608b24d4aea6c475864027a4d14b"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 54764,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.38,
+          "encodedPeakDbFS": -10.500000532301211,
+          "layers": [
+            "felt",
+            "paper",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/answer-retry__v01.wav",
+          "name": "candidate-b",
+          "path": "candidates/organic-v2/sfx/answer-retry__v01__candidate-b.wav",
+          "sampleRate": 48000,
+          "sha256": "c80300e400fb0bfddd5be1f1910547f0e0e21b12d826cf564bc0b4f82acc8e8d"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 54764,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.38,
+          "encodedPeakDbFS": -10.500000532301211,
+          "layers": [
+            "felt",
+            "paper",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/answer-retry__v01.wav",
+          "name": "candidate-c",
+          "path": "candidates/organic-v2/sfx/answer-retry__v01__candidate-c.wav",
+          "sampleRate": 48000,
+          "sha256": "82af80ecfc067e3d5dfc9a53868564ec45bbb03ceb66fe2e217ae16b0eabc627"
+        }
+      ],
+      "catalogVariants": 2,
+      "durationSeconds": 0.38,
+      "id": "answer-retry",
+      "loop": false,
+      "masterPath": "design/audio/masters/organic-v2/sfx/answer-retry__v01.wav",
+      "name": "Thử lại nhẹ nhàng",
+      "prompt": "Create one original organic-modern audio asset for a warm illustrated primary-school learning game. Build the sound from tactile material contact, softly inharmonic resonance, restrained air, and a small dry room. The identity must feel contemporary and natural under repeated listening, never like 8-bit or a 1990s game. No vocals, speech, breath close to the ear, copyrighted melody, branded notification, harsh attack, punitive buzzer, metallic glitter, exaggerated bass, or dramatic rise. This is a local deterministic procedural synthesis reference, not a claim of recorded foley.\nSpecific cue identity: A soft paper-and-cloth brush settling into one quiet rounded resonance. Patient invitation to look again; lower energy than correct and never a failure verdict.",
+      "trigger": "Kết quả cần thử lại; đi cùng hướng dẫn tích cực bằng hình/chữ.",
+      "variants": 1
+    },
+    {
+      "bus": "sfx",
+      "candidates": [
+        {
+          "bitsPerSample": 24,
+          "bytes": 100844,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.7,
+          "encodedPeakDbFS": -7.999998953539694,
+          "layers": [
+            "contact",
+            "paper",
+            "pressure",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/stamp-press__v01.wav",
+          "name": "candidate-a",
+          "path": "candidates/organic-v2/sfx/stamp-press__v01__candidate-a.wav",
+          "sampleRate": 48000,
+          "sha256": "6d765b2f52cad521fa03aede3a3d0415a64426ed19b7797cbbd906150b1297dc"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 100844,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.7,
+          "encodedPeakDbFS": -7.999998953539694,
+          "layers": [
+            "contact",
+            "paper",
+            "pressure",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/stamp-press__v01.wav",
+          "name": "candidate-b",
+          "path": "candidates/organic-v2/sfx/stamp-press__v01__candidate-b.wav",
+          "sampleRate": 48000,
+          "sha256": "dc1cde8424278b63fbe6c922c19b73694da889cc98f0947a155aefe974c1acb5"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 100844,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.7,
+          "encodedPeakDbFS": -7.999998953539694,
+          "layers": [
+            "contact",
+            "paper",
+            "pressure",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/stamp-press__v01.wav",
+          "name": "candidate-c",
+          "path": "candidates/organic-v2/sfx/stamp-press__v01__candidate-c.wav",
+          "sampleRate": 48000,
+          "sha256": "9f0c3b47a506322d44c7b44c48641eed6769626a25f8d9d1c693ba7f44ff281a"
+        }
+      ],
+      "catalogVariants": 2,
+      "durationSeconds": 0.7,
+      "id": "stamp-press",
+      "loop": false,
+      "masterPath": "design/audio/masters/organic-v2/sfx/stamp-press__v01.wav",
+      "name": "Đóng dấu",
+      "prompt": "Create one original organic-modern audio asset for a warm illustrated primary-school learning game. Build the sound from tactile material contact, softly inharmonic resonance, restrained air, and a small dry room. The identity must feel contemporary and natural under repeated listening, never like 8-bit or a 1990s game. No vocals, speech, breath close to the ear, copyrighted melody, branded notification, harsh attack, punitive buzzer, metallic glitter, exaggerated bass, or dramatic rise. This is a local deterministic procedural synthesis reference, not a claim of recorded foley.\nSpecific cue identity: Padded rubber stamp on thick paper: handle pressure, cushioned contact, paper release, and a small wooden body. Tactile weight without slam or cartoon boing.",
+      "trigger": "Thao tác đóng dấu được xác nhận, không chỉ xem chi tiết dấu.",
+      "variants": 1
+    },
+    {
+      "bus": "pet",
+      "candidates": [
+        {
+          "bitsPerSample": 24,
+          "bytes": 93644,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.65,
+          "encodedPeakDbFS": -10.000001478704908,
+          "layers": [
+            "air",
+            "felt",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/pet-fox__v01.wav",
+          "name": "candidate-a",
+          "path": "candidates/organic-v2/sfx/pet-fox__v01__candidate-a.wav",
+          "sampleRate": 48000,
+          "sha256": "fe736532ea252d371adfcb3e29ca261a5dc3892d700b45f7595d24ec002f32ba"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 93644,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.65,
+          "encodedPeakDbFS": -10.000001478704908,
+          "layers": [
+            "air",
+            "felt",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/pet-fox__v01.wav",
+          "name": "candidate-b",
+          "path": "candidates/organic-v2/sfx/pet-fox__v01__candidate-b.wav",
+          "sampleRate": 48000,
+          "sha256": "b019ecfe26fa4d36322b1c1cfda9882a94322220fb1d6e8180908bf81b42cdcf"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 93644,
+          "channels": 1,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 0.65,
+          "encodedPeakDbFS": -10.000001478704908,
+          "layers": [
+            "air",
+            "felt",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/sfx/pet-fox__v01.wav",
+          "name": "candidate-c",
+          "path": "candidates/organic-v2/sfx/pet-fox__v01__candidate-c.wav",
+          "sampleRate": 48000,
+          "sha256": "a660301f74958538e4db466ceee78d64a333b67b8efb96b15b9f6b00e1ccde10"
+        }
+      ],
+      "catalogVariants": 3,
+      "durationSeconds": 0.65,
+      "id": "pet-fox",
+      "loop": false,
+      "masterPath": "design/audio/masters/organic-v2/sfx/pet-fox__v01.wav",
+      "name": "Cáo Nhỏ",
+      "prompt": "Create one original organic-modern audio asset for a warm illustrated primary-school learning game. Build the sound from tactile material contact, softly inharmonic resonance, restrained air, and a small dry room. The identity must feel contemporary and natural under repeated listening, never like 8-bit or a 1990s game. No vocals, speech, breath close to the ear, copyrighted melody, branded notification, harsh attack, punitive buzzer, metallic glitter, exaggerated bass, or dramatic rise. This is a local deterministic procedural synthesis reference, not a claim of recorded foley.\nSpecific cue identity: A tiny friendly fox personality expressed without an animal recording: soft felt brush, two nimble rounded resonances, and a light airy landing. Curious and quick, never squeaky or hyperactive.",
+      "trigger": "Chạm Pet Cáo; motif không lời, không phát theo idle timer.",
+      "variants": 1
+    },
+    {
+      "bus": "music",
+      "candidates": [
+        {
+          "bitsPerSample": 24,
+          "bytes": 13824044,
+          "channels": 2,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 48.0,
+          "encodedPeakDbFS": -19.999996893683985,
+          "layers": [
+            "air",
+            "brush",
+            "percussion",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/beds/music-home__v01.wav",
+          "name": "candidate-a",
+          "path": "candidates/organic-v2/beds/music-home__v01__candidate-a.wav",
+          "sampleRate": 48000,
+          "sha256": "8cb357f7d1be64160b18934f916f99e2957d5a9cbeb26814c6f90bf3859451ac"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 13824044,
+          "channels": 2,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 48.0,
+          "encodedPeakDbFS": -19.999996893683985,
+          "layers": [
+            "air",
+            "brush",
+            "percussion",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/beds/music-home__v01.wav",
+          "name": "candidate-b",
+          "path": "candidates/organic-v2/beds/music-home__v01__candidate-b.wav",
+          "sampleRate": 48000,
+          "sha256": "c26cd0d7b683bbb960d00198e17121092f81e3203825dc268f2e7c015beb4031"
+        },
+        {
+          "bitsPerSample": 24,
+          "bytes": 13824044,
+          "channels": 2,
+          "codec": "pcm_s24le",
+          "durationSecondsMeasured": 48.0,
+          "encodedPeakDbFS": -19.999996893683985,
+          "layers": [
+            "air",
+            "brush",
+            "percussion",
+            "resonance",
+            "room"
+          ],
+          "listeningStatus": "pending-human-listening",
+          "masterPath": "masters/organic-v2/beds/music-home__v01.wav",
+          "name": "candidate-c",
+          "path": "candidates/organic-v2/beds/music-home__v01__candidate-c.wav",
+          "sampleRate": 48000,
+          "sha256": "6d8465e2ea8d912e49935d90f9a5da610d804c46e5c6074b7e2c7674081f3e93"
+        }
+      ],
+      "catalogVariants": 1,
+      "durationSeconds": 48.0,
+      "id": "music-home",
+      "loop": true,
+      "masterPath": "design/audio/masters/organic-v2/beds/music-home__v01.wav",
+      "name": "Nhạc Hành trình",
+      "prompt": "Create one original organic-modern audio asset for a warm illustrated primary-school learning game. Build the sound from tactile material contact, softly inharmonic resonance, restrained air, and a small dry room. The identity must feel contemporary and natural under repeated listening, never like 8-bit or a 1990s game. No vocals, speech, breath close to the ear, copyrighted melody, branded notification, harsh attack, punitive buzzer, metallic glitter, exaggerated bass, or dramatic rise. This is a local deterministic procedural synthesis reference, not a claim of recorded foley.\nSpecific cue identity: A sparse 48-second stereo storybook bed: evolving warm air, irregular wood/felt gestures, tiny brushed texture, and open space. No periodic harmonic pad, obvious arpeggio, final cadence, or bar-line signalling.",
+      "trigger": "Hành trình/Pet/Bộ sưu tập khi người dùng bật nhạc.",
+      "variants": 1
+    }
+  ],
+  "generatedAt": "2026-09-19T16:49:05.721026+00:00",
+  "profile": "organic-v2",
+  "provenancePath": "design/audio/provenance/organic-v2-asset-generation.jsonl",
+  "revision": "organic-v2",
+  "schemaVersion": 1,
+  "status": "candidate-only"
+}

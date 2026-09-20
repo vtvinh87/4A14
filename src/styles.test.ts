@@ -86,12 +86,40 @@ describe('Friends dialog layout', () => {
   });
 });
 
+describe('Settings dialog responsive layout', () => {
+  it('bounds the modal and gives long settings content its own vertical scroll region', () => {
+    expect(ruleFor('.dialog-backdrop')).toContain('overflow-y: auto;');
+
+    const settingsRule = ruleFor('.settings-dialog');
+    expect(settingsRule).toContain('max-height: min(780px, calc(100svh - 24px));');
+    expect(settingsRule).toContain('overflow-y: auto;');
+    expect(settingsRule).toContain('overscroll-behavior: contain;');
+  });
+});
+
 describe('Challenge responsive layout', () => {
   it('bounds the daily/report overlays, collapses the weekly map, and honors reduced motion on narrow screens', () => {
     expect(styles).toMatch(/\.challenge-dialog \{[\s\S]*?max-height: min\(880px, calc\(100svh - 28px\)\);/);
     expect(styles).toMatch(/\.challenge-report-dialog \{[\s\S]*?max-height: min\(720px, calc\(100svh - 36px\)\);/);
     expect(styles).toMatch(/@media \(max-width: 700px\)[\s\S]*?\.challenge-weekly-day-grid \{ grid-template-columns: repeat\(4, minmax\(0, 1fr\)\); \}/);
     expect(styles).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*?transition-duration: 0\.001ms !important;/);
+  });
+});
+
+describe('Challenge actions and approval modal', () => {
+  it('makes incomplete challenge submission visibly disabled', () => {
+    const rule = ruleFor('.primary-small-button:disabled');
+    expect(rule).toContain('cursor: not-allowed;');
+    expect(rule).toContain('opacity: 0.46;');
+    expect(rule).toContain('transform: none;');
+  });
+
+  it('keeps the approval backdrop viewport-wide and frosted', () => {
+    const rule = ruleFor('.challenge-approval-modal-backdrop');
+    expect(rule).toContain('position: fixed;');
+    expect(rule).toContain('inset: 0;');
+    expect(rule).toContain('backdrop-filter: blur(8px);');
+    expect(rule).toContain('-webkit-backdrop-filter: blur(8px);');
   });
 });
 

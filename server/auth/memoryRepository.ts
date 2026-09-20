@@ -40,6 +40,10 @@ export class MemoryAuthRepository implements AuthRepository {
     return [...this.accounts.values()].filter((account) => account.role === 'student').map(cloneAccount);
   }
 
+  async listStudentSummaries(): Promise<SessionAccountView[]> {
+    return [...this.accounts.values()].filter((account) => account.role === 'student').map(sessionAccountView);
+  }
+
   async insertAccount(account: ServerAccountRecord): Promise<void> {
     if ([...this.accounts.values()].some((item) => item.username === account.username)) throw new Error('username_conflict');
     this.accounts.set(account.id, cloneAccount(account));

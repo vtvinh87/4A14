@@ -8,6 +8,8 @@ type FriendConversationPanelProps = {
   onBack: () => void;
   onClose: () => void;
   onFriendsChanged: (friendId: string) => Promise<void> | void;
+  onMessageSent?: (message: ClassroomMessage) => void;
+  onMessageReceived?: (message: ClassroomMessage) => void;
 };
 
 const MESSAGE_MAX_LENGTH = 500;
@@ -19,7 +21,7 @@ function mergeMessages(current: readonly ClassroomMessage[], incoming: readonly 
   return [...byId.values()].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
 }
 
-export function FriendConversationPanel({ friend, messageRevision = 0, onBack, onClose, onFriendsChanged }: FriendConversationPanelProps) {
+export function FriendConversationPanel({ friend, messageRevision = 0, onBack, onClose, onFriendsChanged, onMessageSent, onMessageReceived }: FriendConversationPanelProps) {
   const [messages, setMessages] = useState<ClassroomMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState('');
@@ -28,6 +30,8 @@ export function FriendConversationPanel({ friend, messageRevision = 0, onBack, o
   const isMountedRef = useRef(false);
   const messagesRef = useRef<HTMLDivElement>(null);
   const currentFriendIdRef = useRef(friend.id);
+  const knownMessageIdsRef = useRef(new Set<string>());
+  const hasLoadedRef = useRef(false);
   currentFriendIdRef.current = friend.id;
 
   useEffect(() => {
@@ -36,10 +40,18 @@ export function FriendConversationPanel({ friend, messageRevision = 0, onBack, o
   }, []);
 
   useEffect(() => {
+    knownMessageIdsRef.current.clear();
+    hasLoadedRef.current = false;
+  }, [friend.id]);
+
+  useEffect(() => {
     let active = true;
-    setMessages([]);
-    setLoading(true);
-    setError('');
+    const initialLoad = !hasLoadedRef.current;
+    if (initialLoad) {
+      setMessages([]);
+      setLoading(true);
+      setError('');
+    }
 
     const loadConversation = async (showLoading: boolean) => {
       if (showLoading) {
@@ -54,8 +66,14 @@ export function FriendConversationPanel({ friend, messageRevision = 0, onBack, o
         setLoading(false);
         return;
       }
+      const newIncoming = showLoading
+        ? []
+        : result.messages.filter((message) => !knownMessageIdsRef.current.has(message.id) && message.senderId === friend.id && !message.readAt);
+      result.messages.forEach((message) => knownMessageIdsRef.current.add(message.id));
       setMessages((current) => mergeMessages(current, result.messages));
+      hasLoadedRef.current = true;
       setLoading(false);
+      newIncoming.forEach((message) => onMessageReceived?.(message));
 
       const hasUnreadIncoming = result.messages.some((message) => message.senderId === friend.id && !message.readAt);
       if (!showLoading && !hasUnreadIncoming) return;
@@ -68,13 +86,13 @@ export function FriendConversationPanel({ friend, messageRevision = 0, onBack, o
       await onFriendsChanged(friend.id);
     };
 
-    void loadConversation(true);
+    void loadConversation(initialLoad);
     const interval = window.setInterval(() => void loadConversation(false), FALLBACK_POLL_INTERVAL_MS);
     return () => {
       active = false;
       window.clearInterval(interval);
     };
-  }, [friend.id, messageRevision, onFriendsChanged]);
+  }, [friend.id, messageRevision, onFriendsChanged, onMessageReceived]);
 
   useLayoutEffect(() => {
     const container = messagesRef.current;
@@ -105,8 +123,10 @@ export function FriendConversationPanel({ friend, messageRevision = 0, onBack, o
       return;
     }
     setMessages((current) => mergeMessages(current, [result.message]));
+    knownMessageIdsRef.current.add(result.message.id);
     setDraft('');
     setSending(false);
+    onMessageSent?.(result.message);
   };
 
   return (

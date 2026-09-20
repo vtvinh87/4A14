@@ -678,6 +678,14 @@ button:focus-visible {
   color: var(--ink);
 }
 
+.primary-small-button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.55);
+  opacity: 0.46;
+  transform: none;
+  box-shadow: none;
+}
+
 .primary-cta {
   min-height: 67px;
   padding: 0 31px;
@@ -3228,17 +3236,22 @@ button:focus-visible {
 
 .challenge-approval-modal-backdrop {
   position: fixed;
-  z-index: 70;
+  z-index: 1000;
   inset: 0;
   display: grid;
   place-items: center;
+  overflow-y: auto;
   padding: clamp(14px, 3vw, 30px);
   background: rgba(3, 31, 57, 0.52);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .challenge-approval-modal {
   display: grid;
   width: min(100%, 560px);
+  max-height: calc(100dvh - 2 * clamp(14px, 3vw, 30px));
+  overflow-y: auto;
   gap: 12px;
   padding: clamp(20px, 3vw, 28px);
   border: 4px solid rgba(94, 72, 47, 0.52);
@@ -3704,6 +3717,8 @@ button:focus-visible {
   inset: 0;
   display: grid;
   place-items: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 22px;
   background: rgba(5, 37, 66, 0.44);
   backdrop-filter: blur(5px);
@@ -3711,6 +3726,9 @@ button:focus-visible {
 
 .settings-dialog {
   width: min(100%, 470px);
+  max-height: min(780px, calc(100svh - 24px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 25px;
   border: 4px solid rgba(94, 72, 47, 0.52);
   border-radius: 25px;
@@ -4238,6 +4256,61 @@ button:focus-visible {
   gap: 10px;
   margin-top: 23px;
 }
+
+.audio-preferences {
+  display: grid;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 2px solid rgba(8, 45, 89, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 251, 237, 0.72);
+}
+
+.audio-preferences-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--ink);
+}
+
+.audio-preferences-heading small,
+.audio-preference-range span,
+.audio-preference-toggle span {
+  color: #6c8790;
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.audio-preference-toggle,
+.audio-preference-range {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 32px;
+}
+
+.audio-preference-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: #268e89;
+}
+
+.audio-preference-range {
+  display: grid;
+  grid-template-columns: 1fr minmax(120px, 1.25fr);
+}
+
+.audio-preference-range span {
+  display: flex;
+  justify-content: space-between;
+  gap: 7px;
+}
+
+.audio-preference-range output { color: var(--ink); font-variant-numeric: tabular-nums; }
+.audio-preference-range input { width: 100%; accent-color: #268e89; }
+.audio-preview-button { width: 100%; margin-top: 3px; }
 
 .settings-row {
   display: grid;
@@ -5829,6 +5902,10 @@ button:focus-visible {
 .auth-field .pin-field-input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 11px; background: transparent; opacity: 0; outline: none; cursor: text; }
 .auth-field .pin-field-input:focus { border: 0; box-shadow: none; }
 .auth-submit { justify-content: center; width: 100%; min-height: 50px; margin-top: 4px; }
+.auth-remember-wrap { display: grid; gap: 4px; margin-top: 1px; }
+.auth-remember { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 0.76rem; font-weight: 900; cursor: pointer; }
+.auth-remember input { width: 17px; height: 17px; margin: 0; accent-color: #268e89; }
+.auth-remember-note { margin: 0; color: #557083; font-size: 0.68rem; font-weight: 700; line-height: 1.35; }
 .auth-cancel { justify-content: center; width: 100%; min-height: 44px; }
 .auth-error { margin: 0; padding: 9px 11px; border: 2px solid rgba(185, 91, 62, 0.34); border-radius: 11px; background: #fff0e8; color: #994a3a; font-size: 0.78rem; font-weight: 800; line-height: 1.4; }
 .auth-note { margin: 20px 0 0; color: #557083; font-size: 0.73rem; font-weight: 700; line-height: 1.45; text-align: center; }

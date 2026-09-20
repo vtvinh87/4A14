@@ -6,6 +6,27 @@ import { createServiceWorkerSource, getInitialOfflineStatus, offlineStatusCopy }
 import viteConfigSource from '../../vite.config.ts?raw';
 
 describe('offline readiness', () => {
+  it('includes the full local sourced-v2 pilot pack without changing production acceptance', () => {
+    const legacyPilotAssets = [
+      '/audio/v1/sfx/ui-tap__v01.mp3',
+      '/audio/v1/sfx/answer-correct__v01.mp3',
+      '/audio/v1/sfx/answer-retry__v01.mp3',
+      '/audio/v1/sfx/stamp-press__v01.mp3',
+      '/audio/v1/sfx/pet-fox__v01.mp3',
+      '/audio/v1/music/music-home__v01.mp3',
+    ];
+
+    const pilotManifestSource = readFileSync(resolve(process.cwd(), 'design/audio/qa/sourced-v1-runtime-pilot.json'), 'utf8');
+    const fullPilotManifest = JSON.parse(readFileSync(resolve(process.cwd(), 'design/audio/qa/sourced-v2-runtime-pilot.json'), 'utf8')) as { assets: Array<{ relativeUrl: string; runtimeMode: string }> };
+    expect(viteConfigSource).toContain('sourced-v1-runtime-pilot.json');
+    expect(viteConfigSource).toContain('sourced-v2-runtime-pilot.json');
+    expect(viteConfigSource).toContain('PILOT_AUDIO_ENTRIES');
+    for (const asset of legacyPilotAssets) expect(pilotManifestSource).toContain(asset);
+    expect(fullPilotManifest.assets).toHaveLength(67);
+    expect(fullPilotManifest.assets.filter((asset) => asset.relativeUrl.startsWith('/audio/v2/'))).toHaveLength(61);
+    expect(fullPilotManifest.assets.every((asset) => asset.runtimeMode === 'pilot')).toBe(true);
+  });
+
   it('precaches all 29 lesson artworks with SHA-256 version entries', () => {
     const artAllowlist = viteConfigSource.match(/const LOCAL_ART_URLS = \[(.*?)\];/s)?.[1] ?? '';
     const artVersions = viteConfigSource.match(/const LOCAL_ART_VERSIONS = \[(.*?)\];/s)?.[1] ?? '';

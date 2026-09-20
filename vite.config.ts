@@ -1,8 +1,49 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
+import { existsSync, readFileSync } from 'node:fs';
 import { MVP_LESSON_PACKAGES } from './src/content/packages';
 import { createServiceWorkerSource } from './src/pwa/offline';
+
+function readAcceptedAudioEntries(): Array<{ relativeUrl: string; sha256: string }> {
+  const manifestPath = './design/audio/manifest.json';
+  if (!existsSync(manifestPath)) return [];
+  try {
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { entries?: Array<{ relativeUrl?: unknown; sha256?: unknown; listeningStatus?: unknown }> };
+    return (manifest.entries ?? [])
+      .filter((entry): entry is { relativeUrl: string; sha256: string; listeningStatus: 'accepted' } => entry.listeningStatus === 'accepted' && typeof entry.relativeUrl === 'string' && entry.relativeUrl.startsWith('/audio/v1/') && typeof entry.sha256 === 'string' && /^[a-f0-9]{64}$/.test(entry.sha256))
+      .map(({ relativeUrl, sha256 }) => ({ relativeUrl, sha256 }));
+  } catch {
+    return [];
+  }
+}
+
+function readPilotAudioEntries(): Array<{ relativeUrl: string; sha256: string }> {
+  const manifestPaths = [
+    './design/audio/qa/sourced-v1-runtime-pilot.json',
+    './design/audio/qa/sourced-v2-runtime-pilot.json',
+  ];
+  const entries: Array<{ relativeUrl: string; sha256: string }> = [];
+  for (const manifestPath of manifestPaths) {
+    if (!existsSync(manifestPath)) continue;
+    try {
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { assets?: Array<{ relativeUrl?: unknown; outputSha256?: unknown; runtimeMode?: unknown }> };
+      entries.push(...(manifest.assets ?? [])
+        .filter((entry): entry is { relativeUrl: string; outputSha256: string; runtimeMode: 'pilot' } => entry.runtimeMode === 'pilot' && typeof entry.relativeUrl === 'string' && entry.relativeUrl.startsWith('/audio/') && typeof entry.outputSha256 === 'string' && /^[a-f0-9]{64}$/.test(entry.outputSha256))
+        .map(({ relativeUrl, outputSha256 }) => ({ relativeUrl, sha256: outputSha256 })));
+    } catch {
+      continue;
+    }
+  }
+  return entries;
+}
+
+const ACCEPTED_AUDIO_ENTRIES = readAcceptedAudioEntries();
+const PILOT_AUDIO_ENTRIES = readPilotAudioEntries();
+const RUNTIME_AUDIO_ENTRIES = [...ACCEPTED_AUDIO_ENTRIES, ...PILOT_AUDIO_ENTRIES]
+  .filter((entry, index, entries) => entries.findIndex((candidate) => candidate.relativeUrl === entry.relativeUrl) === index);
+const LOCAL_AUDIO_URLS = RUNTIME_AUDIO_ENTRIES.map((entry) => entry.relativeUrl);
+const LOCAL_AUDIO_VERSIONS = RUNTIME_AUDIO_ENTRIES.map((entry) => `${entry.relativeUrl}:${entry.sha256}`);
 
 const LOCAL_ART_URLS = ['/art/world-background.png', '/art/world-background-portrait.png', '/art/fox-pet-alpha.png', '/art/brand-plaque-4a14.png',
   ...['journey', 'lessons', 'reward', 'pet', 'collection'].map((id) => `/art/dock/${id}.png`),
@@ -202,7 +243,7 @@ function offlineServiceWorkerPlugin(): Plugin {
         .sort()
         .map((fileName) => `/${fileName}`);
       const lessonUrls = MVP_LESSON_PACKAGES.map((lesson) => `/lessons/${lesson.id}.json`);
-      const precacheUrls = ['/', '/index.html', '/offline-manifest.json', ...builtShellUrls, ...LOCAL_ART_URLS, ...LOCAL_PWA_URLS, ...LOCAL_FONT_URLS, ...lessonUrls];
+      const precacheUrls = ['/', '/index.html', '/offline-manifest.json', ...builtShellUrls, ...LOCAL_ART_URLS, ...LOCAL_PWA_URLS, ...LOCAL_FONT_URLS, ...LOCAL_AUDIO_URLS, ...lessonUrls];
       const builtFingerprint = Object.keys(bundle).sort().map((fileName) => {
         const item = bundle[fileName];
         const source = item.type === 'chunk'
@@ -211,7 +252,7 @@ function offlineServiceWorkerPlugin(): Plugin {
         return `${fileName}:${source}`;
       }).join('|');
       const lessonFingerprint = MVP_LESSON_PACKAGES.map((lesson) => JSON.stringify(lesson)).join('|');
-      const offlineCacheName = `hoc-vui-offline-${hashString(`${builtFingerprint}|${lessonFingerprint}|${LOCAL_ART_VERSIONS.join('|')}|${LOCAL_PWA_VERSIONS.join('|')}|${LOCAL_FONT_VERSIONS.join('|')}`)}`;
+      const offlineCacheName = `hoc-vui-offline-${hashString(`${builtFingerprint}|${lessonFingerprint}|${LOCAL_ART_VERSIONS.join('|')}|${LOCAL_PWA_VERSIONS.join('|')}|${LOCAL_FONT_VERSIONS.join('|')}|${LOCAL_AUDIO_VERSIONS.join('|')}`)}`;
 
       for (const lesson of MVP_LESSON_PACKAGES) {
         this.emitFile({

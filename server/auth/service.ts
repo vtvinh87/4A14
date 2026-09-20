@@ -15,6 +15,11 @@ import { credentialAlgorithm, hashSecret, hashToken, randomToken, randomUuid, ve
 import type { AccountView, AdminAuditRecord, AuthFailure, AuthRepository, AuthResult, AuthSessionView, CredentialKind, CredentialRecord, ServerAccountRecord, ServerSessionRecord, SessionAccountView } from './types.ts';
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const REMEMBERED_STUDENT_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+function isRememberedSession(session: ServerSessionRecord): boolean {
+  return session.mode === 'full' && Date.parse(session.expiresAt) - Date.parse(session.createdAt) >= REMEMBERED_STUDENT_SESSION_TTL_MS;
+}
 const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const PARENT_GRANT_TTL_MS = 15 * 60 * 1000;
 const MAX_FAILED_ATTEMPTS = 5;
@@ -119,12 +124,12 @@ export function createAuthService(repository: AuthRepository, clock: () => Date 
     return current;
   }
 
-  async function createSession(account: ServerAccountRecord, mode: ServerSessionRecord['mode'], changeKind: ServerSessionRecord['changeKind'], parentGrantUntil: string | null = null): Promise<AuthResult> {
+  async function createSession(account: ServerAccountRecord, mode: ServerSessionRecord['mode'], changeKind: ServerSessionRecord['changeKind'], parentGrantUntil: string | null = null, rememberDevice = false): Promise<AuthResult> {
     const token = randomToken();
     const parentGrantToken = parentGrantUntil ? randomToken() : undefined;
     const createdAt = clock().toISOString();
-    const ttl = account.role === 'admin' ? ADMIN_SESSION_TTL_MS : SESSION_TTL_MS;
-    const record: ServerSessionRecord = { id: id(), tokenHash: hashToken(token), accountId: account.id, mode, changeKind, createdAt, expiresAt: new Date(clock().getTime() + ttl).toISOString(), revokedAt: null, credentialVersion: account.credentialVersion, parentGrantUntil, parentGrantHash: parentGrantToken ? hashToken(parentGrantToken) : null };
+    const ttl = account.role === 'admin' ? ADMIN_SESSION_TTL_MS : mode === 'full' && rememberDevice ? REMEMBERED_STUDENT_SESSION_TTL_MS : SESSION_TTL_MS;
+    const record: ServerSessionRecord = { id: id(), tokenHash: hashToken(token), accountId: account.id, mode, changeKind, createdAt, expiresAt: new Date(Date.parse(createdAt) + ttl).toISOString(), revokedAt: null, credentialVersion: account.credentialVersion, parentGrantUntil, parentGrantHash: parentGrantToken ? hashToken(parentGrantToken) : null };
     await repository.insertSession(record);
     return { ok: true, token, session: viewSession(token, account, record), ...(mode === 'change-only' ? { mustChange: true } : {}), ...(parentGrantUntil ? { parentGrantUntil, parentGrantToken } : {}) };
   }
@@ -137,7 +142,7 @@ export function createAuthService(repository: AuthRepository, clock: () => Date 
     return null;
   }
 
-  async function loginWithCredential(username: string, secret: string, kind: 'student' | 'admin'): Promise<AuthResult> {
+  async function loginWithCredential(username: string, secret: string, kind: 'student' | 'admin', rememberDevice = false): Promise<AuthResult> {
     await ready;
     const account = await repository.findAccountByUsername(normalizeUsername(username));
     const failure = await checkLogin(account);
@@ -155,11 +160,11 @@ export function createAuthService(repository: AuthRepository, clock: () => Date 
     account.failedAttempts = 0;
     account.updatedAt = clock().toISOString();
     await repository.updateAccount(account);
-    return createSession(account, credential.mustChange ? 'change-only' : 'full', credential.mustChange && kind === 'student' ? kind : null);
+    return createSession(account, credential.mustChange ? 'change-only' : 'full', credential.mustChange && kind === 'student' ? kind : null, null, kind === 'student' && rememberDevice);
   }
 
   return {
-    loginStudent: (username: string, pin: string) => loginWithCredential(username, pin, 'student'),
+    loginStudent: (username: string, pin: string, rememberDevice = false) => loginWithCredential(username, pin, 'student', rememberDevice),
     loginAdmin: (username: string, password: string) => loginWithCredential(username, password, 'admin'),
     async getSession(token: string): Promise<AuthSessionView | AuthFailure> {
       await ready;
@@ -194,7 +199,7 @@ export function createAuthService(repository: AuthRepository, clock: () => Date 
       await repository.insertAdminAudit(auditRecord(current.account.id, 'admin_password_changed', current.account.id, {}, clock));
       return createSession(current.account, 'full', null);
     },
-    async changePin(token: string, currentSecret: string, nextPin: string, kind: 'student' | 'parent'): Promise<AuthResult> {
+    async changePin(token: string, currentSecret: string, nextPin: string, kind: 'student' | 'parent', rememberDevice = false): Promise<AuthResult> {
       const current = await currentSession(token);
       if ('ok' in current) return current;
       const { account, session } = current;
@@ -214,7 +219,10 @@ export function createAuthService(repository: AuthRepository, clock: () => Date 
       await repository.revokeSessions(account.id);
       // Completing a first-use PIN change is not itself a parent unlock. The
       // user must explicitly pass through the parent PIN gate afterwards.
-      return createSession(account, 'full', null);
+      const rememberFullSession = kind === 'student' || session.mode === 'change-only'
+        ? rememberDevice
+        : isRememberedSession(session);
+      return createSession(account, 'full', null, null, rememberFullSession);
     },
     async unlockParent(token: string, pin: string): Promise<AuthResult> {
       const current = await currentSession(token);
@@ -224,7 +232,7 @@ export function createAuthService(repository: AuthRepository, clock: () => Date 
       const credential = account.parentCredential;
       if (!credential || !(await verifySecret(pin, credential))) return { ok: false, code: 'invalid', message: 'Mã PIN phụ huynh chưa đúng.' };
       if (credential.mustChange) return createSession(account, 'change-only', 'parent');
-      return createSession(account, 'full', null, new Date(clock().getTime() + PARENT_GRANT_TTL_MS).toISOString());
+      return createSession(account, 'full', null, new Date(clock().getTime() + PARENT_GRANT_TTL_MS).toISOString(), isRememberedSession(session));
     },
     async getParentDashboard(token: string, parentGrantToken: string | undefined, requestedStudentId?: string): Promise<{ ok: true; studentId: string; session: AuthSessionView } | AuthFailure> {
       const current = await currentParentGrant(token, parentGrantToken, 'Cần nhập lại PIN phụ huynh để mở Dashboard.');
@@ -277,7 +285,7 @@ export function createAuthService(repository: AuthRepository, clock: () => Date 
       const current = await currentSession(token);
       if ('ok' in current) return current;
       if (current.account.role !== 'admin' || current.session.mode !== 'full') return { ok: false, code: 'forbidden', message: 'Chỉ Admin mới xem được danh sách.' };
-      return { ok: true, accounts: (await repository.listStudents()).map(accountView) };
+      return { ok: true, accounts: await repository.listStudentSummaries() };
     },
     async createStudent(token: string, username: string, displayName: string): Promise<{ ok: true; account: AccountView } | AuthFailure> {
       const current = await currentSession(token);

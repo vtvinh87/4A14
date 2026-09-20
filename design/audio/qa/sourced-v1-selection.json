@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "revision": "sourced-v1",
+  "status": "pilot-selected",
+  "reviewer": "user",
+  "reviewedAt": "2026-09-20T01:50:38.417519Z",
+  "reviewSurface": "design/audio/audition.html?revision=sourced-v1",
+  "decisions": {
+    "ui-tap": "candidate-b",
+    "answer-correct": "candidate-a",
+    "answer-retry": "candidate-b",
+    "stamp-press": "candidate-c",
+    "pet-fox": "candidate-b",
+    "music-home": "candidate-b"
+  },
+  "selectedEntries": 6,
+  "runtimePromotion": false,
+  "runtimeAcceptedEntries": 0,
+  "masters": [
+    {
+      "cueId": "ui-tap",
+      "candidate": "candidate-b",
+      "sourcePath": "design/audio/candidates/sourced-v1/sfx/ui-tap__candidate-b.wav",
+      "masterPath": "design/audio/masters/sourced-v1/sfx/ui-tap__v01.wav",
+      "sha256": "0ca22c0d33616a2accb2a19db776ea8bf08999b1be0719a2291bf6ecad24832e",
+      "bytes": 32094,
+      "status": "pilot-selected"
+    },
+    {
+      "cueId": "answer-correct",
+      "candidate": "candidate-a",
+      "sourcePath": "design/audio/candidates/sourced-v1/sfx/answer-correct__candidate-a.wav",
+      "masterPath": "design/audio/masters/sourced-v1/sfx/answer-correct__v01.wav",
+      "sha256": "82ff9b515bcab38f8d186cfd0a24aa01a84db050239f0461ffc06b8b47240ba4",
+      "bytes": 41842,
+      "status": "pilot-selected"
+    },
+    {
+      "cueId": "answer-retry",
+      "candidate": "candidate-b",
+      "sourcePath": "design/audio/candidates/sourced-v1/sfx/answer-retry__candidate-b.wav",
+      "masterPath": "design/audio/masters/sourced-v1/sfx/answer-retry__v01.wav",
+      "sha256": "62d8ac9efa10c6310edc8bb58cf62bd963ddff14fa88f8319968a47896835a77",
+      "bytes": 47566,
+      "status": "pilot-selected"
+    },
+    {
+      "cueId": "stamp-press",
+      "candidate": "candidate-c",
+      "sourcePath": "design/audio/candidates/sourced-v1/sfx/stamp-press__candidate-c.wav",
+      "masterPath": "design/audio/masters/sourced-v1/sfx/stamp-press__v01.wav",
+      "sha256": "eaff663b7945d24e0c2f987d861b2c1a4fa1167d4df20d5d2b23bbf117a84cbf",
+      "bytes": 40968,
+      "status": "pilot-selected"
+    },
+    {
+      "cueId": "pet-fox",
+      "candidate": "candidate-b",
+      "sourcePath": "design/audio/candidates/sourced-v1/sfx/pet-fox__candidate-b.wav",
+      "masterPath": "design/audio/masters/sourced-v1/sfx/pet-fox__v01.wav",
+      "sha256": "1d2af3d22d1ce71b2a4a7f6eaf79f5cce77cce8ff62c45d5c25cd3e19917a669",
+      "bytes": 23382,
+      "status": "pilot-selected"
+    },
+    {
+      "cueId": "music-home",
+      "candidate": "candidate-b",
+      "sourcePath": "design/audio/candidates/sourced-v1/beds/music-home__candidate-b.wav",
+      "masterPath": "design/audio/masters/sourced-v1/beds/music-home__v01.wav",
+      "sha256": "3687b689e6dd5477a20522e6200289349cb49233b5783825e71c2a1d39d62de3",
+      "bytes": 13821174,
+      "status": "pilot-selected"
+    }
+  ],
+  "remainingGates": [
+    "mix/loudness pass",
+    "full device listening evidence",
+    "mute/background/offline regression",
+    "selection of remaining catalog variants",
+    "license/attribution sign-off before delivery"
+  ]
+}

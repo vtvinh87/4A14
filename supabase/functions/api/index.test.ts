@@ -73,7 +73,7 @@ describe('Supabase Edge API adapter', () => {
     expect(result.headers.get('Access-Control-Allow-Origin')).toBe('https://hoc-vui.web.app');
     expect(result.headers.get('Access-Control-Allow-Credentials')).toBe('true');
     expect(result.headers.get('Access-Control-Allow-Methods')).toBe('GET,POST,PATCH,PUT,DELETE,OPTIONS');
-    expect(result.headers.get('Access-Control-Allow-Headers')).toBe('Authorization,Content-Type,X-Parent-Grant');
+    expect(result.headers.get('Access-Control-Allow-Headers')).toBe('Authorization,Content-Type,X-Parent-Grant,Idempotency-Key');
     expect(result.headers.get('Access-Control-Max-Age')).toBe('600');
     expect(result.headers.get('Vary')).toBe('Origin');
     expect(app.handle).not.toHaveBeenCalled();

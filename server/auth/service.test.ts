@@ -1,9 +1,102 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MemoryAuthRepository } from './memoryRepository';
 import { createAuthService } from './service';
 import { DEFAULT_ADMIN_PASSWORD, DEFAULT_STUDENT_PIN } from '../../src/auth/account';
 
 describe('server auth service', () => {
+  it('lists safe student summaries without loading full student credentials', async () => {
+    const repository = new MemoryAuthRepository();
+    const auth = createAuthService(repository);
+    const admin = await auth.loginAdmin('admin', DEFAULT_ADMIN_PASSWORD);
+    if (!admin.ok) throw new Error('admin');
+    const created = await auth.createStudent(admin.token, 'summary01', 'Summary');
+    if (!created.ok) throw new Error('create');
+    vi.spyOn(repository, 'listStudents').mockRejectedValue(new Error('credential fan-out forbidden'));
+    expect(await auth.listStudents(admin.token)).toEqual({ ok: true, accounts: [created.account] });
+    const summaries = await repository.listStudentSummaries();
+    expect(summaries).toEqual([created.account]);
+    expect(Object.keys(summaries[0]).sort()).toEqual(['active', 'credentialVersion', 'displayName', 'id', 'role', 'username']);
+    summaries[0].displayName = 'mutated';
+    expect((await repository.findAccountById(created.account.id))?.displayName).toBe('Summary');
+  });
+
+  it.each(['revoke', 'inactive', 'version'] as const)('rejects remembered sessions after %s', async (cause) => {
+    const repository = new MemoryAuthRepository();
+    const auth = createAuthService(repository);
+    const admin = await auth.loginAdmin('admin', DEFAULT_ADMIN_PASSWORD);
+    if (!admin.ok) throw new Error('admin');
+    const created = await auth.createStudent(admin.token, 'secure01', 'Secure');
+    if (!created.ok) throw new Error('create');
+    const provisional = await auth.loginStudent('secure01', DEFAULT_STUDENT_PIN, true);
+    if (!provisional.ok) throw new Error('login');
+    const full = await auth.changePin(provisional.token, DEFAULT_STUDENT_PIN, '246810', 'student', true);
+    if (!full.ok) throw new Error('change');
+    if (cause === 'revoke') await auth.logout(full.token);
+    else {
+      const account = await repository.findAccountById(created.account.id);
+      if (!account) throw new Error('account');
+      if (cause === 'inactive') account.active = false;
+      else account.credentialVersion += 1;
+      await repository.updateAccount(account);
+    }
+    expect(await auth.getSession(full.token)).toMatchObject({ ok: false, code: cause === 'revoke' ? 'expired' : 'forbidden' });
+  });
+
+  it('preserves remembered TTL on parent rotation without granting parent access after reload', async () => {
+    let tick = Date.parse('2026-09-20T00:00:00Z');
+    const auth = createAuthService(new MemoryAuthRepository(), () => new Date(tick++));
+    const admin = await auth.loginAdmin('admin', DEFAULT_ADMIN_PASSWORD);
+    if (!admin.ok) throw new Error('admin');
+    await auth.createStudent(admin.token, 'parent01', 'Parent');
+    const provisional = await auth.loginStudent('parent01', DEFAULT_STUDENT_PIN);
+    if (!provisional.ok) throw new Error('login');
+    const full = await auth.changePin(provisional.token, DEFAULT_STUDENT_PIN, '246810', 'student', true);
+    if (!full.ok) throw new Error('change');
+    const parentSetup = await auth.unlockParent(full.token, DEFAULT_STUDENT_PIN);
+    if (!parentSetup.ok) throw new Error('parent setup');
+    expect(Date.parse(parentSetup.session.expiresAt) - Date.parse(parentSetup.session.createdAt)).toBe(7 * 86400000);
+    const parentChanged = await auth.changePin(parentSetup.token, DEFAULT_STUDENT_PIN, '864208', 'parent', true);
+    if (!parentChanged.ok) throw new Error('parent change');
+    expect(Date.parse(parentChanged.session.expiresAt) - Date.parse(parentChanged.session.createdAt)).toBe(30 * 86400000);
+    expect(parentChanged.parentGrantToken).toBeUndefined();
+    expect(parentChanged.session.parentGrantUntil).toBeUndefined();
+    expect(await auth.getParentDashboard(parentChanged.token, undefined)).toMatchObject({ ok: false, code: 'forbidden' });
+    const remembered = await auth.loginStudent('parent01', '246810', true);
+    if (!remembered.ok) throw new Error('remembered');
+    const unlocked = await auth.unlockParent(remembered.token, '864208');
+    if (!unlocked.ok) throw new Error('unlock');
+    expect(Date.parse(unlocked.session.expiresAt) - Date.parse(unlocked.session.createdAt)).toBe(30 * 86400000);
+    expect(await auth.getParentDashboard(unlocked.token, undefined)).toMatchObject({ ok: false, code: 'forbidden' });
+    const rotated = await auth.changePin(unlocked.token, '864208', '864209', 'parent');
+    if (!rotated.ok) throw new Error('rotate');
+    expect(Date.parse(rotated.session.expiresAt) - Date.parse(rotated.session.createdAt)).toBe(30 * 86400000);
+    expect(await auth.getParentDashboard(rotated.token, unlocked.parentGrantToken)).toMatchObject({ ok: false, code: 'forbidden' });
+  });
+
+  it('bounds remembered full sessions to 30 days while legacy and provisional sessions remain 7 days', async () => {
+    let now = new Date('2026-09-20T00:00:00Z');
+    const repository = new MemoryAuthRepository();
+    const auth = createAuthService(repository, () => now);
+    const admin = await auth.loginAdmin('admin', DEFAULT_ADMIN_PASSWORD);
+    if (!admin.ok) throw new Error('admin');
+    expect(Date.parse(admin.session.expiresAt) - Date.parse(admin.session.createdAt)).toBe(8 * 3600000);
+    await auth.createStudent(admin.token, 'remember01', 'Remember');
+    const provisional = await auth.loginStudent('remember01', DEFAULT_STUDENT_PIN, true);
+    if (!provisional.ok) throw new Error('provisional');
+    expect(provisional.session.mode).toBe('change-only');
+    expect(Date.parse(provisional.session.expiresAt) - now.getTime()).toBe(7 * 86400000);
+    const full = await auth.changePin(provisional.token, DEFAULT_STUDENT_PIN, '246810', 'student', true);
+    if (!full.ok) throw new Error('full');
+    expect(Date.parse(full.session.expiresAt) - now.getTime()).toBe(30 * 86400000);
+    for (const remember of [undefined, false, true]) {
+      const login = await auth.loginStudent('remember01', '246810', remember);
+      if (!login.ok) throw new Error('login');
+      expect(Date.parse(login.session.expiresAt) - now.getTime()).toBe((remember ? 30 : 7) * 86400000);
+    }
+    now = new Date(now.getTime() + 30 * 86400000);
+    expect(await auth.getSession(full.token)).toMatchObject({ ok: false, code: 'expired' });
+  });
+
   it('creates a student with independent default credentials and requires first-use PIN change', async () => {
     const repository = new MemoryAuthRepository();
     const auth = createAuthService(repository);
