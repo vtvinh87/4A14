@@ -29,7 +29,7 @@
 - Supabase Edge function `api` deployed to project `tvlpabqkternfvsxqovi`. Firebase Hosting released both `a14-82a69` (`https://a14-82a69.web.app`) and `4a14` (`https://4a14.web.app`) from the same `dist` build.
 - Live verification: both sites returned index, deep-link `/challenge`, SW and sampled MP3 `200`; the served bundle `index-8BQF_8ed.js` matched local `dist` SHA-256 `b83580b5a3db033d40ac7bbb1c5d54846573d6bfce659b432350d92a53654d93`; SW returned `no-cache, no-store, must-revalidate`.
 - Live Edge verification: the four configured origins returned CORS `204` and allowed `Authorization,Content-Type,X-Parent-Grant,Idempotency-Key`; an invalid origin returned `403`; unauthenticated `/auth/me` returned `401`.
-- A follow-up ledger-only commit/push is still required to persist this post-deploy evidence. No learner data, progress-map work, unrelated load-performance evidence or `tmp/` files were changed.
+- Follow-up ledger-only commit `96e729e` was pushed to the same branch to persist this post-deploy evidence. No learner data, progress-map work, unrelated load-performance evidence or `tmp/` files were changed.
 
 ## Recovery identity
 
